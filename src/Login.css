@@ -1,0 +1,38 @@
+.center{
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	align-items: center;
+}
+.inline-heading {
+	display: inline; /* Makes the <h2> inline */
+	margin-right: 10px; /* Adds some space between the <h2> and <input> */
+  }
+  
+  .inline-input {
+	display: inline; /* Ensures the input is inline */
+	padding: 5px; /* Optional: Adds padding for better appearance */
+  }
+  h1{
+	margin-left: 42%;
+  }
+  input{ border: none;
+	border-radius: 2px;
+	border-bottom: 1px solid #000;
+	outline: none;
+	margin-bottom: 15px;
+  }
+  p{
+	font-family: 'Times New Roman', Times, serif;
+	font-size: 28px;
+  }
+  .button{
+	background-color: rgb(38, 53, 188);
+	border-style: inset;
+	border-color: white;
+	color: white;
+	border-radius: 8px;
+	padding: 15px;
+	
+  }
+  
