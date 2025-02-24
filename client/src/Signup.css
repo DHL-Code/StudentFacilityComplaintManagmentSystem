@@ -1,5 +1,62 @@
-#Text{
+/* Login.css */
 
-margin-left: 10px;
-font-size: 32px;
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: url('./assets/wolkite.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: black;
+    /* Text color */
 }
+
+h1 {
+    text-align: center;
+    font-size: 60px;
+}
+
+
+.inline-heading {
+   margin-left: 10px;
+    font-size: 18px;
+    margin-bottom: 10px;
+    /* Space between label and input */
+}
+
+.inline-input {
+    width: 25%;
+ margin-left: 10%;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+    transition: border 0.3s;
+  
+
+}
+
+.inline-input:focus {
+    border-color: #3498db;
+    /* Change border color on focus */
+}
+
+.button {
+    background-color: #3498db;
+    /* Button color */
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 10%;
+    font-size: 18px;
+    transition: background-color 0.3s;
+    margin-left: 570px;
+    margin-top: 2%;
+
+}
+
+.button:hover {
+    background-color: #2980b9;
+    /* Darker shade on hover */
+}
+
+
