@@ -6,6 +6,8 @@ import Home from './Home';
 
 import Signup from './Signup';
 import Login from './Login';
+import ForgotPassword from './ForgotPassword';
+ForgotPassword
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/Signup" element={<Signup />} />
           <Route path="/Login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+  
           
         </Routes>
       </div>

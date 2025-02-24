@@ -8,7 +8,7 @@ const Home = () => {
         
       
       
-      <section style={styles.section}>
+      <section style={styles.section} className='welcome'>
         <p style={styles.paragraph}>Welcome to the Wolkite University Student Facility Complaint Management System.
            <br /> This platform streamlines facility issue reporting and ensures quick resolutions <br />
          Together, we create a better campus experience for all.</p>
