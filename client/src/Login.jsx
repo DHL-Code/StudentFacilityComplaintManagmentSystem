@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 import './Login.css'
 
 const Login = () => {
+  /*
+  
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate(); // Hook for navigation
@@ -33,6 +35,7 @@ const Login = () => {
       alert('An error occurred. Please try again.');
     }
   };
+  */
   return (<>
     <h1>Welcome</h1>
     <div className='center'>
