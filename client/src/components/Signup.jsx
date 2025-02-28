@@ -1,6 +1,6 @@
 // src/Contact.js
 import React from 'react';
-import './Signup.css';
+import '../styles/Signup.css';
 
 const Signup = () => {
  
