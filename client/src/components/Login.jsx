@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; 
+import { Link, useNavigate } from 'react-router-dom'; 
 import '../styles/Login.css';
 
 const Login = () => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
@@ -20,10 +21,11 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Handle successful login (e.g., store token, redirect)
+        // Store token and redirect
+        localStorage.setItem('token', data.token);
         console.log('Login successful:', data.token);
+        navigate('/'); // Redirect to a protected route
       } else {
-        // Handle login error
         setError(data.message);
       }
     } catch (err) {
@@ -34,31 +36,10 @@ const Login = () => {
   return (
     <>
       <h1>Welcome</h1>
-      <div className='center'>
-        <div className="inline-heading">
-          <input 
-            type="text" 
-            placeholder="UserID" 
-            className="inline-input" 
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)} 
-          />
-        </div> 
-        <div className="inline-heading">
-          <input 
-            type="password" 
-            placeholder='PassWord' 
-            className='inline-input' 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)} 
-          />
-        </div>
-        <input 
-          className='button' 
-          type="button" 
-          value="Login" 
-          onClick={handleLogin} 
-        />
+      <div className='inline-heading'>
+        <input type="text" placeholder="UserID" className="inline-input" value={userId} onChange={(e) => setUserId(e.target.value)} />
+        <input type="password" placeholder='Password' className="inline-input" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <input className="button" type="button" value="Login" onClick={handleLogin} />
         {error && <p className="error">{error}</p>}
         <Link to="/forgot-password" className='forgot-password'>Forgot Password?</Link>
       </div>
