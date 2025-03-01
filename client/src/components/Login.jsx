@@ -24,7 +24,17 @@ const Login = () => {
         // Store token and redirect
         localStorage.setItem('token', data.token);
         console.log('Login successful:', data.token);
-        navigate('/'); // Redirect to a protected route
+        const firstLetter = userId.charAt(0).toLowerCase();// Redirect to a protected route
+        if (firstLetter === 's') {
+          navigate('/StudentAccount'); // Redirect to Student dashboard
+        } else if (firstLetter === 'b') {
+          navigate('/manager-dashboard'); // Redirect to manager dashboard
+        } else if (firstLetter === 'c') {
+          navigate('/user-dashboard'); // Redirect to user dashboard
+        } else {
+          navigate('/'); // Redirect to a Home
+        }
+      
       } else {
         setError(data.message);
       }

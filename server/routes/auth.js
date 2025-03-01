@@ -5,10 +5,13 @@ const router = express.Router();
 
 // Signup
 router.post('/signup', async (req, res) => {
-    if (successful) {
-        return res.status(201).json({ message: 'User registered successfully' });
-    } else {
-        return res.status(400).json({ message: 'Error registering user' });
+    const { firstName, lastName, userId, department, phoneNumber, email, password } = req.body;
+    try {
+        const user = new User({ firstName, lastName, userId, department, phoneNumber, email, password });
+        await user.save();
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (error) {
+        res.status(400).json({ message: 'Error registering user', error });
     }
 });
 
