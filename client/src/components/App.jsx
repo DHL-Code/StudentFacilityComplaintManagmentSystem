@@ -10,6 +10,7 @@ import Login from './Login';
 import ForgotPassword from './ForgotPassword';
 import ContactUs from './ContactUs';
 
+
 ForgotPassword
 
 function App() {
@@ -24,7 +25,7 @@ function App() {
           <Route path="/ContactUs" element={<ContactUs />} />
           <Route path="/StudentAccount" element={<><StudentNav/><StudentAccount  /></>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-         
+          
           
           
         </Routes>
