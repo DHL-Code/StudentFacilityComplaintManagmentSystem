@@ -9,6 +9,7 @@ import Signup from './Signup';
 import Login from './Login';
 import ForgotPassword from './ForgotPassword';
 
+
 ForgotPassword
 
 function App() {
@@ -22,7 +23,7 @@ function App() {
           <Route path="/Login" element={<Login />} />
           <Route path="/StudentAccount" element={<><StudentNav/><StudentAccount  /></>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-         
+          
           
           
         </Routes>
