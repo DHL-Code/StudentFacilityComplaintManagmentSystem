@@ -8,6 +8,7 @@ import StudentNav from './StudentNav';
 import Signup from './Signup';
 import Login from './Login';
 import ForgotPassword from './ForgotPassword';
+import ContactUs from './ContactUs';
 
 ForgotPassword
 
@@ -20,6 +21,7 @@ function App() {
           <Route path="/" element={ <Home /> } />
           <Route path="/Signup" element={<Signup />} />
           <Route path="/Login" element={<Login />} />
+          <Route path="/ContactUs" element={<ContactUs />} />
           <Route path="/StudentAccount" element={<><StudentNav/><StudentAccount  /></>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
          

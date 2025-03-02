@@ -1,0 +1,82 @@
+.contact-us-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #131313; /* Dark background */
+    color: white;
+    min-height: 100vh;
+    font-family: sans-serif;
+    padding: 20px;
+}
+
+.contact-form {
+    background-color: #6879d0; /* Darker form background */
+    padding: 30px;
+    border-radius: 12px;
+    width: 400px; /* Adjust as needed */
+    max-width: 90%;
+    margin-top: 50px;
+}
+
+.contact-form h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: darkblue;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #faf6f6;
+    background-color: #f7f4f4;
+    color: white;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.contact-form textarea {
+    height: 150px;
+    resize: vertical;
+}
+
+.submit-button {
+    background-color: green; /* Green submit button */
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+}
+
+.submit-button:hover {
+    background-color: #a337e2; /* Darker green on hover */
+}
+
+.contact-info,
+.quick-links {
+    margin-top: 30px;
+    text-align: left;
+}
+
+.contact-info p,
+.quick-links p {
+    margin: 5px 0;
+}
+
+
+.contact-footer {
+    display: flex;
+    justify-content: space-between; /* Position items at left and right */
+    align-items: center;
+    background-color: #e8e5f5ef; /* Same background as container */
+    color: rgb(14, 13, 13);
+    padding: 20px;
+    position: fixed; /* Fix the footer to the bottom */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}

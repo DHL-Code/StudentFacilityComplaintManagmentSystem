@@ -28,7 +28,7 @@ const Navbar = () => {
     { path: "/", title: "Home", icon: <FiHome />, tooltip: "Return to homepage" },
     { path: "/signup", title: "Signup", icon: <FiUserPlus />, tooltip: "Create new account" },
     { path: "/login", title: "Login", icon: <FiLogIn />, tooltip: "Access your account" },
-    { path: "#contact", title: "Contact", icon: <FiMail />, tooltip: "Get in touch with support" }
+    { path: "/contactus", title: "Contact", icon: <FiMail />, tooltip: "Get in touch with support" }
   ];
 
   return (

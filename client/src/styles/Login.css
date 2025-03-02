@@ -2,19 +2,21 @@
 
 .login-container {
 	display: flex;
+	font-size: large;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	min-height: 100vh;
 	background-color: #222; /* Dark background as in the image */
-	color: white;
+	color: rgb(250, 241, 241);
+	opacity: 90%;
   }
   
   .login-form {
-	background-color: #333; /* Slightly lighter dark background for the form */
+	background-color: #225053; /* Slightly lighter dark background for the form */
 	padding: 40px;
-	border-radius: 8px;
-	width: 350px; /* Adjust width as needed */
+	border-radius: 12px;
+	width: 440px; /* Adjust width as needed */
 	text-align: center;
   }
   
@@ -33,6 +35,9 @@
 	flex-direction: column;
 	align-items: flex-start;
 	margin-bottom: 20px;
+	/*color: #1caf75;*/
+	color: #b04f1f;
+	font-size:xx-large;
   }
   
   .input-group label {
@@ -44,10 +49,10 @@
   .input-group input {
 	width: 100%;
 	padding: 10px;
-	border: 1px solid #555;
+	border: 1px solid #faf5f5;
 	border-radius: 4px;
-	background-color: #444;
-	color: white;
+	background-color: #f4f0f0;
+	color: rgb(14, 13, 13);
   }
   
   .login-button {
@@ -62,7 +67,7 @@
   }
   
   .login-button:hover {
-	background-color: #2980b9;
+	background-color: #ad1e9a;
   }
   
   .error {
