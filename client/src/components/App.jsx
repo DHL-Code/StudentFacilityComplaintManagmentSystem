@@ -1,6 +1,6 @@
 // src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Import Router, Route, and Routes
+import { BrowserRouter as Router, Route, Routes, BrowserRouter } from 'react-router-dom'; // Import Router, Route, and Routes
 import Navbar from './Navbar';
 import Home from './Home';
 import StudentAccount from './StudentAccount';
@@ -13,13 +13,13 @@ ForgotPassword
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <div>
      
         <Routes>
-          <Route path="/" element={ <><Navbar /><Home /></> } />
-          <Route path="/Signup" element={<><Navbar /><Signup /></>} />
-          <Route path="/Login" element={<><Navbar /><Login /></>} />
+          <Route path="/" element={ <Home /> } />
+          <Route path="/Signup" element={<Signup />} />
+          <Route path="/Login" element={<Login />} />
           <Route path="/StudentAccount" element={<><StudentNav/><StudentAccount  /></>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
          
@@ -27,7 +27,7 @@ function App() {
           
         </Routes>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
 

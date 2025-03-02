@@ -1,69 +1,71 @@
 /* Login.css */
 
-body {
-	margin: 0;
-	font-family: 'Arial', sans-serif;
-	background: url('../assets/wolkite.jpg') no-repeat center center fixed;
-	background-size: cover;
-	color:black; /* Text color */
-  }
-  
-  h1 {
-	text-align: center;
-	margin-top: 125px;
-	font-size: 60px;
-  }
-  .center{
-	margin-top: 50px;
-  }
-  
-  .inline-heading {
-	font-size: 18px;
-	margin-bottom: 10px; /* Space between label and input */
-  }
-  
-  .inline-input {
-	width: 25%;
-	padding: 10px;
-	border: 2px solid #ccc;
-	border-radius: 15px;
-	outline: none;
-	transition: border 0.3s;
-	margin-left: 550px;
-
-  }
-  
-  .inline-input:focus {
-	border-color: #3498db; /* Change border color on focus */
-  }
-  
-  .button {
-	background-color: #3498db; /* Button color */
+.login-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	background-color: #222; /* Dark background as in the image */
 	color: white;
+  }
+  
+  .login-form {
+	background-color: #333; /* Slightly lighter dark background for the form */
+	padding: 40px;
+	border-radius: 8px;
+	width: 350px; /* Adjust width as needed */
+	text-align: center;
+  }
+  
+  .login-title {
+	font-size: 2em;
+	margin-bottom: 10px;
+  }
+  
+  .welcome-back {
+	font-size: 1.5em;
+	margin-bottom: 30px;
+  }
+  
+  .input-group {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	margin-bottom: 20px;
+  }
+  
+  .input-group label {
+	font-weight: bold;
+	margin-bottom: 5px;
+	text-align: left;
+  }
+  
+  .input-group input {
+	width: 100%;
 	padding: 10px;
+	border: 1px solid #555;
+	border-radius: 4px;
+	background-color: #444;
+	color: white;
+  }
+  
+  .login-button {
+	background-color: #3498db;
+	color: white;
+	padding: 12px 20px;
 	border: none;
-	border-radius: 10px;
+	border-radius: 4px;
 	cursor: pointer;
-	width: 10%;
-	font-size: 18px;
-	transition: background-color 0.3s;
-	margin-left: 570px;
-	margin-top: 2%;
-	
+	font-size: 1em;
+	width: 100%;
   }
   
-  .button:hover {
-	background-color: #2980b9; /* Darker shade on hover */
-  }
-  .forgot-password {
-	margin-top: 10px; /* Space above the link */
-	color:black; /* Link color */
-	text-decoration: underline; /* Underline the link */
-	cursor: pointer; /* Change cursor to pointer */
-	font-size: 30px; /* Smaller font size */
-	margin-left: 2%;
+  .login-button:hover {
+	background-color: #2980b9;
   }
   
-  .forgot-password:hover {
-	color: #fff; /* Change color on hover */
+  .error {
+	color: #e74c3c;
+	margin-top: 10px;
   }

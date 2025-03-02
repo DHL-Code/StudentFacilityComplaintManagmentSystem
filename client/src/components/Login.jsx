@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; 
+import Navbar from './Navbar';
 import '../styles/Login.css';
 
 const Login = () => {
@@ -44,17 +45,44 @@ const Login = () => {
   };
 
   return (
-    <>
-      <h1>Welcome</h1>
-      <div className='inline-heading'>
-        <input type="text" placeholder="UserID" className="inline-input" value={userId} onChange={(e) => setUserId(e.target.value)} />
-        <input type="password" placeholder='Password' className="inline-input" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <input className="button" type="button" value="Login" onClick={handleLogin} />
-        {error && <p className="error">{error}</p>}
-        <Link to="/forgot-password" className='forgot-password'>Forgot Password?</Link>
+    <div>
+    <Navbar />
+    <div className="login-container"> 
+   
+    <div className="login-form">
+
+      <h1 className="login-title">FacilityComplaintManagment</h1>
+     
+      <h2 className="welcome-back">Welcome Back!</h2>
+     
+      <div className="input-group">
+        <label htmlFor="username">UserID</label>
+        <input
+          type="text"
+          id="username"
+          placeholder="Enter your userID"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+        />
       </div>
-    </>
-  );
+      <div className="input-group">
+        <label htmlFor="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter your password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
+      <button className="login-button" onClick={handleLogin}>
+        Log In
+      </button>
+      {error && <p className="error">{error}</p>}
+    </div>
+  </div>
+  </div>
+);
 };
 
 export default Login;
