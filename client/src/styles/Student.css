@@ -32,7 +32,8 @@ body {
 }
 
 .sidebar li:hover {
-    color: #4a90e2;
+    color: #fba53b;
+
 }
 
 .content {
@@ -57,7 +58,8 @@ body {
 }
 
 .top-nav button:hover {
-    background-color: #357ab8;
+    background-color: #ffffff;
+		color: rgb(0, 0, 0);
 }
 
 section {
@@ -113,7 +115,8 @@ button {
 }
 
 button:hover {
-    background-color: #357ab8;
+	background-color: #ffffff;
+		color: rgb(0, 0, 0);
 }
 
 .error {
