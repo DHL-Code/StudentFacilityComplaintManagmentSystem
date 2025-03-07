@@ -9,9 +9,56 @@ const Dashboard = () => {
     const [description, setDescription] = useState('');
     const [file, setFile] = useState(null);
     const [fileError, setFileError] = useState('');
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+     // New state for sidebar toggle
+     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+     // Function to toggle sidebar
+     const toggleSidebar = () => {
+         setIsSidebarOpen(!isSidebarOpen);
+     };
 
     const handleNavigation = (section) => {
         setActiveSection(section);
+        if (section === 'viewProfile' && !profile) {
+            fetchProfile();
+        }
+    };
+
+    const fetchProfile = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const token = localStorage.getItem('token');
+            console.log('Token from localStorage:', token); // Debugging: Log the token
+    
+            if (!token) {
+                throw new Error('No token found. Please log in.');
+            }
+    
+            const response = await fetch('http://localhost:5000/api/auth/profile', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to fetch profile. Status: ${response.status}`);
+            }
+    
+            const data = await response.json();
+            console.log('Profile Data:', data); // Debugging: Log the profile data
+            setProfile(data);
+        } catch (err) {
+            console.error('Profile Fetch Error:', err); // Debugging: Log fetch errors
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleFileChange = (e) => {
@@ -36,6 +83,10 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard">
+            {/* Hamburger Menu Button for Mobile */}
+    <button className="hamburger-menu" onClick={toggleSidebar}>
+        ☰
+    </button>
             <div className="sidebar">
                 <h1>Student Dashboard</h1>
                 <ul>
@@ -94,15 +145,63 @@ const Dashboard = () => {
                     </section>
                 )}
 
-                {activeSection === 'viewProfile' && (
-                    <section className="view-profile">
-                        <h2>View Profile</h2>
-                        <p>Name: Alex Johnson</p>
-                        <p>Email: alex.johnson@student.com</p>
-                        <p>Course: Computer Science</p>
-                    </section>
-                )}
+{activeSection === 'viewProfile' && (
+  <section className="view-profile">
+    <h2>View Profile</h2>
+    {loading && <p className="loading">Loading profile...</p>}
+    {error && <p className="error">Error: {error}</p>}
+    {profile && (
+      <div className="profile-container">
+        <div className="profile-header">
+          {/* Profile Photo */}
+          {profile.profilePhoto ? (
+            <img
+              src={profile.profilePhoto}
+              alt="Profile"
+              className="profile-photo"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                setError('Failed to load profile photo');
+              }}
+            />
+          ) : (
+            <div className="profile-photo-placeholder">No Photo</div>
+          )}
 
+          {/* User Name and ID */}
+          <h3 className='full-name'>{profile.fullName}</h3>
+          <p className="user-id">{profile.userId}</p>
+        </div>
+
+        {/* Profile Details */}
+        <div className="profile-details">
+          <div className="detail-item">
+            <span className="detail-label">Department:</span>
+            <span className="detail-value">{profile.department}</span>
+          </div>
+          <div className="detail-item">
+            <span className="detail-label">Email:</span>
+            <span className="detail-value">{profile.email}</span>
+          </div>
+          <div className="detail-item">
+            <span className="detail-label">Phone Number:</span>
+            <span className="detail-value">{profile.phoneNumber}</span>
+          </div>
+          <div className="detail-item">
+            <span className="detail-label">Gender:</span>
+            <span className="detail-value">{profile.gender}</span>
+          </div>
+          <div className="detail-item">
+            <span className="detail-label">Account Created:</span>
+            <span className="detail-value">
+              {new Date(profile.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      </div>
+    )}
+  </section>
+)}
                 {activeSection === 'editProfile' && (
                     <section className="edit-profile">
                         <h2>Edit Profile</h2>

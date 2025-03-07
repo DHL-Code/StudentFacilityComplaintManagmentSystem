@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #131313; /* Dark background */
+    background-color: #131313;
     color: white;
     min-height: 100vh;
     font-family: sans-serif;
@@ -10,12 +10,13 @@
 }
 
 .contact-form {
-    background-color: #6879d0; /* Darker form background */
+    background-color: #6879d0;
     padding: 30px;
     border-radius: 12px;
-    width: 400px; /* Adjust as needed */
-    max-width: 90%;
+    width: 100%;
+    max-width: 400px;
     margin-top: 50px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .contact-form h2 {
@@ -31,7 +32,7 @@
     margin-bottom: 15px;
     border: 1px solid #faf6f6;
     background-color: #f7f4f4;
-    color: white;
+    color: black; /* Change to black for readability */
     border-radius: 4px;
     box-sizing: border-box;
 }
@@ -42,7 +43,7 @@
 }
 
 .submit-button {
-    background-color: green; /* Green submit button */
+    background-color: green;
     color: white;
     padding: 12px 20px;
     border: none;
@@ -53,7 +54,7 @@
 }
 
 .submit-button:hover {
-    background-color: #a337e2; /* Darker green on hover */
+    background-color: #a337e2;
 }
 
 .contact-info,
@@ -67,16 +68,21 @@
     margin: 5px 0;
 }
 
-
 .contact-footer {
     display: flex;
-    justify-content: space-between; /* Position items at left and right */
+    flex-direction: column; /* Change to column for better stacking */
     align-items: center;
-    background-color: #e8e5f5ef; /* Same background as container */
+    background-color: #e8e5f5ef;
     color: rgb(14, 13, 13);
     padding: 20px;
-    position: fixed; /* Fix the footer to the bottom */
-    bottom: 0;
-    left: 0;
+    position: relative; /* Changed to relative for better flow */
+    margin-top: 20px; /* Space above footer */
     width: 100%;
+}
+
+@media (min-width: 768px) {
+    .contact-footer {
+        flex-direction: row; /* Row layout for larger screens */
+        justify-content: space-between;
+    }
 }

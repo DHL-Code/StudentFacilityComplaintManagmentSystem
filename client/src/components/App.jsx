@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes, BrowserRouter } from 'react-rou
 import Navbar from './Navbar';
 import Home from './Home';
 import StudentAccount from './StudentAccount';
+import ProctorDashboard from './ProctorDashboard';
 import StudentNav from './StudentNav';
 import Signup from './Signup';
 import Login from './Login';
@@ -24,6 +25,7 @@ function App() {
           <Route path="/Login" element={<Login />} />
           <Route path="/ContactUs" element={<ContactUs />} />
           <Route path="/StudentAccount" element={<><StudentNav/><StudentAccount  /></>} />
+          <Route path="/ProctorDashboard" element={<><StudentNav/><ProctorDashboard  /></>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           
           

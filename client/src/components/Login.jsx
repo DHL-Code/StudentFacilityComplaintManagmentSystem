@@ -28,8 +28,8 @@ const Login = () => {
         const firstLetter = userId.charAt(0).toLowerCase();// Redirect to a protected route
         if (firstLetter === 's') {
           navigate('/StudentAccount'); // Redirect to Student dashboard
-        } else if (firstLetter === 'b') {
-          navigate('/manager-dashboard'); // Redirect to manager dashboard
+        } else if (firstLetter === 'p') {
+          navigate('/ProctorDashboard'); // Redirect to Proctor dashboard
         } else if (firstLetter === 'c') {
           navigate('/user-dashboard'); // Redirect to user dashboard
         } else {

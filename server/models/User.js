@@ -2,12 +2,16 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-    fullName: { type: String, required: true }, // Changed from firstName and lastName
-    email: { type: String, required: true, unique: true },
-    userId: { type: String, required: true, unique: true }, 
-    phoneNumber: { type: String, required: true },
-    password: { type: String, required: true },
-    gender: { type: String, enum: ['male', 'female'], required: true },
+  fullName: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  userId: { type: String, required: true, unique: true },
+  phoneNumber: { type: String, required: true },
+  password: { type: String, required: true },
+  gender: { type: String, enum: ['male', 'female'], required: true },
+  department: { type: String, required: true },
+  //SprofilePhoto: { type: Buffer }, // Store image buffer
+  profilePhoto: {type: String}, //Store content type
+  createdAt: { type: Date, default: Date.now }
 });
 
 // Hash password before saving
@@ -25,5 +29,5 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('users', userSchema);
 module.exports = User;
