@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true },
   password: { type: String, required: true },
   gender: { type: String, enum: ['male', 'female'], required: true },
+  college:{type:String, required: true},
   department: { type: String, required: true },
   //SprofilePhoto: { type: Buffer }, // Store image buffer
   profilePhoto: {type: String}, //Store content type

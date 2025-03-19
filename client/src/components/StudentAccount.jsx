@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import '../styles/Student.css'
-
+import '../styles/Student.css';
 
 const Dashboard = () => {
     const [activeSection, setActiveSection] = useState('complaintForm');
@@ -13,48 +12,156 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-     // New state for sidebar toggle
-     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    //to edit data
 
-     // Function to toggle sidebar
-     const toggleSidebar = () => {
-         setIsSidebarOpen(!isSidebarOpen);
-     };
+    // Existing code at top
+const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    department: '',
+    gender: '',
+    // NEW: Add password fields
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: '',
+  });
+  const [newProfilePhoto, setNewProfilePhoto] = useState(null);
+const [newProfilePreview, setNewProfilePreview] = useState(null);
+
+    // New state for sidebar toggle
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // Function to toggle sidebar
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
 
     const handleNavigation = (section) => {
         setActiveSection(section);
-        if (section === 'viewProfile' && !profile) {
+        if (section === 'viewProfile'|| section === 'editProfile' && !profile) {
             fetchProfile();
         }
     };
+
+    const handlePhotoChange = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+          const isValidType = ['image/jpeg', 'image/png'].includes(selectedFile.type);
+          const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
+      
+          if (isValidType && isValidSize) {
+            setNewProfilePhoto(selectedFile);
+            const reader = new FileReader();
+            reader.onloadend = () => setNewProfilePreview(reader.result);
+            reader.readAsDataURL(selectedFile);
+            setFileError('');
+          } else {
+            setFileError('File must be JPG/PNG and less than 5MB');
+          }
+        }
+      };
+
+      const handleProfileUpdate = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+
+        // Password validation
+  if (formData.currentPassword || formData.newPassword || formData.confirmNewPassword) {
+    if (formData.newPassword !== formData.confirmNewPassword) {
+      setError("New passwords don't match");
+      setLoading(false);
+      return;
+    }
+    if (formData.newPassword.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
+  }
+
+      
+        const formPayload = new FormData();
+        formPayload.append('fullName', formData.fullName);
+        formPayload.append('email', formData.email);
+        formPayload.append('phoneNumber', formData.phoneNumber);
+        formPayload.append('department', formData.department);
+        formPayload.append('gender', formData.gender);
+        if (newProfilePhoto) formPayload.append('profilePhoto', newProfilePhoto);
+        // Only append password fields if current password is provided
+  if (formData.currentPassword) {
+    formPayload.append('currentPassword', formData.currentPassword);
+    formPayload.append('newPassword', formData.newPassword);
+  }
+      
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch('http://localhost:5000/api/auth/profile', {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formPayload,
+          });
+      
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Update failed');
+          }
+
+          useEffect(() => {
+            if (profile && activeSection === 'editProfile') {
+              setFormData({
+                fullName: profile.fullName,
+                email: profile.email,
+                phoneNumber: profile.phoneNumber,
+                department: profile.department,
+                gender: profile.gender,
+                currentPassword: '',
+                newPassword: '',
+                confirmNewPassword: ''
+              });
+            }
+          }, [profile, activeSection]);
+      
+          const data = await response.json();
+          setProfile(data.user);
+          setNewProfilePhoto(null);
+          setNewProfilePreview(null);
+          alert('Profile updated successfully');
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
 
     const fetchProfile = async () => {
         setLoading(true);
         setError(null);
         try {
             const token = localStorage.getItem('token');
-            console.log('Token from localStorage:', token); // Debugging: Log the token
-    
+            console.log('Token from localStorage:', token);
+
             if (!token) {
                 throw new Error('No token found. Please log in.');
             }
-    
+
             const response = await fetch('http://localhost:5000/api/auth/profile', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
             });
-    
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || `Failed to fetch profile. Status: ${response.status}`);
             }
-    
+
             const data = await response.json();
-            console.log('Profile Data:', data); // Debugging: Log the profile data
+            console.log('Profile Data:', data);
             setProfile(data);
         } catch (err) {
-            console.error('Profile Fetch Error:', err); // Debugging: Log fetch errors
+            console.error('Profile Fetch Error:', err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -76,18 +183,53 @@ const Dashboard = () => {
         }
     };
 
-    const handleSubmitComplaint = (e) => {
+    const handleSubmitComplaint = async (e) => {
         e.preventDefault();
-        alert(`Complaint submitted:\nType: ${complaintType}\nDetails: ${specificInfo}\nDescription: ${description}\nFile: ${file?.name}`);
+
+        // Fetch userId from localStorage
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            alert('User not logged in. Please log in to submit a complaint.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('userId', userId);
+        formData.append('complaintType', complaintType);
+        formData.append('specificInfo', specificInfo);
+        formData.append('description', description);
+        if (file) {
+            formData.append('file', file);
+        }
+
+        try {
+            const response = await fetch('http://localhost:5000/api/complaints/submit', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to submit complaint');
+            }
+
+            const data = await response.json();
+            alert('Complaint submitted successfully');
+        } catch (error) {
+            console.error('Error:', error);
+            alert(error.message || 'An error occurred. Please try again.');
+        }
     };
 
     return (
         <div className="dashboard">
             {/* Hamburger Menu Button for Mobile */}
-    <button className="hamburger-menu" onClick={toggleSidebar}>
-        ☰
-    </button>
-            <div className="sidebar">
+            <button className="hamburger-menu" onClick={toggleSidebar}>
+                ☰
+            </button>
+
+            {/* Sidebar */}
+            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <h1>Student Dashboard</h1>
                 <ul>
                     <li onClick={() => handleNavigation('complaintForm')}>Complaint Form</li>
@@ -203,21 +345,145 @@ const Dashboard = () => {
   </section>
 )}
                 {activeSection === 'editProfile' && (
-                    <section className="edit-profile">
-                        <h2>Edit Profile</h2>
-                        <form>
-                            <label>
-                                Name:
-                                <input type="text" defaultValue="Alex Johnson" />
-                            </label>
-                            <label>
-                                Email:
-                                <input type="email" defaultValue="alex.johnson@student.com" />
-                            </label>
-                            <button type="submit">Save Changes</button>
-                        </form>
-                    </section>
-                )}
+  <section className="edit-profile">
+    <h2>Edit Profile</h2>
+    {loading && <p className="loading">Saving changes...</p>}
+    {error && <p className="error">Error: {error}</p>}
+    
+    <form onSubmit={handleProfileUpdate}>
+      <div className="profile-photo-edit">
+        <div 
+          className="photo-preview"
+          onClick={() => document.getElementById('profilePhotoInput').click()}
+        >
+          {newProfilePreview ? (
+            <img src={newProfilePreview} alt="Preview" className="profile-image"/>
+          ) : profile?.profilePhoto ? (
+            <img src={profile.profilePhoto} alt="Current Profile" className="profile-image"/>
+          ) : (
+            <div className="upload-placeholder">
+                <span className="upload-icon">+</span>
+        <span className="upload-text">Upload Photo</span>
+        </div>
+          )}
+        </div>
+        <input
+          type="file"
+          id="profilePhotoInput"
+          accept="image/*"
+          onChange={handlePhotoChange}
+          style={{ display: 'none' }}
+        />
+        {fileError && <p className="error">{fileError}</p>}
+      </div>
+<div className="form-fields">
+      <label>
+        Full Name:
+        <input
+        className="narrow-input"
+          type="text"
+          value={formData.fullName}
+          onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+        />
+      </label>
+
+      <label>
+        Email:
+        <input
+        className="narrow-input"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({...formData, email: e.target.value})}
+        />
+      </label>
+
+      <label>
+        Phone Number:
+        <input
+          type="tel"
+          value={formData.phoneNumber}
+          onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+        />
+      </label>
+
+      <label>
+        Department:
+        <select
+          value={formData.department}
+          onChange={(e) => setFormData({...formData, department: e.target.value})}
+        >
+          <option value="">Select Department</option>
+          <option value="Computer Science">Computer Science</option>
+          <option value="Electrical Engineering">Electrical Engineering</option>
+          <option value="Mechanical Engineering">Mechanical Engineering</option>
+          <option value="Business Administration">Business Administration</option>
+          <option value="Civil Engineering">Civil Engineering</option>
+        </select>
+      </label>
+
+      <div className="gender-selection">
+        <span className='gender'>Gender:</span>
+        <label>
+          <input
+            type="radio"
+            value="male"
+            checked={formData.gender === 'male'}
+            onChange={(e) => setFormData({...formData, gender: e.target.value})}
+          />
+          Male
+        </label>
+        <label>
+          <input
+            type="radio"
+            value="female"
+            checked={formData.gender === 'female'}
+            onChange={(e) => setFormData({...formData, gender: e.target.value})}
+          />
+          Female
+        </label>
+      </div>
+
+      <div className="password-change-section">
+      <h3>Change Password</h3>
+      
+      <label>
+        Current Password:
+        <input
+          type="password"
+          value={formData.currentPassword}
+          onChange={(e) => setFormData({...formData, currentPassword: e.target.value})}
+          placeholder="Enter current password"
+        />
+      </label>
+
+      <label>
+        New Password:
+        <input
+          type="password"
+          value={formData.newPassword}
+          onChange={(e) => setFormData({...formData, newPassword: e.target.value})}
+          placeholder="Enter new password (min 6 characters)"
+        />
+      </label>
+
+      <label>
+        Confirm New Password:
+        <input
+          type="password"
+          value={formData.confirmNewPassword}
+          onChange={(e) => setFormData({...formData, confirmNewPassword: e.target.value})}
+          placeholder="Confirm new password"
+        />
+      </label>
+    </div>
+    </div>
+
+      <button type="submit" disabled={loading}>
+        {loading ? 'Saving...' : 'Save Changes'}
+      </button>
+    </form>
+  </section>
+)}
 
                 {activeSection === 'provideFeedback' && (
                     <section className="provide-feedback">

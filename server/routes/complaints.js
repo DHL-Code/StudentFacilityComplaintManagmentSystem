@@ -1,35 +1,38 @@
 const express = require('express');
+const Complaint = require('../models/Complaint');
+const multer = require('multer');
 const router = express.Router();
-//const Complaint = require('../models/Complaint'); // Ensure this model matches your existing setup
 
-// Get all complaints
-router.get('/', async (req, res) => {
-    try {
-        const complaints = await Complaint.find();
-        res.json(complaints);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/complaints/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    },
 });
 
-// Create a new complaint
-router.post('/', async (req, res) => {
-    const newComplaint = new Complaint(req.body);
-    try {
-        const savedComplaint = await newComplaint.save();
-        res.status(201).json(savedComplaint);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
+const upload = multer({ storage });
 
-// Update complaint status
-router.put('/:id', async (req, res) => {
+// Submit a complaint
+router.post('/submit', upload.single('file'), async (req, res) => {
     try {
-        const updatedComplaint = await Complaint.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json(updatedComplaint);
+        const { userId, complaintType, specificInfo, description } = req.body;
+        const file = req.file ? req.file.path : null;
+
+        const newComplaint = new Complaint({
+            userId,
+            complaintType,
+            specificInfo,
+            description,
+            file,
+        });
+
+        await newComplaint.save();
+        res.status(201).json({ message: 'Complaint submitted successfully' });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 

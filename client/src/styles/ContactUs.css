@@ -76,7 +76,7 @@
     color: rgb(14, 13, 13);
     padding: 20px;
     position: relative; /* Changed to relative for better flow */
-    margin-top: 20px; /* Space above footer */
+    margin-top: 100px; /* Space above footer */
     width: 100%;
 }
 

@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const complaintRoutes = require('./routes/complaints');
+const profileRoutes = require('./routes/profileRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
 const authRoutes = require('./routes/auth');
 const contactRoutes = require('./routes/contact'); // Import the contact route
+
 const path = require('path');
 const dotenv = require('dotenv');
 
@@ -22,7 +26,10 @@ app.use(express.urlencoded({ extended: true }));
 
 //Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/contact', contactRoutes); // Use the register route
+app.use('/api/contact', contactRoutes); 
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

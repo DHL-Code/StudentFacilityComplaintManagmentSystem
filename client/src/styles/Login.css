@@ -74,3 +74,21 @@
 	color: #e74c3c;
 	margin-top: 10px;
   }
+
+.additional-login-options {
+	margin-top: 20px;
+	text-align: center;
+  }
+  
+  .forgot-password, .signup-link {
+	color: #007bff;
+	text-decoration: none;
+  }
+  
+  .forgot-password:hover, .signup-link:hover{
+	  text-decoration: underline;
+  }
+  
+  .no-account{
+	  margin-top:10px;
+  }

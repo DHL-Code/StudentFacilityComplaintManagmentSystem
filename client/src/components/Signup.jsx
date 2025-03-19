@@ -3,6 +3,23 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import "../styles/Signup.css";
 
+
+const colleges = [
+  {
+    name: "Computing and Informatics",
+    departments: ["Computer Science", "Software Engineering", "Information Technology", "Information Systems"],
+  },
+  {
+    name: "Engineering",
+    departments: ["Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"],
+  },
+  {
+    name: "Business",
+    departments: ["Business Administration", "Accounting", "Marketing", "Finance"],
+  },
+];
+
+
 const Signup = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -13,6 +30,7 @@ const Signup = () => {
   const [gender, setGender] = useState("");
   const [error, setError] = useState("");
   const [profilePhoto, setProfilePhoto] = useState(null);
+  const [college, setCollege] = useState("");
   const [department, setDepartment] = useState("");
   const [profilePreview, setProfilePreview] = useState(null);
   const navigate = useNavigate();
@@ -49,6 +67,7 @@ const Signup = () => {
     formData.append("fullName", fullName);
     formData.append("email", email);
     formData.append("userId", userId);
+    formData.append("college", college);
     formData.append("department", department);
     formData.append("phoneNumber", phoneNumber);
     formData.append("password", password);
@@ -115,11 +134,6 @@ const Signup = () => {
           </div>
 
           <div className="input-group">
-            <label htmlFor="email">Email</label>
-            <input type="email" id="email" placeholder="Enter your email address" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-
-          <div className="input-group">
             <label htmlFor="userId">User ID</label>
             <input
               type="text"
@@ -131,34 +145,8 @@ const Signup = () => {
           </div>
 
           <div className="input-group">
-            <label htmlFor="department">Department</label>
-            <select 
-              id="department" 
-              value={department} 
-              onChange={(e) => setDepartment(e.target.value)}
-            >
-              <option value="">Select Department</option>
-              <option value="Computer Science">Computer Science</option>
-              <option value="Electrical Engineering">Electrical Engineering</option>
-              <option value="Mechanical Engineering">Mechanical Engineering</option>
-              <option value="Business Administration">Business Administration</option>
-              <option value="Civil Engineering">Civil Engineering</option>
-            </select>
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="phoneNumber">Phone Number</label>
-            <input type="text" id="phoneNumber" placeholder="Enter your phone number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="password">Password</label>
-            <input type="password" id="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input type="password" id="confirmPassword" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+            <label htmlFor="email">Email</label>
+            <input type="email" id="email" placeholder="Enter your email address" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
 
           <div className="input-group gender-group">
@@ -173,6 +161,51 @@ const Signup = () => {
                 Female
               </label>
             </div>
+          </div>
+
+          
+
+          <div className="input-group">
+            <label htmlFor="college">College</label>
+            <select id="college" value={college} onChange={(e) => setCollege(e.target.value)}>
+              <option value="">Select College</option>
+              {colleges.map((col) => (
+                <option key={col.name} value={col.name}>
+                  {col.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {college && (
+            <div className="input-group">
+              <label htmlFor="department">Department</label>
+              <select id="department" value={department} onChange={(e) => setDepartment(e.target.value)}>
+                <option value="">Select Department</option>
+                {colleges
+                  .find((col) => col.name === college)
+                  ?.departments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+              </select>
+            </div>   )}
+
+          <div className="input-group">
+            <label htmlFor="phoneNumber">Phone Number</label>
+            <input type="text" id="phoneNumber" placeholder="Enter your phone number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+          </div>
+
+
+          <div className="input-group">
+            <label htmlFor="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </div>
 
           <button className="signup-button" onClick={handleSignup}>Create Account</button>

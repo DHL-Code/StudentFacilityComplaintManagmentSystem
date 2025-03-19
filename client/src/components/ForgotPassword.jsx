@@ -1,35 +1,67 @@
 import React, { useState } from 'react';
 import '../styles/forgotpassword.css';
-
+import forgotPasswordImage from '../assets/forgotPass3.jpg';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here, you would typically send the email to your backend API for processing
-    console.log('Email sent to:', email);
-    // You can add further logic to handle the response from the server
+    setMessage('');
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage(data.message || 'Password reset link sent to your email.');
+      } else {
+        setError(data.message || 'Failed to send reset link. Please try again.');
+      }
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      setError('An unexpected error occurred. Please try again.');
+    }
   };
+
   return (
-    <>
-      <h1>Forgot Password</h1>
-      <div className='center'>
-        <form onSubmit={handleSubmit}>
-          <div className="inline-heading">
-            <input 
-              type="email" 
-              placeholder="Enter your email" 
-              className="inline-input" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-            />
-          </div>
-          <input className='button' type="submit" value="Send" />
-        </form>
+    <div className="forgot-password-page">
+      <div className="background-motion"></div>
+      <div className="forgot-password-container">
+        <div className="forgot-password-image">
+          <img src={forgotPasswordImage} alt="Forgot Password" />
+        </div>
+        <div className="forgot-password-form">
+          <h1>Forgot Password</h1>
+          <form onSubmit={handleSubmit}>
+            <div className="input-group">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" className="reset-button">
+              Send Reset Link
+            </button>
+          </form>
+          {message && <p className="success-message">{message}</p>}
+          {error && <p className="error-message">{error}</p>}
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Home.css';
 import Navbar from './Navbar';
 import Image1 from '../assets/wolkite.jpg'; // Correctly import images
-import Image2 from '../assets/wolkite.jpg';
-import Image3 from '../assets/wolkite.jpg';
+import Image2 from '../assets/wolkite3.jpg';
+import Image3 from '../assets/wolkite4.jpg';
+import Image4 from '../assets/comp.jpg';
+import Image5 from '../assets/comp1.jpg';
+import Image6 from '../assets/comp2.jpg';
 
 const Home = () => {
   const [currentImage, setCurrentImage] = useState(0);
-  const images = [Image1, Image2, Image3]; // Use imported images
+  const images = [Image1, Image2, Image3,Image4,Image5,Image6]; // Use imported images
 
   useEffect(() => {
     const interval = setInterval(() => {
