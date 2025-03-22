@@ -60,13 +60,14 @@ body {
 
 .hamburger {
     font-size: 24px;
+    margin-left: 90%;
     cursor: pointer;
     color: #fba53b;
     /* Orange color */
     display: block;
     /* Always show on mobile */
+    z-index: 1001; /* Ensure it's on top */
 }
-
 /* Desktop Navigation Buttons */
 .desktop-nav {
     display: none;
@@ -96,6 +97,7 @@ body {
     /* Stack items vertically */
     gap: 10px;
     /* Space between items */
+    z-index: 1000; /* Ensure it's below hamburger */
 }
 
 .nav-items.active {
@@ -108,7 +110,7 @@ body {
 .nav-items span {
     cursor: pointer;
     /* Change cursor to pointer */
-    color: #fba53b;
+    color: #e261d5;
     /* Orange color */
 }
 

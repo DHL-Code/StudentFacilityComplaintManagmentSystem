@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Student.css';
 
 const Dashboard = () => {
@@ -12,6 +12,19 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const [formData, setFormData] = useState({
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      department: '',
+      gender: '',
+      currentPassword: '',
+      newPassword: '',
+      confirmNewPassword: ''
+  });
+  const [newProfilePhoto, setNewProfilePhoto] = useState(null);
+  const [newProfilePreview, setNewProfilePreview] = useState(null);
+  const [isNavActive, setIsNavActive] = useState(false);
      // New state for sidebar toggle
      const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -90,22 +103,6 @@ const Dashboard = () => {
             const errorData = await response.json();
             throw new Error(errorData.message || 'Update failed');
           }
-
-          useEffect(() => {
-            if (profile && activeSection === 'editProfile') {
-              setFormData({
-                fullName: profile.fullName,
-                email: profile.email,
-                phoneNumber: profile.phoneNumber,
-                department: profile.department,
-                gender: profile.gender,
-                currentPassword: '',
-                newPassword: '',
-                confirmNewPassword: ''
-              });
-            }
-          }, [profile, activeSection]);
-      
           const data = await response.json();
           setProfile(data.user);
           setNewProfilePhoto(null);
@@ -118,6 +115,7 @@ const Dashboard = () => {
         }
       };
 
+    
     const fetchProfile = async () => {
         setLoading(true);
         setError(null);
@@ -142,6 +140,7 @@ const Dashboard = () => {
 
             const data = await response.json();
             console.log('Profile Data:', data); // Debugging: Log the profile data
+            console.log("Profile Photo URL: ", data.profilePhoto); // added console log
             setProfile(data);
         } catch (err) {
             console.error('Profile Fetch Error:', err); // Debugging: Log fetch errors
@@ -150,6 +149,25 @@ const Dashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+      fetchProfile();
+  }, []);
+
+    useEffect(() => {
+      if (profile && activeSection === 'editProfile') {
+        setFormData({
+          fullName: profile.fullName,
+          email: profile.email,
+          phoneNumber: profile.phoneNumber,
+          department: profile.department,
+          gender: profile.gender,
+          currentPassword: '',
+          newPassword: '',
+          confirmNewPassword: ''
+        });
+      }
+    }, [profile, activeSection]);
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -210,10 +228,6 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard">
-            {/* Hamburger Menu Button for Mobile */}
-    <button className="hamburger-menu" onClick={toggleSidebar}>
-        ☰
-    </button>
             <div className="sidebar">
                 <h1>Student Dashboard</h1>
                 <ul>
@@ -225,16 +239,17 @@ const Dashboard = () => {
             </div>
 
             <div className="content">
-                <div className="top-nav">
-                    <span className="hamburger" onClick={toggleNav}>☰</span> {/* Hamburger icon for mobile */}
-                    <div className={`nav-items ${isNavActive ? 'active' : ''}`}>
-                        <span onClick={() => handleNavigation('complaintForm')}>Complaint Form</span>
-                        <span onClick={() => handleNavigation('viewProfile')}>View Profile</span>
-                        <span onClick={() => handleNavigation('editProfile')}>Edit Profile</span>
-                        <span onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</span>
-                    </div>
-                </div>
-
+            <div className="top-nav">
+    <span className="hamburger" onClick={toggleNav}>
+        {isNavActive ? 'x' : '☰'} {/* Change icon based on state */}
+    </span>
+    <div className={`nav-items ${isNavActive ? 'active' : ''}`}>
+        <span onClick={() => handleNavigation('complaintForm')}>Complaint Form</span>
+        <span onClick={() => handleNavigation('viewProfile')}>View Profile</span>
+        <span onClick={() => handleNavigation('editProfile')}>Edit Profile</span>
+        <span onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</span>
+    </div>
+</div>
                 {/* Navigation Buttons for Desktop View */}
                 <div className="desktop-nav">
                     <button onClick={() => handleNavigation('complaintForm')}>Complaint Form</button>
