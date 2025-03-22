@@ -57,6 +57,9 @@ const Signup = () => {
       case "department":
         if (!value) errorMessage = "Department is required";
         break;
+      case "college":
+        if (!value) errorMessage = "Department is required";
+        break;
       case "phoneNumber":
         if (!value) {
           errorMessage = "Phone Number is required";
@@ -236,36 +239,6 @@ const Signup = () => {
             {validationErrors.userId && <span className="error">{validationErrors.userId}</span>}
           </div>
 
-          <div className="input-group">
-            <label htmlFor="department">Department</label>
-            <select 
-              id="department" 
-              value={department} 
-              onChange={(e) => setDepartment(e.target.value)}
-            >
-              <option value="">Select Department</option>
-              <option value="Computer Science">Computer Science</option>
-              <option value="Electrical Engineering">Electrical Engineering</option>
-              <option value="Mechanical Engineering">Mechanical Engineering</option>
-              <option value="Business Administration">Business Administration</option>
-              <option value="Civil Engineering">Civil Engineering</option>
-            </select>
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="phoneNumber">Phone Number</label>
-            <input type="text" id="phoneNumber" placeholder="Enter your phone number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="password">Password</label>
-            <input type="password" id="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input type="password" id="confirmPassword" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-          </div>
 
           <div className="input-group gender-group">
             <label>Gender</label>
