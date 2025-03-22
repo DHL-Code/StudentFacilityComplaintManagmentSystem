@@ -10,8 +10,8 @@ import Signup from './Signup';
 import Login from './Login';
 import ForgotPassword from './ForgotPassword';
 import ContactUs from './ContactUs';
-
-
+import SupervisorPage from './SupervisorPage';
+import DeanPage from './DeanPage';
 ForgotPassword
 
 function App() {
@@ -27,6 +27,8 @@ function App() {
           <Route path="/StudentAccount" element={<><StudentNav/><StudentAccount  /></>} />
           <Route path="/ProctorDashboard" element={<><StudentNav/><ProctorDashboard  /></>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/SupervisorPage" element={<SupervisorPage />} />
+          <Route path="/DeanPage" element={<DeanPage />} />
           
           
           
