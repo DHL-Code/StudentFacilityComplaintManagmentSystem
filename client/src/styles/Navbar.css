@@ -1,5 +1,5 @@
 .navbar {
-    background-color: #f0f0f0; /* Example background */
+    background-color: #922d4b; /* Example background */
     padding: 10px;
   }
   
@@ -17,7 +17,7 @@
   }
   
   .logo span {
-    color: #d93e29; /* Example accent color */
+    color: #ded9d8; /* Example accent color */
   }
   
   .desktop-nav {
@@ -26,7 +26,7 @@
   
   .nav-link {
     text-decoration: none;
-    color: #333;
+    color: #cecbcb;
     display: flex;
     align-items: center;
   }

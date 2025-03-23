@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/forgotpassword.css';
 import forgotPasswordImage from '../assets/forgotPass3.jpg';
 
@@ -6,6 +7,7 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,8 +38,12 @@ const ForgotPassword = () => {
 
   return (
     <div className="forgot-password-page">
+      <button className="back-button" onClick={() => navigate('/')}>
+          &#8592; Back
+        </button>
       <div className="background-motion"></div>
       <div className="forgot-password-container">
+        
         <div className="forgot-password-image">
           <img src={forgotPasswordImage} alt="Forgot Password" />
         </div>

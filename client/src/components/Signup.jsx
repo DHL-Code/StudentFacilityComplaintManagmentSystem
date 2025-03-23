@@ -206,7 +206,7 @@ const Signup = () => {
             </div>
           </div>
 
-          <div className="input-group">
+          <div className="input-groups">
             <label htmlFor="fullName">Full Name</label>
             <input
               type="text"
@@ -220,12 +220,12 @@ const Signup = () => {
             {validationErrors.fullName && <span className="error">{validationErrors.fullName}</span>}
           </div>
 
-          <div className="input-group">
+          <div className="input-groups">
             <label htmlFor="email">Email</label>
             <input type="email" id="email" placeholder="Enter your email address" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
 
-          <div className="input-group">
+          <div className="input-groups">
             <label htmlFor="userId">User ID</label>
             <input
               type="text"
@@ -240,7 +240,7 @@ const Signup = () => {
           </div>
 
 
-          <div className="input-group gender-group">
+          <div className="input-groups gender-group">
             <label>Gender</label>
             <div className="radio-buttons">
               <label>
@@ -275,7 +275,7 @@ const Signup = () => {
 
           
 
-          <div className="input-group">
+          <div className="input-groups">
             <label htmlFor="college">College</label>
             <select id="college" value={college} onChange={(e) => setCollege(e.target.value)}>
               <option value="">Select College</option>
@@ -288,7 +288,7 @@ const Signup = () => {
           </div>
 
           {college && (
-            <div className="input-group">
+            <div className="input-groups">
               <label htmlFor="department">Department</label>
               <select id="department" value={department} onChange={(e) => setDepartment(e.target.value)}>
                 <option value="">Select Department</option>
@@ -302,18 +302,18 @@ const Signup = () => {
               </select>
             </div>   )}
 
-          <div className="input-group">
+          <div className="input-groups">
             <label htmlFor="phoneNumber">Phone Number</label>
             <input type="text" id="phoneNumber" placeholder="Enter your phone number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
           </div>
 
 
-          <div className="input-group">
+          <div className="input-groups">
             <label htmlFor="password">Password</label>
             <input type="password" id="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
 
-          <div className="input-group">
+          <div className="input-groups">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <input type="password" id="confirmPassword" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </div>

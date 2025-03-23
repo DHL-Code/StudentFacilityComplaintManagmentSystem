@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/Student.css';
 
 const Dashboard = () => {
@@ -13,28 +13,44 @@ const Dashboard = () => {
     const [error, setError] = useState(null);
 
     const [formData, setFormData] = useState({
-      fullName: '',
-      email: '',
-      phoneNumber: '',
-      department: '',
-      gender: '',
-      currentPassword: '',
-      newPassword: '',
-      confirmNewPassword: ''
-  });
-  const [newProfilePhoto, setNewProfilePhoto] = useState(null);
-  const [newProfilePreview, setNewProfilePreview] = useState(null);
-  const [isNavActive, setIsNavActive] = useState(false);
-     // New state for sidebar toggle
-     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+        fullName: '',
+        email: '',
+        phoneNumber: '',
+        department: '',
+        gender: '',
+        currentPassword: '',
+        newPassword: '',
+        confirmNewPassword: '',
+        college: ''
+    });
+    const [newProfilePhoto, setNewProfilePhoto] = useState(null);
+    const [newProfilePreview, setNewProfilePreview] = useState(null);
+    const [isNavActive, setIsNavActive] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [colleges, setColleges] = useState([
+        {
+            name: "Computing and Informatics",
+            departments: ["Computer Science", "Software Engineering", "Information Technology", "Information Systems"],
+        },
+        {
+            name: "Engineering",
+            departments: ["Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"],
+        },
+        {
+            name: "Business",
+            departments: ["Business Administration", "Accounting", "Marketing", "Finance"],
+        },
+    ]);
+    const [availableDepartments, setAvailableDepartments] = useState([]);
+    const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null); // Added state for current photo URL
 
-     // Function to toggle sidebar
-     const toggleSidebar = () => {
-         setIsSidebarOpen(!isSidebarOpen);
-     };
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
 
     const handleNavigation = (section) => {
         setActiveSection(section);
+        setIsNavActive(false);
         if (section === 'viewProfile' && !profile) {
             fetchProfile();
         }
@@ -43,86 +59,102 @@ const Dashboard = () => {
     const handlePhotoChange = (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
-          const isValidType = ['image/jpeg', 'image/png'].includes(selectedFile.type);
-          const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
-      
-          if (isValidType && isValidSize) {
-            setNewProfilePhoto(selectedFile);
-            const reader = new FileReader();
-            reader.onloadend = () => setNewProfilePreview(reader.result);
-            reader.readAsDataURL(selectedFile);
-            setFileError('');
-          } else {
-            setFileError('File must be JPG/PNG and less than 5MB');
-          }
-        }
-      };
+            const isValidType = ['image/jpeg', 'image/png'].includes(selectedFile.type);
+            const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
 
-      const handleProfileUpdate = async (e) => {
+            if (isValidType && isValidSize) {
+                setNewProfilePhoto(selectedFile);
+                const reader = new FileReader();
+                reader.onloadend = () => setNewProfilePreview(reader.result);
+                reader.readAsDataURL(selectedFile);
+                setFileError('');
+            } else {
+                setFileError('File must be JPG/PNG and less than 5MB');
+            }
+        }
+    };
+
+    const handleProfileUpdate = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
 
-        // Password validation
-  if (formData.currentPassword || formData.newPassword || formData.confirmNewPassword) {
-    if (formData.newPassword !== formData.confirmNewPassword) {
-      setError("New passwords don't match");
-      setLoading(false);
-      return;
-    }
-    if (formData.newPassword.length < 6) {
-      setError("Password must be at least 6 characters");
-      setLoading(false);
-      return;
-    }
-  }
+        if (formData.currentPassword || formData.newPassword || formData.confirmNewPassword) {
+            if (formData.newPassword !== formData.confirmNewPassword) {
+                setError("New passwords don't match");
+                setLoading(false);
+                return;
+            }
+            if (formData.newPassword.length < 6) {
+                setError("Password must be at least 6 characters");
+                setLoading(false);
+                return;
+            }
+        }
 
-      
         const formPayload = new FormData();
         formPayload.append('fullName', formData.fullName);
         formPayload.append('email', formData.email);
         formPayload.append('phoneNumber', formData.phoneNumber);
         formPayload.append('department', formData.department);
         formPayload.append('gender', formData.gender);
+        formPayload.append('college', formData.college);
         if (newProfilePhoto) formPayload.append('profilePhoto', newProfilePhoto);
-        // Only append password fields if current password is provided
-  if (formData.currentPassword) {
-    formPayload.append('currentPassword', formData.currentPassword);
-    formPayload.append('newPassword', formData.newPassword);
-  }
-      
-        try {
-          const token = localStorage.getItem('token');
-          const response = await fetch('http://localhost:5000/api/auth/profile', {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${token}` },
-            body: formPayload,
-          });
-      
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Update failed');
-          }
-          const data = await response.json();
-          setProfile(data.user);
-          setNewProfilePhoto(null);
-          setNewProfilePreview(null);
-          alert('Profile updated successfully');
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
+        if (formData.currentPassword) {
+            formPayload.append('currentPassword', formData.currentPassword);
+            formPayload.append('newPassword', formData.newPassword);
         }
-      };
 
-    
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/auth/profile', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formPayload,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Update failed');
+            }
+            const data = await response.json();
+
+            // Update currentProfilePhoto *before* setting profile
+            setCurrentProfilePhoto(data.user.profilePhoto);
+            setProfile(data.user);
+
+            // Only reset preview if a *new* photo was NOT uploaded
+            if (!newProfilePhoto) {
+                setNewProfilePreview(null);
+            }
+
+            alert('Profile updated successfully');
+
+            setFormData({
+                fullName: data.user.fullName,
+                email: data.user.email,
+                phoneNumber: data.user.phoneNumber,
+                department: data.user.department,
+                gender: data.user.gender,
+                currentPassword: '',
+                newPassword: '',
+                confirmNewPassword: '',
+                college: data.user.college
+            });
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const fetchProfile = async () => {
         setLoading(true);
         setError(null);
         try {
             const token = localStorage.getItem('token');
-            console.log('Token from localStorage:', token); // Debugging: Log the token
-    
             if (!token) {
                 throw new Error('No token found. Please log in.');
             }
@@ -139,11 +171,10 @@ const Dashboard = () => {
             }
 
             const data = await response.json();
-            console.log('Profile Data:', data); // Debugging: Log the profile data
-            console.log("Profile Photo URL: ", data.profilePhoto); // added console log
+            // Update currentProfilePhoto *before* setting profile
+            setCurrentProfilePhoto(data.profilePhoto);
             setProfile(data);
         } catch (err) {
-            console.error('Profile Fetch Error:', err); // Debugging: Log fetch errors
             setError(err.message);
         } finally {
             setLoading(false);
@@ -151,32 +182,56 @@ const Dashboard = () => {
     };
 
     useEffect(() => {
-      fetchProfile();
-  }, []);
+        if (formData.college) {
+            const selectedCollege = colleges.find((col) => col.name === formData.college);
+            if (selectedCollege) {
+                setAvailableDepartments(selectedCollege.departments);
+            } else {
+                setAvailableDepartments([]);
+            }
+        } else {
+            setAvailableDepartments([]);
+        }
+    }, [formData.college, colleges]);
 
     useEffect(() => {
-      if (profile && activeSection === 'editProfile') {
-        setFormData({
-          fullName: profile.fullName,
-          email: profile.email,
-          phoneNumber: profile.phoneNumber,
-          department: profile.department,
-          gender: profile.gender,
-          currentPassword: '',
-          newPassword: '',
-          confirmNewPassword: ''
-        });
-      }
-    }, [profile, activeSection]);
+        fetchProfile();
+    }, []);
+
+    useEffect(() => {
+        if (profile && activeSection === 'editProfile') {
+            setFormData({
+                fullName: profile.fullName,
+                email: profile.email,
+                phoneNumber: profile.phoneNumber,
+                department: profile.department,
+                gender: profile.gender,
+                currentPassword: '',
+                newPassword: '',
+                confirmNewPassword: '',
+                college: profile.college
+            });
+            const selectedCollege = colleges.find((col) => col.name === profile.college);
+            if (selectedCollege) {
+                setAvailableDepartments(selectedCollege.departments);
+            } else {
+                setAvailableDepartments([]);
+            }
+        }
+    }, [profile, activeSection, colleges]);
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
             const isValidType = selectedFile.type === 'image/jpeg' || selectedFile.type === 'image/png';
-            const isValidSize = selectedFile.size <= 5 * 1024 * 1024; // 5 MB
+            const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
 
             if (isValidType && isValidSize) {
                 setFile(selectedFile);
+                setNewProfilePhoto(selectedFile);
+                const reader = new FileReader();
+                reader.onloadend = () => setNewProfilePreview(reader.result);
+                reader.readAsDataURL(selectedFile);
                 setFileError('');
             } else {
                 setFileError('File must be a JPG or PNG and less than 5 MB.');
@@ -187,7 +242,6 @@ const Dashboard = () => {
     const handleSubmitComplaint = async (e) => {
         e.preventDefault();
 
-        // Fetch userId from localStorage
         const userId = localStorage.getItem('userId');
         if (!userId) {
             alert('User not logged in. Please log in to submit a complaint.');
@@ -223,7 +277,7 @@ const Dashboard = () => {
     };
 
     const toggleNav = () => {
-        setIsNavActive(!isNavActive); // Toggle mobile navigation visibility
+        setIsNavActive(!isNavActive);
     };
 
     return (
@@ -239,17 +293,17 @@ const Dashboard = () => {
             </div>
 
             <div className="content">
-            <div className="top-nav">
-    <span className="hamburger" onClick={toggleNav}>
-        {isNavActive ? 'x' : '☰'} {/* Change icon based on state */}
-    </span>
-    <div className={`nav-items ${isNavActive ? 'active' : ''}`}>
-        <span onClick={() => handleNavigation('complaintForm')}>Complaint Form</span>
-        <span onClick={() => handleNavigation('viewProfile')}>View Profile</span>
-        <span onClick={() => handleNavigation('editProfile')}>Edit Profile</span>
-        <span onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</span>
-    </div>
-</div>
+                <div className="top-nav">
+                    <span className="hamburger" onClick={toggleNav}>
+                        {isNavActive ? 'x' : '☰'}
+                    </span>
+                    <div className={`nav-items ${isNavActive ? 'active' : ''}`}>
+                        <span onClick={() => handleNavigation('complaintForm')}>Complaint Form</span>
+                        <span onClick={() => handleNavigation('viewProfile')}>View Profile</span>
+                        <span onClick={() => handleNavigation('editProfile')}>Edit Profile</span>
+                        <span onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</span>
+                    </div>
+                </div>
                 {/* Navigation Buttons for Desktop View */}
                 <div className="desktop-nav">
                     <button onClick={() => handleNavigation('complaintForm')}>Complaint Form</button>
@@ -339,6 +393,10 @@ const Dashboard = () => {
                                         <span className="detail-label">Gender:</span>
                                         <span className="detail-value">{profile.gender}</span>
                                     </div>
+                                     <div className="detail-item">
+                                        <span className="detail-label">College:</span>
+                                        <span className="detail-value">{profile.college}</span>
+                                    </div>
                                     <div className="detail-item">
                                         <span className="detail-label">Account Created:</span>
                                         <span className="detail-value">
@@ -352,145 +410,163 @@ const Dashboard = () => {
                 )}
 
                 {activeSection === 'editProfile' && (
-  <section className="edit-profile">
-    <h2>Edit Profile</h2>
-    {loading && <p className="loading">Saving changes...</p>}
-    {error && <p className="error">Error: {error}</p>}
-    
-    <form onSubmit={handleProfileUpdate}>
-      <div className="profile-photo-edit">
-        <div 
-          className="photo-preview"
-          onClick={() => document.getElementById('profilePhotoInput').click()}
-        >
-          {newProfilePreview ? (
-            <img src={newProfilePreview} alt="Preview" className="profile-image"/>
-          ) : profile?.profilePhoto ? (
-            <img src={profile.profilePhoto} alt="Current Profile" className="profile-image"/>
-          ) : (
-            <div className="upload-placeholder">
-                <span className="upload-icon">+</span>
-        <span className="upload-text">Upload Photo</span>
-        </div>
-          )}
-        </div>
-        <input
-          type="file"
-          id="profilePhotoInput"
-          accept="image/*"
-          onChange={handlePhotoChange}
-          style={{ display: 'none' }}
-        />
-        {fileError && <p className="error">{fileError}</p>}
-      </div>
-<div className="form-fields">
-      <label>
-        Full Name:
-        <input
-        className="narrow-input"
-          type="text"
-          value={formData.fullName}
-          onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-        />
-      </label>
+                    <section className="edit-profile">
+                        <h2>Edit Profile</h2>
+                        {loading && <p className="loading">Saving changes...</p>}
+                        {error && <p className="error">Error: {error}</p>}
 
-      <label>
-        Email:
-        <input
-        className="narrow-input"
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({...formData, email: e.target.value})}
-        />
-      </label>
+                        <form onSubmit={handleProfileUpdate}>
+                            <div className="profile-photo-edit">
+                                <div
+                                    className="photo-preview"
+                                    onClick={() => document.getElementById('profilePhotoInput').click()}
+                                >
+                                    {newProfilePreview ? (
+                                        <img src={newProfilePreview} alt="Preview" className="profile-image" />
+                                    ) : profile?.profilePhoto ? (
+                                        <img src={profile.profilePhoto} alt="Current Profile" className="profile-image" />
+                                    ) : (
+                                        <div className="upload-placeholder">
+                                            <span className="upload-icon">+</span>
+                                            <span className="upload-text">Upload Photo</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <input
+                                    type="file"
+                                    id="profilePhotoInput"
+                                    accept="image/*"
+                                    onChange={handlePhotoChange}
+                                    style={{ display: 'none' }}
+                                />
+                                {fileError && <p className="error">{fileError}</p>}
+                            </div>
+                            <div className="form-fields">
+                                <label>
+                                    Full Name:
+                                    <input
+                                        className="narrow-input"
+                                        type="text"
+                                        value={formData.fullName}
+                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                    />
+                                </label>
 
-      <label>
-        Phone Number:
-        <input
-          type="tel"
-          value={formData.phoneNumber}
-          onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-        />
-      </label>
+                                <label>
+                                    Email:
+                                    <input
+                                        className="narrow-input"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    />
+                                </label>
 
-      <label>
-        Department:
-        <select
-          value={formData.department}
-          onChange={(e) => setFormData({...formData, department: e.target.value})}
-        >
-          <option value="">Select Department</option>
-          <option value="Computer Science">Computer Science</option>
-          <option value="Electrical Engineering">Electrical Engineering</option>
-          <option value="Mechanical Engineering">Mechanical Engineering</option>
-          <option value="Business Administration">Business Administration</option>
-          <option value="Civil Engineering">Civil Engineering</option>
-        </select>
-      </label>
+                                <label>
+                                    Phone Number:
+                                    <input
+                                        type="tel"
+                                        value={formData.phoneNumber}
+                                        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                    />
+                                </label>
 
-      <div className="gender-selection">
-        <span className='gender'>Gender:</span>
-        <label>
-          <input
-            type="radio"
-            value="male"
-            checked={formData.gender === 'male'}
-            onChange={(e) => setFormData({...formData, gender: e.target.value})}
-          />
-          Male
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="female"
-            checked={formData.gender === 'female'}
-            onChange={(e) => setFormData({...formData, gender: e.target.value})}
-          />
-          Female
-        </label>
-      </div>
+                                 <label>
+                                    College:
+                                    <select
+                                        value={formData.college}
+                                        onChange={(e) => {
+                                            const selectedCollegeName = e.target.value;
+                                            setFormData({...formData, college: selectedCollegeName, department: ''});
+                                        }}
+                                    >
+                                        <option value="">Select College</option>
+                                        {colleges.map((col) => (
+                                            <option key={col.name} value={col.name}>
+                                                {col.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
 
-      <div className="password-change-section">
-      <h3>Change Password</h3>
-      
-      <label>
-        Current Password:
-        <input
-          type="password"
-          value={formData.currentPassword}
-          onChange={(e) => setFormData({...formData, currentPassword: e.target.value})}
-          placeholder="Enter current password"
-        />
-      </label>
+                                <label>
+                                    Department:
+                                    <select
+                                        value={formData.department}
+                                         onChange={(e) => setFormData({...formData, department: e.target.value})}
+                                        >
+                                        <option value="">Select Department</option>
+                                        {availableDepartments.map((dept) => (
+                                            <option key={dept} value={dept}>
+                                                {dept}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
 
-      <label>
-        New Password:
-        <input
-          type="password"
-          value={formData.newPassword}
-          onChange={(e) => setFormData({...formData, newPassword: e.target.value})}
-          placeholder="Enter new password (min 6 characters)"
-        />
-      </label>
+                                <div className="gender-selection">
+                                    <span className='gender'>Gender:</span>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            value="male"
+                                            checked={formData.gender === 'male'}
+                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                        />
+                                        Male
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            value="female"
+                                            checked={formData.gender === 'female'}
+                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                        />
+                                        Female
+                                    </label>
+                                </div>
 
-      <label>
-        Confirm New Password:
-        <input
-          type="password"
-          value={formData.confirmNewPassword}
-          onChange={(e) => setFormData({...formData, confirmNewPassword: e.target.value})}
-          placeholder="Confirm new password"
-        />
-      </label>
-    </div>
-    </div>
+                                <div className="password-change-section">
+                                    <h3>Change Password</h3>
 
-      <button type="submit" disabled={loading}>
-        {loading ? 'Saving...' : 'Save Changes'}
-      </button>
-    </form>
-  </section>
-)}
+                                    <label>
+                                        Current Password:
+                                        <input
+                                            type="password"
+                                            value={formData.currentPassword}
+                                            onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                                            placeholder="Enter current password"
+                                        />
+                                    </label>
+
+                                    <label>
+                                        New Password:
+                                        <input
+                                            type="password"
+                                            value={formData.newPassword}
+                                            onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                                            placeholder="Enter new password (min 6 characters)"
+                                        />
+                                    </label>
+
+                                    <label>
+                                        Confirm New Password:
+                                        <input
+                                            type="password"
+                                            value={formData.confirmNewPassword}
+                                            onChange={(e) => setFormData({ ...formData, confirmNewPassword: e.target.value })}
+                                            placeholder="Confirm new password"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" disabled={loading}>
+                                {loading ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </form>
+                    </section>
+                )}
 
                 {activeSection === 'provideFeedback' && (
                     <section className="provide-feedback">

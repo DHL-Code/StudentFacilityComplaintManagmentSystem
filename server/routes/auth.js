@@ -107,54 +107,48 @@ router.get('/profile', authMiddleware, async (req, res) => {
 });
 
 // Update Profile Route
-router.put('/profile', upload.single('profilePhoto'), async (req, res) => {
+router.put('/profile', authMiddleware, upload.single('profilePhoto'), async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
+      const user = await User.findById(req.user.id);
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Update profile fields
-    user.fullName = req.body.fullName || user.fullName;
-    user.email = req.body.email || user.email;
-    user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
-    user.department = req.body.department || user.department;
-    user.gender = req.body.gender || user.gender;
-
-    // Handle profile photo upload
-    if (req.file) {
-      user.profilePhoto = `/uploads/profile-photos/${req.file.filename}`;
-    }
-
-    // Handle password change
-    if (req.body.currentPassword && req.body.newPassword) {
-      const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Current password is incorrect' });
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
       }
-      user.password = await bcrypt.hash(req.body.newPassword, 12);
-    }
 
-    const updatedUser = await user.save();
+      // Update profile fields
+      user.fullName = req.body.fullName || user.fullName;
+      user.email = req.body.email || user.email;
+      user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
+      user.department = req.body.department || user.department;
+      user.gender = req.body.gender || user.gender;
 
-    // Return user data without password
-    const userData = updatedUser.toObject();
-    delete userData.password;
+      // Handle profile photo upload
+      if (req.file) {
+          user.profilePhoto = `/uploads/profile_photos/${req.file.filename}`;
+      }
 
-    res.json({ user: userData });
-    
+      // Handle password change
+      if (req.body.currentPassword && req.body.newPassword) {
+          const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+          if (!isMatch) {
+              return res.status(400).json({ message: 'Current password is incorrect' });
+          }
+          user.password = await bcrypt.hash(req.body.newPassword, 12);
+      }
+
+      const updatedUser = await user.save();
+
+      // Return user data without password
+      const userData = updatedUser.toObject();
+      delete userData.password;
+
+      res.json({ user: userData });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      message: error.message || 'Error updating profile' 
-    });
+      console.error(error);
+      res.status(500).json({
+          message: error.message || 'Error updating profile'
+      });
   }
 });
 

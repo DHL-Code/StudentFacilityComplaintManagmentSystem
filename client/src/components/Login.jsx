@@ -35,9 +35,12 @@ const Login = () => {
           navigate('/StudentAccount');
         } else if (firstLetter === 'p') {
           navigate('/ProctorDashboard');
-        } else if (firstLetter === 'c') {
-          navigate('/user-dashboard');
-        } else {
+        } else if (firstLetter === 'd') {
+          navigate('/ DeanPage');
+        } else if (firstLetter === 's') {
+          navigate('/ SupervisorPage');
+        } 
+         else {
           navigate('/');
         }
       } else {
@@ -53,8 +56,8 @@ const Login = () => {
     <div>
       <Navbar />
       <div className="login-container">
+        
         <div className="login-form">
-          <h1 className="login-title">FacilityComplaintManagement</h1>
           <h2 className="welcome-back">Welcome Back!</h2>
 
           <div className="input-group">

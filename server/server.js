@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const complaintRoutes = require('./routes/complaints');
-const profileRoutes = require('./routes/profileRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const authRoutes = require('./routes/auth');
 const contactRoutes = require('./routes/contact'); // Import the contact route
@@ -28,7 +27,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes); 
 app.use('/api/complaints', complaintRoutes);
-app.use('/api/profile', profileRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
 // Serve static files from uploads directory
