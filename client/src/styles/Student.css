@@ -472,3 +472,34 @@ button:hover {
     padding: 1rem;
     margin-top: 1rem;
   }
+
+  .star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.star svg {
+    width: 2rem;
+    height: 2rem;
+    color: #ddd;
+}
+
+.star:hover svg,
+.star.active svg {
+    color: #FFD700;
+}
+
+.star-rating {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    gap: 0.5rem;
+}
+
+.rating-text {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  color: #555;
+}

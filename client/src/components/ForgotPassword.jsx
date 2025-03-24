@@ -38,7 +38,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="forgot-password-page">
-      <button className="back-button" onClick={() => navigate('/')}>
+      <button className="back-button" onClick={() => navigate('/Login')}>
           &#8592; Back
         </button>
       <div className="background-motion"></div>

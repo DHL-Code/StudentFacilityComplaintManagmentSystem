@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/Student.css';
+import { Star, Send, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Dashboard = () => {
     const [activeSection, setActiveSection] = useState('complaintForm');
@@ -11,7 +13,6 @@ const Dashboard = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -42,7 +43,13 @@ const Dashboard = () => {
         },
     ]);
     const [availableDepartments, setAvailableDepartments] = useState([]);
-    const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null); // Added state for current photo URL
+    const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
+
+    // New state for feedback form
+    const [feedbackRating, setFeedbackRating] = useState(0);
+    const [feedbackComment, setFeedbackComment] = useState('');
+    const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
+    const [feedbackSubmissionStatus, setFeedbackSubmissionStatus] = useState(null);
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -280,6 +287,62 @@ const Dashboard = () => {
         setIsNavActive(!isNavActive);
     };
 
+    // New function for handling feedback submission
+    const handleFeedbackSubmit = async (e) => {
+        e.preventDefault();
+        setIsFeedbackSubmitting(true);
+        setFeedbackSubmissionStatus(null);
+    
+        // Ensure feedbackRating and feedbackComment are valid
+        if (feedbackRating === 0 && !feedbackComment.trim()) {
+            setFeedbackSubmissionStatus('error');
+            setIsFeedbackSubmitting(false);
+            return;
+        }
+    
+        try {
+            const token = localStorage.getItem('token'); // Ensure you have a valid token
+            const userId = localStorage.getItem('userId'); // Make sure this is set
+            if (!userId) {
+                throw new Error('User ID is not available. Please log in.');
+            }
+    
+            const response = await fetch('http://localhost:5000/api/feedback/submit', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rating: feedbackRating,
+                    comment: feedbackComment,
+                    userId: userId, // Pass the userId here
+                }),
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to submit feedback');
+            }
+    
+            const data = await response.json();
+            console.log('Feedback submitted:', data);
+            setFeedbackSubmissionStatus('success');
+            setFeedbackRating(0);
+            setFeedbackComment('');
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+            setFeedbackSubmissionStatus('error');
+        } finally {
+            setIsFeedbackSubmitting(false);
+        }
+    };
+
+    // New function for handling star clicks
+    const handleStarClick = (selectedRating) => {
+        setFeedbackRating(selectedRating);
+    };
+
     return (
         <div className="dashboard">
             <div className="sidebar">
@@ -360,9 +423,9 @@ const Dashboard = () => {
                         {profile && (
                             <div className="profile-container">
                                 <div className="profile-header">
-                                    {profile.profilePhoto ? (
+                                    {currentProfilePhoto ? (
                                         <img
-                                            src={profile.profilePhoto}
+                                            src={currentProfilePhoto}
                                             alt="Profile"
                                             className="profile-photo"
                                             onError={(e) => {
@@ -393,7 +456,7 @@ const Dashboard = () => {
                                         <span className="detail-label">Gender:</span>
                                         <span className="detail-value">{profile.gender}</span>
                                     </div>
-                                     <div className="detail-item">
+                                    <div className="detail-item">
                                         <span className="detail-label">College:</span>
                                         <span className="detail-value">{profile.college}</span>
                                     </div>
@@ -471,13 +534,13 @@ const Dashboard = () => {
                                     />
                                 </label>
 
-                                 <label>
+                                <label>
                                     College:
                                     <select
                                         value={formData.college}
                                         onChange={(e) => {
                                             const selectedCollegeName = e.target.value;
-                                            setFormData({...formData, college: selectedCollegeName, department: ''});
+                                            setFormData({ ...formData, college: selectedCollegeName, department: '' });
                                         }}
                                     >
                                         <option value="">Select College</option>
@@ -493,8 +556,8 @@ const Dashboard = () => {
                                     Department:
                                     <select
                                         value={formData.department}
-                                         onChange={(e) => setFormData({...formData, department: e.target.value})}
-                                        >
+                                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                    >
                                         <option value="">Select Department</option>
                                         {availableDepartments.map((dept) => (
                                             <option key={dept} value={dept}>
@@ -569,13 +632,86 @@ const Dashboard = () => {
                 )}
 
                 {activeSection === 'provideFeedback' && (
-                    <section className="provide-feedback">
-                        <h2>Provide Feedback</h2>
-                        <form>
-                            <textarea placeholder="Provide your feedback..." />
-                            <button type="submit">Submit Feedback</button>
+                    <motion.section
+                        className="feedback-section"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <h2 className="feedback-title">Provide Feedback</h2>
+                        <form onSubmit={handleFeedbackSubmit} className="feedback-form">
+                            <div className="star-rating" style={{ gap: '18px' }}> {/* Added gap here */}
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <motion.button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => handleStarClick(star)}
+                                        whileHover={{ scale: 1.2 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        className={star <= feedbackRating ? 'star active' : 'star'}
+                                        aria-label={`Rate ${star} stars`}
+                                    >
+                                        <Star
+                                            color={star <= feedbackRating ? '#FFD700' : '#ddd'}
+                                        />
+                                    </motion.button>
+                                ))}
+                                <p className="rating-text">
+                                    {feedbackRating
+                                        ? `Rated ${feedbackRating} ${feedbackRating === 1 ? 'star' : 'stars'}`
+                                        : 'Click to rate'}
+                                </p>
+                            </div>
+
+                            <textarea
+                                placeholder="Provide your feedback..."
+                                value={feedbackComment}
+                                onChange={(e) => setFeedbackComment(e.target.value)}
+                                className="feedback-textarea"
+                                rows={4}
+                                disabled={isFeedbackSubmitting}
+                            />
+                            <AnimatePresence>
+                                {feedbackSubmissionStatus === 'error' && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="error-message"
+                                    >
+                                        Please provide a rating or feedback comment.
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
+
+                            <button type="submit" disabled={isFeedbackSubmitting} className="feedback-button">
+                                {isFeedbackSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Submitting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="mr-2 h-4 w-4" />
+                                        Submit Feedback
+                                    </>
+                                )}
+                            </button>
+
+                            <AnimatePresence>
+                                {feedbackSubmissionStatus === 'success' && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        className="success-message"
+                                    >
+                                        Thank you for your feedback!
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
                         </form>
-                    </section>
+                    </motion.section>
                 )}
             </div>
         </div>
