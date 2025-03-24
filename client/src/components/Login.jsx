@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from './Navbar';
+
 import '../styles/Login.css';
 
 const Login = () => {
@@ -36,9 +37,9 @@ const Login = () => {
         } else if (firstLetter === 'p') {
           navigate('/ProctorDashboard');
         } else if (firstLetter === 'd') {
-          navigate('/ DeanPage');
-        } else if (firstLetter === 's') {
-          navigate('/ SupervisorPage');
+          navigate('/DeanPage');
+        } else if (firstLetter === 'v') {
+          navigate('/SupervisorPage');
         } 
          else {
           navigate('/');

@@ -4,110 +4,190 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #222;
-  color: white;
+  background: linear-gradient(135deg, #050506, #a777e3); /* Gradient background */
   padding: 20px;
   box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .signup-form {
-  background-color: #f6f1f1;
+  background-color: rgba(255, 255, 255, 0.9); /* Glassmorphism effect - more subtle*/
   padding: 40px;
-  border-radius: 8px;
+  border-radius: 16px; /* More rounded corners */
   width: 90%;
-  max-width: 400px;
+  max-width: 450px; /* Slightly wider */
   margin: 20px auto;
   text-align: left;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2); /* Softer shadow */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Add a border */
 }
 
 .signup-title {
-  font-size: 2em;
+  font-size: 2.2em; /* Larger title */
   margin-bottom: 30px;
   text-align: center;
-  color: #4CAF50; /* Title color */
+  color: #5142fc; /* Vibrant title color */
+  font-weight: 600; /* Make title bold */
+  letter-spacing: -0.02em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex; /* Use flexbox for icon alignment */
+  align-items: center;
+  justify-content: center;
 }
+
+.signup-title svg {
+  margin-right: 8px; /* Adjust spacing between icon and text */
+  width: 30px; /* Larger icon */
+  height: 30px;
+  color: #5142fc;
+}
+
 
 .input-groups {
   display: flex;
   flex-direction: column;
-  margin-bottom: 20px;
+  margin-bottom: 25px; /* Increased spacing */
 }
 
 .input-groups label {
-  font-weight: bold;
-  font-size:  xx-large;
-  margin-bottom: 5px;
-  color: #100f10; /* Shiny gold color for labels */
-  text-shadow: 0 0 5px rgba(129, 175, 187, 0.7); /* Glow effect */
+  font-weight: 500;
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  color: #333; /* Darker label color */
+  transition: color 0.3s ease;
+  display: flex; /* Use flexbox for icon alignment */
+  align-items: center;
 }
+
+.input-groups label svg {
+  margin-right: 8px; /* Adjust spacing between icon and text */
+  width: 20px; /* Icon size */
+  height: 20px;
+  color: #5142fc;
+}
+
 
 .input-groups input,
 .input-groups select {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #555;
-  border-radius: 4px;
-  background-color: #444;
-  color: white;
+  padding: 12px;
+  border: 1px solid #ddd; /* Lighter border */
+  border-radius: 6px;
+  background-color: #fff;
+  color: #222;
+  font-size: 1em;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  outline: none;
 }
 
+.input-groups input:focus,
+.input-groups select:focus {
+  border-color: #5142fc; /* Highlight on focus */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow on focus */
+}
+
+.input-groups input.error-input {
+  border-color: #e74c3c;
+}
+
+
 .gender-group label {
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  font-weight: 500;
+  font-size: 1.1em;
+  color: #333;
 }
 
 .radio-buttons {
   display: flex;
-  gap: 10px;
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .radio-buttons label {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  font-size: 1em;
+  color: #444;
 }
 
-.signup-button {
-  background-color: #4CAF50; /* Green button */
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 4px;
+.radio-buttons input[type="radio"] {
+  margin: 0;
   cursor: pointer;
-  font-size: 1em;
+}
+
+
+.signup-button {
+  background: linear-gradient(to right, #667eea, #764ba2); /* Gradient button */
+  color: white;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1em;
   width: 100%;
-  margin-top: 20px;
-  transition: background-color 0.3s;
+  margin-top: 30px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+  font-weight: 500;
 }
 
 .signup-button:hover {
-  background-color: #3e8e41;
+  background: linear-gradient(to right, #5667d3, #614096);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.signup-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .error {
   color: #e74c3c;
-  margin-top: 5px;
-  font-size: 0.875rem;
+  margin-top: 10px;
+  font-size: 0.9em;
+  font-weight: 400;
+  animation: shake 0.5s ease-in-out;
 }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+  50% { transform: translateX(-10px); }
+}
+
 
 .profile-photo-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
 
 .profile-preview {
-  width: 140px;
-  height: 135px;
+  width: 120px; /* Slightly smaller preview */
+  height: 120px;
   border-radius: 50%;
-  background-color: #444;
+  background-color: #ddd;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   overflow: hidden;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+  margin-left: 85px;
 }
+
+.profile-preview:hover {
+  transform: scale(1.05);
+}
+
 
 .profile-preview img {
   width: 100%;
@@ -116,69 +196,157 @@
 }
 
 .upload-placeholder {
-  font-size: 2em;
+  font-size: 2.5em; /* Larger placeholder */
+  color: #d14f4f;
+  transition: color 0.3s ease;
+}
+
+.profile-preview:hover .upload-placeholder {
   color: #777;
 }
 
+
 .upload-instruction {
-  margin-top: 10px;
-  font-size: 0.875em;
-  color: #393838;
+
+  font-size: 0.9em;
+  color: #5f6f71;
+  text-align: center;
+  margin-left: 100px;
+  padding-right: 5px;
 }
+
+
+/* Custom Select Styles */
+.select-wrapper {
+  position: relative;
+  user-select: none;
+  flex-grow: 1;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #222;
+  font-size: 1em;
+  cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  z-index: 1;
+  outline: none;
+}
+
+.select-trigger:focus,
+.select-wrapper:focus-within .select-trigger {
+  border-color: #5142fc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+
+.select-trigger span {
+  margin-right: auto;
+}
+
+.select-icon {
+  width: 20px;
+  height: 20px;
+  color: #777;
+  transition: transform 0.3s ease;
+}
+
+.select-wrapper.open .select-icon {
+  transform: rotate(180deg);
+}
+
+
+.select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #222;
+  font-size: 1em;
+  margin-top: 4px;
+  overflow: auto;
+  max-height: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+  z-index: 2;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.select-wrapper.open .select-options {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+
+.select-options div {
+  padding: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  white-space: nowrap;
+}
+
+.select-options div:hover,
+.select-options div.selected {
+  background-color: #5142fc;
+  color: white;
+}
+
+.select-options div.selected {
+  font-weight: 600;
+}
+
 
 /* Media query for mobile view */
 @media (max-width: 480px) {
   .signup-form {
-    padding: 20px;
+    padding: 30px;
+    border-radius: 12px;
   }
 
   .signup-title {
-    font-size: 1.5em;
-    margin-bottom: 20px;
+    font-size: 1.8em;
+    margin-bottom: 25px;
   }
 
-  .input-group input,
-  .input-group select {
-    padding: 8px;
-    font-size: 0.9em;
-  }
-
-  .radio-buttons {
-    flex-direction: column;
-    gap: 5px;
+  .input-groups input,
+  .input-groups select {
+    padding: 10px;
+    font-size: 0.95em;
   }
 
   .signup-button {
-    padding: 10px;
-    font-size: 0.9em;
+    padding: 12px 20px;
+    font-size: 1em;
+    margin-top: 25px;
   }
 
   .error {
-    font-size: 0.8em;
+    font-size: 0.85em;
   }
 
   .profile-preview {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
   }
 
   .upload-instruction {
-    font-size: 0.8em;
+    font-size: 0.85em;
   }
-}
 
-.input-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  color: black;
-  border-radius: 4px;
-  font-size: 16px;
-  background-color: rgb(248, 244, 244); /* Optional: Add background color */
-}
-
-.input-group select:focus {
-  outline: none;
-  border-color: #007bff; /* Optional: Highlight on focus */
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Optional: Add shadow on focus */
+  .radio-buttons label {
+    font-size: 0.95em;
+  }
 }
