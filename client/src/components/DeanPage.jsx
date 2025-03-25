@@ -325,58 +325,10 @@ const DeanPage = () => {
                   />
                 </label>
 
-                <label>
-                  College:
-                  <select
-                    value={formData.college}
-                    onChange={e => setFormData({...formData, college: e.target.value})}
-                    required
-                  >
-                    <option value="">Select College</option>
-                    {colleges.map(college => (
-                      <option key={college.name} value={college.name}>
-                        {college.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+               
 
-                <label>
-                  Department:
-                  <select
-                    value={formData.department}
-                    onChange={e => setFormData({...formData, department: e.target.value})}
-                    required
-                    disabled={!formData.college}
-                  >
-                    <option value="">Select Department</option>
-                    {availableDepartments.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
-                </label>
 
-                <div className="password-section">
-                  <h3>Change Password</h3>
-                  <input
-                    type="password"
-                    placeholder="Current Password"
-                    value={formData.currentPassword}
-                    onChange={e => setFormData({...formData, currentPassword: e.target.value})}
-                  />
-                  <input
-                    type="password"
-                    placeholder="New Password"
-                    value={formData.newPassword}
-                    onChange={e => setFormData({...formData, newPassword: e.target.value})}
-                  />
-                  <input
-                    type="password"
-                    placeholder="Confirm New Password"
-                    value={formData.confirmNewPassword}
-                    onChange={e => setFormData({...formData, confirmNewPassword: e.target.value})}
-                  />
-                </div>
+                
               </div>
 
               <button 
