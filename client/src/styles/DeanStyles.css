@@ -1,179 +1,66 @@
-/* DeanStyles.css */
-.dean-container {
-	background-color: #222;
-	color: white;
-	min-height: 100vh;
-	padding: 20px;
+/* Add these styles */
+.loading-spinner {
+	border: 4px solid #f3f3f3;
+	border-top: 4px solid #3498db;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+	animation: spin 1s linear infinite;
+	margin: 20px auto;
   }
   
-  .dean-nav {
-	display: flex;
-	gap: 15px;
-	margin-bottom: 30px;
+  @keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+  }
+  
+  .error-message {
+	background-color: #f8d7da;
+	color: #721c24;
 	padding: 15px;
-	background-color: #333;
-	border-radius: 8px;
-  }
-  
-  .nav-btn {
-	background-color: #444;
-	color: white;
-	border: none;
-	padding: 12px 25px;
-	border-radius: 5px;
-	cursor: pointer;
-	transition: all 0.3s ease;
-  }
-  
-  .nav-btn:hover {
-	background-color: #4CAF50;
-  }
-  
-  .nav-btn.active {
-	background-color: #4CAF50;
-	border: 2px solid #3e8e41;
-  }
-  
-  .section {
-	background-color: #333;
-	padding: 25px;
-	border-radius: 10px;
-	margin-bottom: 20px;
-  }
-  
-  /* Complaints Section */
-  .complaints-list {
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
-  }
-  
-  .complaint-card {
-	background-color: #444;
-	padding: 20px;
-	border-radius: 8px;
-	border-left: 4px solid #4CAF50;
-  }
-  
-  .complaint-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 15px;
-  }
-  
-  .status {
-	padding: 5px 10px;
 	border-radius: 4px;
+	margin: 20px 0;
+  }
+  
+  .file-error {
+	color: #dc3545;
+	margin-top: 10px;
 	font-size: 0.9em;
   }
   
-  .status.pending { background-color: #fff3cd; color: #856404; }
-  .status.verified { background-color: #cce5ff; color: #004085; }
-  .status.approved { background-color: #d4edda; color: #155724; }
-  .status.rejected { background-color: #f8d7da; color: #721c24; }
-  
-  .action-buttons {
-	display: flex;
-	gap: 10px;
-	margin-top: 15px;
-  }
-  
-  /* Reports Section */
-  .generate-btn {
-	background-color: #2196F3;
-	margin-bottom: 20px;
-  }
-  
-  .generate-btn:hover {
-	background-color: #1976D2;
-  }
-  
-  .reports-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-	gap: 20px;
-  }
-  
-  .report-card {
-	background-color: #444;
-	padding: 20px;
-	border-radius: 8px;
-	border-left: 4px solid #2196F3;
-  }
-  
-  /* Feedback Section */
-  .feedback-list {
+  .upload-placeholder {
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	color: #666;
   }
   
-  .feedback-card {
+  .upload-icon {
+	font-size: 24px;
+	margin-bottom: 5px;
+  }
+  
+  .password-section {
+	grid-column: span 2;
 	background-color: #444;
 	padding: 20px;
-	border-radius: 8px;
-	border-left: 4px solid #FFC107;
-  }
-  
-  .feedback-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 15px;
-  }
-  
-  .status.responded {
-	background-color: #d4edda;
-	color: #155724;
-  }
-  
-  textarea {
-	width: 100%;
-	padding: 15px;
-	margin: 10px 0;
-	background-color: #555;
-	border: 1px solid #666;
-	color: white;
 	border-radius: 6px;
-	min-height: 100px;
-  }
-  
-  .feedback-actions {
-	display: flex;
-	gap: 10px;
 	margin-top: 15px;
   }
   
-  .respond-btn {
-	background-color: #4CAF50;
+  .password-section h3 {
+	color: #fff;
+	margin-top: 0;
   }
   
-  .respond-btn:hover {
-	background-color: #45a049;
-  }
-  
-  .cancel-btn {
+  select:disabled {
 	background-color: #666;
+	cursor: not-allowed;
   }
-  
-  .cancel-btn:hover {
-	background-color: #555;
+  .dean-nav{
+	margin-left: 70%;
+
   }
-  
-  .response-section {
-	background-color: #555;
-	padding: 15px;
-	border-radius: 6px;
-	margin-top: 15px;
-  }
-  
-  .edit-response-btn {
-	background-color: #FFC107;
-	color: black;
-	margin-top: 10px;
-  }
-  
-  .edit-response-btn:hover {
-	background-color: #e0a800;
-  }
+  .nav-btn{margin-left: 20px;}
