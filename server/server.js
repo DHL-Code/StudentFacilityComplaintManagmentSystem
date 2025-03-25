@@ -4,7 +4,7 @@ const connectDB = require('./config/db');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const authRoutes = require('./routes/auth');
 const contactRoutes = require('./routes/contact'); // Import the contact route
-
+const complaintRoutes = require('./routes/complaints'); // Import complaints route
 const path = require('path');
 const dotenv = require('dotenv');
 
@@ -26,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes); 
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/complaints', complaintRoutes); // Use complaints route
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -13,6 +13,7 @@ const Dashboard = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState('');
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -249,14 +250,7 @@ const Dashboard = () => {
     const handleSubmitComplaint = async (e) => {
         e.preventDefault();
 
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-            alert('User not logged in. Please log in to submit a complaint.');
-            return;
-        }
-
         const formData = new FormData();
-        formData.append('userId', userId);
         formData.append('complaintType', complaintType);
         formData.append('specificInfo', specificInfo);
         formData.append('description', description);
@@ -265,8 +259,12 @@ const Dashboard = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/complaints/submit', {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/complaints', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
                 body: formData,
             });
 
@@ -276,10 +274,16 @@ const Dashboard = () => {
             }
 
             const data = await response.json();
-            alert('Complaint submitted successfully');
+            setSuccessMessage(`Complaint submitted: ${data.complaintType} - ${data.specificInfo}`);
+            setError(null);
+            // Reset form fields
+            setComplaintType('');
+            setSpecificInfo('');
+            setDescription('');
+            setFile(null);
         } catch (error) {
-            console.error('Error:', error);
-            alert(error.message || 'An error occurred. Please try again.');
+            setError('Error submitting complaint: ' + (error.message || 'Unknown error'));
+            setSuccessMessage('');
         }
     };
 
@@ -381,7 +385,7 @@ const Dashboard = () => {
                         <form onSubmit={handleSubmitComplaint}>
                             <label>
                                 Type of Problem:
-                                <select value={complaintType} onChange={(e) => setComplaintType(e.target.value)}>
+                                <select value={complaintType} onChange={(e) => setComplaintType(e.target.value)} required>
                                     <option value="">Select...</option>
                                     <option value="Electricity">Electricity</option>
                                     <option value="Toilet Problem">Toilet Problem</option>
@@ -395,6 +399,7 @@ const Dashboard = () => {
                                     value={specificInfo}
                                     onChange={(e) => setSpecificInfo(e.target.value)}
                                     placeholder="e.g., socket, wire, bulb..."
+                                    required
                                 />
                             </label>
                             <label>
@@ -403,6 +408,7 @@ const Dashboard = () => {
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Describe your complaint..."
+                                    required
                                 />
                             </label>
                             <label>
@@ -412,6 +418,8 @@ const Dashboard = () => {
                             </label>
                             <button type="submit">Submit Complaint</button>
                         </form>
+                        {successMessage && <p className="success">{successMessage}</p>}
+                        {error && <p className="error">{error}</p>}
                     </section>
                 )}
 
