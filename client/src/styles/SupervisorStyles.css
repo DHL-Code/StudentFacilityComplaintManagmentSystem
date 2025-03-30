@@ -77,3 +77,325 @@
   }
   
   /* Existing styles remain the same */
+  /* Add styles for navigation buttons */
+  .navigation-buttons {
+  	display: flex;
+  	justify-content: flex-end;
+  	margin-bottom: 20px;
+  }
+
+  .nav-button {
+  	background-color:#fba53b;
+  	color: white;
+  	border: none;
+  	padding: 10px 15px;
+  	margin-left: 10px;
+  	cursor: pointer;
+  	border-radius: 4px;
+  }
+
+  .nav-button:hover {
+	transform: scale(1.05);
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .nav-button.active {
+  	background-color: #ffffff;
+	color: #000000;
+  	/* Active button color */
+  	font-weight: bold;
+  }
+  /* Complaint Card Styles */
+  .complaint-card {
+	max-width: 300px;
+		/* Limit the maximum width */
+  	background-color:#2d3237;
+  	/* Light background for cards */
+  	border: 1px solid #dee2e6;
+  	/* Border for card definition */
+  	border-radius: 8px;
+  	/* Rounded corners */
+  	padding: 15px;
+  	/* Padding inside the card */
+  	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  	/* Subtle shadow */
+  	transition: transform 0.2s ease, box-shadow 0.2s ease;
+  	/* Smooth transition for scaling and shadow */
+  }
+  .complaints-grid {
+  	display: grid;
+  	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  	/* Adjust minmax value */
+  	gap: 20px;
+  }
+
+  .complaint-card:hover {
+  	transform: scale(1.05);
+  	/* Slightly enlarge on hover */
+  	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  	/* Enhanced shadow on hover */
+  }
+
+  /* Escalation Reports Section Styles */
+  .reports-list {
+  	display: grid;
+  	/* Use grid layout for better alignment */
+  	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  	/* Responsive grid */
+  	gap: 20px;
+  	/* Space between report cards */
+  	margin-top: 20px;
+  	/* Space above the reports */
+  }
+
+  .report-card {
+  	background-color: #2d3237;
+  	/* Light background for cards */
+  	border: 1px solid #dee2e6;
+  	/* Border for card definition */
+  	border-radius: 8px;
+  	/* Rounded corners */
+  	padding: 15px;
+  	/* Padding inside the card */
+  	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  	/* Subtle shadow */
+  	transition: transform 0.2s;
+  	/* Smooth hover effect */
+  }
+
+  .report-card:hover {
+  	transform: scale(1.02);
+  	/* Slightly enlarge on hover */
+  }
+
+  .report-card h3 {
+  	margin-bottom: 10px;
+  	/* Space below report title */
+  }
+
+  .report-card p {
+  	margin: 5px 0;
+  	/* Space between paragraphs */
+  }
+  /* View Profile Styles */
+  .view-profile {
+  	max-width: 100%;
+  	/* Full width on mobile */
+  	margin: 0 auto;
+  	padding: 2rem;
+  }
+
+  .profile-container {
+  	background: #fff;
+  	border-radius: 10px;
+  	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  	padding: 2rem;
+  }
+
+  .profile-header {
+  	text-align: center;
+  	margin-bottom: 2rem;
+  }
+
+  .user-id {
+  	color: #111111;
+  	font-size: large;
+  }
+
+  .full-name {
+  	color: #111111;
+  	font-size: xx-large;
+  }
+
+  .profile-details {
+  	display: grid;
+  	grid-template-columns: repeat(2, 1fr);
+  	gap: 1.5rem;
+  }
+
+  .detail-item {
+  	padding: 1rem;
+  	background: #f8f9fa;
+  	border-radius: 5px;
+  }
+
+  .detail-label {
+  	display: block;
+  	font-weight: 600;
+  	color: #333;
+  	margin-bottom: 0.5rem;
+  }
+
+  .detail-value {
+  	color: #666;
+  }
+
+  .loading {
+  	text-align: center;
+  	color: #007bff;
+  	font-size: 1.2rem;
+  }
+
+  .error {
+  	color: #dc3545;
+  	text-align: center;
+  	margin: 1rem 0;
+  }
+
+  .profile-photo {
+  	width: 150px;
+  	height: 150px;
+  	border-radius: 50%;
+  	object-fit: cover;
+  	border: 2px solid #101010;
+  }
+
+  .profile-photo-placeholder {
+  	width: 150px;
+  	height: 150px;
+  	border-radius: 50%;
+  	background-color: #0c0c0c;
+  	display: flex;
+  	align-items: center;
+  	justify-content: center;
+  	border: 2px dashed #0b0b0b;
+  	color: #0e0d0d;
+  	font-size: 14px;
+  }
+  /* Edit Profile Styles */
+  .edit-profile {
+  	margin-top: 20px;
+  }
+
+  .edit-profile form {
+  	max-width: 500px;
+  	margin: 0 auto;
+  }
+
+  .edit-profile form label {
+  	display: block;
+  	margin-bottom: 1.5rem;
+  }
+
+  .edit-profile form input:not([type="radio"]):not([type="file"]),
+  .edit-profile form select {
+  	width: 100%;
+  	padding: 0.8rem;
+  	margin-top: 0.5rem;
+  	border: 1px solid #ddd;
+  	border-radius: 4px;
+  	box-sizing: border-box;
+  }
+
+  .edit-profile form .gender-selection {
+  	margin: 1.5rem 0;
+  	padding: 1rem;
+  	background-color: #f8f9fa;
+  	border-radius: 4px;
+  }
+
+  .edit-profile form .gender-selection label {
+  	margin-right: 1.5rem;
+  	margin-bottom: 0;
+  	color: black;
+  	margin-top: 5%;
+  }
+
+  .gender {
+  	color: #0b0b0b;
+  }
+
+  .edit-profile form button[type="submit"] {
+  	width: 100%;
+  	padding: 1rem;
+  }
+  /*side bar*/
+
+  /* SupervisorStyles.css */
+
+  /* Sidebar Styles */
+  .sidebar {
+  	width: 200px;
+  	/* Width of the sidebar */
+  	background-color: #333335;
+  	/* Background color */
+  	padding: 20px;
+  	/* Padding around content */
+  	position: fixed;
+  	/* Fix position on the left */
+  	height: 100%;
+  	/* Full height */
+  	
+  	/* Right border */
+  	top: 0;
+  	/* Align to the top */
+  	overflow-y: auto;
+  	/* Allow scrolling if content is too long */
+  }
+
+  .sidebar h2 {
+  	margin-bottom: 20px;
+  	/* Space below the title */
+  }
+
+  .sidebar ul {
+  	list-style-type: none;
+  	/* Remove bullets */
+  	padding: 0;
+  	/* Remove padding */
+  }
+
+  .sidebar li {
+  	margin-bottom: 10px;
+  	/* Space between items */
+  }
+
+  .sidebar button {
+  	width: 100%;
+  	/* Full width */
+  	padding: 10px;
+  	/* Padding */
+  	background-color: #fba53b;
+  	/* Button color */
+  	color: white;
+  	/* Text color */
+  	border: none;
+  	/* Remove border */
+  	border-radius: 4px;
+  	/* Rounded corners */
+  	cursor: pointer;
+  	/* Pointer cursor */
+  }
+
+  .sidebar button:hover {
+  	background-color: #ffffff;
+		color: #000000;
+  	/* Darken on hover */
+		transform: scale(1.05);
+  }
+
+  .sidebar button.active {
+  	background-color: #ffffff;
+  	/* Active button color */
+  	color: #000000;
+  	/* Active button text color */
+  	font-weight: bold;
+  	/* Bold text */
+  }
+
+  /* Main Content Styles */
+  .main-content {
+  	margin-left: 220px;
+  	/* Space for the sidebar */
+  	padding: 20px;
+  	/* Padding for main content */
+  	transition: margin-left 0.3s;
+  	/* Smooth transition for responsive adjustments */
+  }
+
+  .content-area {
+  	padding-left: 20px;
+  	/* Padding for content area */
+  }
+
+  /* Other existing styles remain unchanged... */
