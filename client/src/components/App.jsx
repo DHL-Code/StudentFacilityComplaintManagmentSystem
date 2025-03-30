@@ -12,6 +12,7 @@ import ForgotPassword from './ForgotPassword';
 import ContactUs from './ContactUs';
 import SupervisorPage from './SupervisorPage';
 import DeanPage from './DeanPage';
+import Admin from './Admin';
 ForgotPassword
 
 function App() {
@@ -30,7 +31,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/SupervisorPage" element={<SupervisorPage />} />
           <Route path="/DeanPage" element={<DeanPage />} />
-          
+          <Route path="/Admin" element={<Admin />} />
           
           
         </Routes>
