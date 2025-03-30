@@ -1,12 +1,14 @@
 .navbar {
     background-color: #470247; /* Example background */
-    padding: 10px;
+padding: 10px;
+  
   }
   
   .nav-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Keeps items spaced out */
     align-items: center;
+
   }
   
   .logo {
@@ -17,7 +19,7 @@
   }
   
   .logo span {
-    color: #ded9d8; /* Example accent color */
+    color: #ded9d8; 
   }
   
   .desktop-nav {
@@ -29,6 +31,7 @@
     color: #cecbcb;
     display: flex;
     align-items: center;
+    
   }
   
   .nav-link svg {
@@ -69,4 +72,5 @@
     .desktop-nav {
       display: none;
     }
+    
   }
