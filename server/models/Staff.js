@@ -1,15 +1,37 @@
-// backend/models/Staff.js
-
 const mongoose = require('mongoose');
 
-const staffSchema = new mongoose.Schema({
-  staffId: { type: String, unique: true, required: true }, // Unique ID for login
+// Base schema with common fields
+const baseStaffSchema = {
+  staffId: { type: String, unique: true, required: true },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   phone: { type: String, required: true },
-  role: { type: String, enum: ['proctor', 'supervisor', 'dean', 'admin'], required: true }, // Role for access control
-  password: { type: String, required: true }, // Hashed password
-  profilePhoto: { type: String }, // URL or path to profile photo
-  createdAt: { type: Date, default: Date.now },
+  password: { type: String, required: true },
+  profilePhoto: { type: String },
+  createdAt: { type: Date, default: Date.now }
+};
+
+// Proctor Schema
+const proctorSchema = new mongoose.Schema({
+  ...baseStaffSchema,
+  role: { type: String, enum: ['proctor'], required: true }
 });
-module.exports = mongoose.model('StaffS', staffSchema);
+
+// Supervisor Schema
+const supervisorSchema = new mongoose.Schema({
+  ...baseStaffSchema,
+  role: { type: String, enum: ['supervisor'], required: true }
+});
+
+// Dean Schema
+const deanSchema = new mongoose.Schema({
+  ...baseStaffSchema,
+  role: { type: String, enum: ['dean'], required: true }
+});
+
+// Create separate models for each role
+const Proctor = mongoose.model('Proctor', proctorSchema);
+const Supervisor = mongoose.model('Supervisor', supervisorSchema);
+const Dean = mongoose.model('Dean', deanSchema);
+
+module.exports = { Proctor, Supervisor, Dean }; 

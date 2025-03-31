@@ -8,6 +8,7 @@ const complaintRoutes = require('./routes/complaints'); // Import complaints rou
 const adminRoutes = require('./routes/superAdminRoutes'); // Import admin routes
 const path = require('path');
 const dotenv = require('dotenv');
+const fs = require('fs');
 
 // Load environment variables first
 dotenv.config();
@@ -17,6 +18,18 @@ const app = express();
 
 // Connect to database
 connectDB();
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+const staffPhotosDir = path.join(uploadsDir, 'staff-photos');
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+if (!fs.existsSync(staffPhotosDir)) {
+  fs.mkdirSync(staffPhotosDir, { recursive: true });
+}
 
 // Middleware
 app.use(cors());
@@ -28,7 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes); 
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/complaints', complaintRoutes); // Use complaints route
-app.use('/', adminRoutes); // Use your routes
+app.use('/api/admin', adminRoutes); // Use your routes
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -37,7 +50,6 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something broke!' });
 });
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
