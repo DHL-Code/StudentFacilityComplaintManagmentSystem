@@ -37,57 +37,33 @@ const storage = multer.diskStorage({
   //Signup
   router.post('/signup', upload.single('profilePhoto'), async (req, res) => {
     try {
-      const { fullName, email, userId, phoneNumber, password, gender,college, department, blockNumber, dormNumber } = req.body;
-      const profilePhoto = req.file ? req.file.path : null;
-  
-      // Basic validation
-      if (!fullName || !email || !userId || !phoneNumber || !password || !gender || !department|| !college || !blockNumber || !dormNumber) {
-        return res.status(400).json({ message: 'All fields are required' });
-      }
-  
-      // Check if user already exists
-      const existingUser = await User.findOne({ $or: [{ email }, { userId }] });
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists with this email or ID' });
-      }
+        // Destructure from req.body
+        const { fullName, email, userId, phoneNumber, password, gender, college, department, blockNumber, dormNumber } = req.body;
 
-      console.log("Received data:", {
-        fullName,
-        email,
-        userId,
-        password: hashedPassword,
-        gender,
-        college,
-        department,
-        phoneNumber,
-        blockNumber,
-        dormNumber,
-        profilePhoto
-    });
-  
-      // Create new user
-      const newUser = new User({
-        fullName,
-        email,
-        userId,
-        phoneNumber,
-        password,
-        gender,
-        college,
-        department,
-        blockNumber,// Save block number
-        dormNumber,
-        profilePhoto,
-       
-      });
-  
-      await newUser.save();
-      res.status(201).json({ message: 'User created successfully' });
+        // Create new user WITH PLAIN TEXT PASSWORD
+        const newUser = new User({
+            fullName,
+            email,
+            userId,
+            phoneNumber,
+            password, // Pass the raw password here
+            gender,
+            college,
+            department,
+            blockNumber,
+            dormNumber,
+            profilePhoto: req.file ? req.file.path : null
+        });
+
+        // The pre-save hook will automatically hash this password before saving
+        await newUser.save();
+
+        res.status(201).json({ message: 'User created successfully' });
     } catch (error) {
-      console.error('Signup error:', error);
-      res.status(500).json({ message: error.message || 'Server error during registration' });
+        console.error('Signup error:', error);
+        res.status(500).json({ message: error.message || 'Server error during registration' });
     }
-  });
+});
 
 // Login
 router.post('/login', async (req, res) => {
