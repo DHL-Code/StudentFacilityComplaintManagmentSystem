@@ -15,6 +15,7 @@ const SupervisorPage = () => {
         currentPassword: '',
         newPassword: '',
         confirmNewPassword: '',
+        college: '' // Added college to formData
     });
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
     const [newProfilePhoto, setNewProfilePhoto] = useState(null);
@@ -73,6 +74,7 @@ const SupervisorPage = () => {
                 phoneNumber: data.phoneNumber,
                 department: data.department,
                 gender: data.gender,
+                college: data.college, // Added college here
                 currentPassword: '',
                 newPassword: '',
                 confirmNewPassword: ''
@@ -122,6 +124,7 @@ const SupervisorPage = () => {
         formPayload.append('phoneNumber', formData.phoneNumber);
         formPayload.append('department', formData.department);
         formPayload.append('gender', formData.gender);
+        formPayload.append('college', formData.college); // Added college to form data
         if (newProfilePhoto) formPayload.append('profilePhoto', newProfilePhoto);
 
         try {
@@ -254,6 +257,34 @@ const SupervisorPage = () => {
                                         <h3 className="full-name">{profile.fullName}</h3>
                                         <p className="user-id">{profile.userId}</p>
                                     </div>
+                                    <div className="profile-details">
+                                        <div className="detail-item">
+                                            <span className="detail-label">Department:</span>
+                                            <span className="detail-value">{profile.department}</span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <span className="detail-label">Email:</span>
+                                            <span className="detail-value">{profile.email}</span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <span className="detail-label">Phone Number:</span>
+                                            <span className="detail-value">{profile.phoneNumber}</span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <span className="detail-label">Gender:</span>
+                                            <span className="detail-value">{profile.gender}</span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <span className="detail-label">College:</span>
+                                            <span className="detail-value">{profile.college}</span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <span className="detail-label">Account Created:</span>
+                                            <span className="detail-value">
+                                                {new Date(profile.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </section>
@@ -264,19 +295,156 @@ const SupervisorPage = () => {
                             <h2>Edit Profile</h2>
                             {loading && <p className="loading">Saving changes...</p>}
                             {error && <p className="error">Error: {error}</p>}
-                            <form onSubmit={handleProfileUpdate}>
-                                <input type="file" onChange={handlePhotoChange} />
+                             <form onSubmit={handleProfileUpdate}>
+                            <div className="profile-photo-edit">
+                                <div
+                                    className="photo-preview"
+                                    onClick={() => document.getElementById('profilePhotoInput').click()}
+                                >
+                                    {newProfilePreview ? (
+                                        <img src={newProfilePreview} alt="Preview" className="profile-image" />
+                                    ) : profile?.profilePhoto ? (
+                                        <img src={profile.profilePhoto} alt="Current Profile" className="profile-image" />
+                                    ) : (
+                                        <div className="upload-placeholder">
+                                            <span className="upload-icon">+</span>
+                                            <span className="upload-text">Upload Photo</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <input
+                                    type="file"
+                                    id="profilePhotoInput"
+                                    accept="image/*"
+                                    onChange={handlePhotoChange}
+                                    style={{ display: 'none' }}
+                                />
                                 {fileError && <p className="error">{fileError}</p>}
-                                <label>Full Name:</label>
-                                <input type="text" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
-                                <label>Email:</label>
-                                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                                <label>Phone Number:</label>
-                                <input type="tel" value={formData.phoneNumber} onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })} />
-                                <button type="submit" disabled={loading}>
-                                    {loading ? 'Saving...' : 'Save Changes'}
-                                </button>
-                            </form>
+                            </div>
+                            <div className="form-fields">
+                                <label>
+                                    Full Name:
+                                    <input
+                                        className="narrow-input"
+                                        type="text"
+                                        value={formData.fullName}
+                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                    />
+                                </label>
+
+                                <label>
+                                    Email:
+                                    <input
+                                        className="narrow-input"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    />
+                                </label>
+
+                                <label>
+                                    Phone Number:
+                                    <input
+                                        type="tel"
+                                        value={formData.phoneNumber}
+                                        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                    />
+                                </label>
+
+                                <label>
+                                    College:
+                                    <select
+                                        value={formData.college}
+                                        onChange={(e) => {
+                                            const selectedCollegeName = e.target.value;
+                                            setFormData({ ...formData, college: selectedCollegeName, department: '' });
+                                        }}
+                                    >
+                                        <option value="">Select College</option>
+                                        {colleges.map((col) => (
+                                            <option key={col.name} value={col.name}>
+                                                {col.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+
+                                <label>
+                                    Department:
+                                    <select
+                                        value={formData.department}
+                                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                    >
+                                        <option value="">Select Department</option>
+                                        {availableDepartments.map((dept) => (
+                                            <option key={dept} value={dept}>
+                                                {dept}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+
+                                <div className="gender-selection">
+                                    <span className='gender'>Gender:</span>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            value="male"
+                                            checked={formData.gender === 'male'}
+                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                        />
+                                        Male
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            value="female"
+                                            checked={formData.gender === 'female'}
+                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                        />
+                                        Female
+                                    </label>
+                                </div>
+
+                                <div className="password-change-section">
+                                    <h3>Change Password</h3>
+
+                                    <label>
+                                        Current Password:
+                                        <input
+                                            type="password"
+                                            value={formData.currentPassword}
+                                            onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                                            placeholder="Enter current password"
+                                        />
+                                    </label>
+
+                                    <label>
+                                        New Password:
+                                        <input
+                                            type="password"
+                                            value={formData.newPassword}
+                                            onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                                            placeholder="Enter new password (min 6 characters)"
+                                        />
+                                    </label>
+
+                                    <label>
+                                        Confirm New Password:
+                                        <input
+                                            type="password"
+                                            value={formData.confirmNewPassword}
+                                            onChange={(e) => setFormData({ ...formData, confirmNewPassword: e.target.value })}
+                                            placeholder="Confirm new password"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" disabled={loading}>
+                                {loading ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </form>
                         </section>
                     )}
 
