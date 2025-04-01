@@ -37,11 +37,11 @@ const storage = multer.diskStorage({
   //Signup
   router.post('/signup', upload.single('profilePhoto'), async (req, res) => {
     try {
-      const { fullName, email, userId, phoneNumber, password, gender,college, department } = req.body;
+      const { fullName, email, userId, phoneNumber, password, gender,college, department, blockNumber, dormNumber } = req.body;
       const profilePhoto = req.file ? req.file.path : null;
   
       // Basic validation
-      if (!fullName || !email || !userId || !phoneNumber || !password || !gender || !department|| !college) {
+      if (!fullName || !email || !userId || !phoneNumber || !password || !gender || !department|| !college || !blockNumber || !dormNumber) {
         return res.status(400).json({ message: 'All fields are required' });
       }
   
@@ -50,6 +50,20 @@ const storage = multer.diskStorage({
       if (existingUser) {
         return res.status(400).json({ message: 'User already exists with this email or ID' });
       }
+
+      console.log("Received data:", {
+        fullName,
+        email,
+        userId,
+        password: hashedPassword,
+        gender,
+        college,
+        department,
+        phoneNumber,
+        blockNumber,
+        dormNumber,
+        profilePhoto
+    });
   
       // Create new user
       const newUser = new User({
@@ -61,7 +75,10 @@ const storage = multer.diskStorage({
         gender,
         college,
         department,
+        blockNumber,// Save block number
+        dormNumber,
         profilePhoto,
+       
       });
   
       await newUser.save();
@@ -121,7 +138,8 @@ router.put('/profile', authMiddleware, upload.single('profilePhoto'), async (req
       user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
       user.department = req.body.department || user.department;
       user.gender = req.body.gender || user.gender;
-
+      user.dormNumber = req.body.dormNumber || user.dormNumber;
+      user.blockNumber = req.body.blockNumber || user.blockNumber;
       // Handle profile photo upload
       if (req.file) {
           user.profilePhoto = `/uploads/profile_photos/${req.file.filename}`;
@@ -129,20 +147,21 @@ router.put('/profile', authMiddleware, upload.single('profilePhoto'), async (req
 
       // Handle password change
       if (req.body.currentPassword && req.body.newPassword) {
-          const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
-          if (!isMatch) {
-              return res.status(400).json({ message: 'Current password is incorrect' });
-          }
-          user.password = await bcrypt.hash(req.body.newPassword, 12);
-      }
+        const isMatch = await user.matchPassword(req.body.currentPassword);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+        user.password = req.body.newPassword; // Store the *plain text* new password.  The model must hash this on save.
+    }
 
-      const updatedUser = await user.save();
+    const updatedUser = await user.save();
 
-      // Return user data without password
-      const userData = updatedUser.toObject();
-      delete userData.password;
+    // Return user data without password
+    const userData = updatedUser.toObject();
+    delete userData.password;
 
-      res.json({ user: userData });
+    res.json({ user: userData });
+
 
   } catch (error) {
       console.error(error);

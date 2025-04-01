@@ -40,8 +40,8 @@ const Login = () => {
           navigate('/DeanPage');
         } else if (firstLetter === 'v') {
           navigate('/SupervisorPage');
-        } 
-         else {
+        }
+        else {
           navigate('/');
         }
       } else {
@@ -57,7 +57,7 @@ const Login = () => {
     <div>
       <Navbar />
       <div className="login-container">
-        
+
         <div className="login-form">
           <h2 className="welcome-back">Welcome Back!</h2>
 
@@ -93,6 +93,8 @@ const Login = () => {
             <Link to="/forgot-password" className="forgot-password">
               Forgot Password?
             </Link>
+
+
             {userId.charAt(0).toLowerCase() === 's' && (
               <p className="no-account">
                 Don't have an account? <Link to="/signup" className="signup-link">Sign Up</Link>

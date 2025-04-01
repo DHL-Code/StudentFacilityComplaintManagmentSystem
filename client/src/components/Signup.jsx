@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from './Navbar';
 import { motion, AnimatePresence } from "framer-motion";
-import { Rocket, User, Mail, IdCard, Phone, Lock, CheckCircle, ChevronDown, Camera, } from 'lucide-react';
+import { Rocket, User, Mail, IdCard, Phone, Lock, CheckCircle, ChevronDown, Camera, Home } from 'lucide-react';
 import "../styles/Signup.css";
 
 const colleges = [
@@ -38,6 +38,8 @@ const Signup = () => {
     const [isCollegeOpen, setIsCollegeOpen] = useState(false);
     const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
     const collegeRef = useRef(null);
+    const [blockNumber, setBlockNumber] = useState("");  // New state for block number
+    const [dormNumber, setDormNumber] = useState("");    // New state for dorm number
     const departmentRef = useRef(null);
 
     // Close dropdowns when clicking outside
@@ -104,6 +106,20 @@ const Signup = () => {
             case "gender":
                 if (!value) errorMessage = "Gender is required";
                 break;
+            case "blockNumber":  // Validate Block Number
+                if (!value) {
+                    errorMessage = "Block Number is required";
+                } else if (!/^\d+$/.test(value)) { // Ensure it's a number
+                    errorMessage = "Block Number must be a number";
+                }
+                break;
+            case "dormNumber":    // Validate Dorm Number
+                if (!value) {
+                    errorMessage = "Dorm Number is required";
+                } else if (!/^\d+$/.test(value)) {  // Ensure it's a number
+                    errorMessage = "Dorm Number must be a number";
+                }
+                break;
             default:
                 break;
         }
@@ -148,6 +164,8 @@ const Signup = () => {
         validateField("password", password);
         validateField("confirmPassword", confirmPassword);
         validateField("gender", gender);
+        validateField("blockNumber", blockNumber); // Validate new fields
+        validateField("dormNumber", dormNumber);   // Validate new fields
 
         if (Object.values(validationErrors).some((error) => error)) {
             setError("Please fix the errors before submitting.");
@@ -163,6 +181,8 @@ const Signup = () => {
         formData.append("phoneNumber", phoneNumber);
         formData.append("password", password);
         formData.append("gender", gender);
+        formData.append("blockNumber", blockNumber);  // Append to form data
+        formData.append("dormNumber", dormNumber);
         if (profilePhoto) {
             formData.append("profilePhoto", profilePhoto);
         }
@@ -199,10 +219,10 @@ const Signup = () => {
                     <div className="input-group photo-upload-group">
                         <div
                             className="profile-photo-container"
+                            onClick={() => document.getElementById("profilePhoto").click()}
                         >
                             <div
                                 className="profile-preview"
-                                onClick={() => document.getElementById("profilePhoto").click()}
                             >
                                 {profilePreview ? (
                                     <img src={profilePreview} alt="Profile preview" />
@@ -252,7 +272,10 @@ const Signup = () => {
                             placeholder="Enter your email address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            onBlur={handleBlur}
+                            className={validationErrors.email ? "error-input" : ""}
                         />
+                        {validationErrors.email && <span className="error">{validationErrors.email}</span>}
                     </div>
 
                     <div className="input-groups">
@@ -315,7 +338,12 @@ const Signup = () => {
                         <select id="college" value={college} onChange={(e) => {
                             setCollege(e.target.value);
                             setDepartment(''); // Reset department when college changes
-                        }}>
+                            validateField("college", e.target.value);
+
+                        }}
+                            onBlur={handleBlur}
+                            className={validationErrors.college ? "error-input" : ""}
+                        >
                             <option value="">Select College</option>
                             {colleges.map((col) => (
                                 <option key={col.name} value={col.name}>
@@ -323,6 +351,7 @@ const Signup = () => {
                                 </option>
                             ))}
                         </select>
+                        {validationErrors.college && <span className="error">{validationErrors.college}</span>}
                     </div>
 
                     {/* Department Dropdown */}
@@ -335,7 +364,12 @@ const Signup = () => {
                             <select
                                 id="department"
                                 value={department}
-                                onChange={(e) => setDepartment(e.target.value)}
+                                onChange={(e) => {
+                                    setDepartment(e.target.value)
+                                    validateField("department", e.target.value);
+                                }}
+                                onBlur={handleBlur}
+                                className={validationErrors.department ? "error-input" : ""}
                             >
                                 <option value="">Select Department</option>
                                 {colleges
@@ -346,6 +380,7 @@ const Signup = () => {
                                         </option>
                                     ))}
                             </select>
+                            {validationErrors.department && <span className="error">{validationErrors.department}</span>}
                         </div>
                     )}
 
@@ -357,10 +392,50 @@ const Signup = () => {
                         <input
                             type="text"
                             id="phoneNumber"
+                            name="phoneNumber"
                             placeholder="Enter your phone number"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
+                            onBlur={handleBlur}
+                            className={validationErrors.phoneNumber ? "error-input" : ""}
                         />
+                        {validationErrors.phoneNumber && <span className="error">{validationErrors.phoneNumber}</span>}
+                    </div>
+
+                    <div className="input-groups">
+                        <label htmlFor="blockNumber">
+                            <Home className="mr-2" />
+                            Block Number
+                        </label>
+                        <input
+                            type="text"
+                            id="blockNumber"
+                            name="blockNumber"
+                            placeholder="Enter your block number"
+                            value={blockNumber}
+                            onChange={(e) => setBlockNumber(e.target.value)}
+                            onBlur={handleBlur}
+                            className={validationErrors.blockNumber ? "error-input" : ""}
+                        />
+                        {validationErrors.blockNumber && <span className="error">{validationErrors.blockNumber}</span>}
+                    </div>
+
+                    <div className="input-groups">
+                        <label htmlFor="dormNumber">
+                            <Home className="mr-2" />
+                            Dorm Number
+                        </label>
+                        <input
+                            type="text"
+                            id="dormNumber"
+                            name="dormNumber"
+                            placeholder="Enter your dorm number"
+                            value={dormNumber}
+                            onChange={(e) => setDormNumber(e.target.value)}
+                            onBlur={handleBlur}
+                            className={validationErrors.dormNumber ? "error-input" : ""}
+                        />
+                        {validationErrors.dormNumber && <span className="error">{validationErrors.dormNumber}</span>}
                     </div>
 
                     <div className="input-groups">
@@ -371,10 +446,14 @@ const Signup = () => {
                         <input
                             type="password"
                             id="password"
+                            name="password"
                             placeholder="Enter your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            onBlur={handleBlur}
+                            className={validationErrors.password ? "error-input" : ""}
                         />
+                        {validationErrors.password && <span className="error">{validationErrors.password}</span>}
                     </div>
 
                     <div className="input-groups">
@@ -385,10 +464,14 @@ const Signup = () => {
                         <input
                             type="password"
                             id="confirmPassword"
+                            name="confirmPassword"
                             placeholder="Confirm your password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
+                            onBlur={handleBlur}
+                            className={validationErrors.confirmPassword ? "error-input" : ""}
                         />
+                        {validationErrors.confirmPassword && <span className="error">{validationErrors.confirmPassword}</span>}
                     </div>
 
                     <motion.button
