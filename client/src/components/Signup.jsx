@@ -4,21 +4,7 @@ import Navbar from './Navbar';
 import { motion, AnimatePresence } from "framer-motion";
 import { Rocket, User, Mail, IdCard, Phone, Lock, CheckCircle, ChevronDown, Camera, Home } from 'lucide-react';
 import "../styles/Signup.css";
-
-const colleges = [
-    {
-        name: "Computing and Informatics",
-        departments: ["Computer Science", "Software Engineering", "Information Technology", "Information Systems"],
-    },
-    {
-        name: "Engineering",
-        departments: ["Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"],
-    },
-    {
-        name: "Business",
-        departments: ["Business Administration", "Accounting", "Marketing", "Finance"],
-    },
-];
+import { fetchCollegesData } from './apiUtils'; // Adjust the import path
 
 const Signup = () => {
     const [fullName, setFullName] = useState("");
@@ -32,24 +18,67 @@ const Signup = () => {
     const [profilePhoto, setProfilePhoto] = useState(null);
     const [college, setCollege] = useState("");
     const [department, setDepartment] = useState("");
+    const [departments, setDepartments] = useState([]);
     const [profilePreview, setProfilePreview] = useState(null);
     const [validationErrors, setValidationErrors] = useState({});
     const navigate = useNavigate();
-    const [isCollegeOpen, setIsCollegeOpen] = useState(false);
-    const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
+    const [loadingColleges, setLoadingColleges] = useState(true);
+    const [loadingDepartments, setLoadingDepartments] = useState(false);
+    const [colleges, setColleges] = useState([]);
     const collegeRef = useRef(null);
-    const [blockNumber, setBlockNumber] = useState("");  // New state for block number
-    const [dormNumber, setDormNumber] = useState("");    // New state for dorm number
+    const [blockNumber, setBlockNumber] = useState("");
+    const [dormNumber, setDormNumber] = useState("");
     const departmentRef = useRef(null);
+
+    // Fetch colleges on component mount using the shared function
+    useEffect(() => {
+        const fetchColleges = async () => {
+            try {
+                const data = await fetchCollegesData();
+                setColleges(data);
+            } catch (err) {
+                setError(err.message || "Error fetching colleges");
+            } finally {
+                setLoadingColleges(false);
+            }
+        };
+
+        fetchColleges();
+    }, []);
+
+    // Fetch departments when the selected college changes
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            if (college) {
+                setLoadingDepartments(true);
+                try {
+                    const response = await fetch(`http://localhost:5000/api/colleges/${college}/departments`);
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch departments");
+                    }
+                    const data = await response.json();
+                    setDepartments(data);
+                } catch (err) {
+                    setError(err.message || "Error fetching departments");
+                } finally {
+                    setLoadingDepartments(false);
+                }
+            } else {
+                setDepartments([]);
+            }
+        };
+
+        fetchDepartments();
+    }, [college]);
 
     // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (collegeRef.current && !collegeRef.current.contains(event.target)) {
-                setIsCollegeOpen(false);
+                //setIsCollegeOpen(false); // No need for this anymore with select
             }
             if (departmentRef.current && !departmentRef.current.contains(event.target)) {
-                setIsDepartmentOpen(false);
+                //setIsDepartmentOpen(false); // No need for this anymore with select
             }
         };
 
@@ -59,82 +88,92 @@ const Signup = () => {
         };
     }, []);
 
-const validateField = (name, value) => {
- let errorMessage = "";
- switch (name) {
- case "fullName":
-if (!value) {
- errorMessage = "Full Name is required";
- } else if (!/^[A-Za-z\s]+$/.test(value)) {
-errorMessage = "Full Name must contain only letters and spaces. Numbers and special characters are not allowed.";
- }
- break;
-case "email":
-if (!value) {
-errorMessage = "Email is required";
- } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
-errorMessage = "Email address is invalid. Example: abcd@gmail.com";
- }
- break;
-case "userId":
- if (!value) {
-errorMessage = "User ID is required";
-}
- break;
- case "department":
- if (!value) {
-errorMessage = "Department is required";
-}
-break;
- case "college":
- if (!value) {
-errorMessage = "College is required";
-}
- break;
- case "phoneNumber":
-if (!value) {
- errorMessage = "Phone Number is required";
-} else if (!/^(?:\+251\d{9}|0\d{9})$/.test(value)) {
-errorMessage = "Phone Number must start with +251 or 0 and contain only digits. E.g., +251994319895 or 0994319895.";
-}
- break;
- case "password":
- if (!value) {
- errorMessage = "Password is required";
- } else if (value.length < 8) {
- errorMessage = "Password should be at least 8 characters long.";
-} else if (!/[A-Z]/.test(value)) {
- errorMessage = "Password should contain at least one uppercase letter.";
- } else if (!/[a-z]/.test(value)) {
- errorMessage = "Password should contain at least one lowercase letter.";
-} else if (!/[0-9]/.test(value)) {
- errorMessage = "Password should contain at least one number.";
- } else if (!/[!@#$%^&*]/.test(value)) {
- errorMessage = "Password should contain at least one special character.";
- }
-break;
- case "confirmPassword":
- if (!value) {
- errorMessage = "Confirm Password is required";
- } else if (value !== password) {
-errorMessage = "Passwords do not match";
- }
-break;
- case "gender":
-if (!value) {
-errorMessage = "Gender is required";
- }
-break;
- default:
-break;
- }
+    const validateField = (name, value) => {
+        let errorMessage = "";
+        switch (name) {
+            case "fullName":
+                if (!value) {
+                    errorMessage = "Full Name is required";
+                } else if (!/^[A-Za-z\s]+$/.test(value)) {
+                    errorMessage = "Full Name must contain only letters and spaces. Numbers and special characters are not allowed.";
+                }
+                break;
+            case "email":
+                if (!value) {
+                    errorMessage = "Email is required";
+                } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
+                    errorMessage = "Email address is invalid. Example: abcd@gmail.com";
+                }
+                break;
+            case "userId":
+                if (!value) {
+                    errorMessage = "User ID is required";
+                }
+                break;
+            case "department":
+                if (!value) {
+                    errorMessage = "Department is required";
+                }
+                break;
+            case "college":
+                if (!value) {
+                    errorMessage = "College is required";
+                }
+                break;
+            case "phoneNumber":
+                if (!value) {
+                    errorMessage = "Phone Number is required";
+                } else if (!/^(?:\+251\d{9}|0\d{9})$/.test(value)) {
+                    errorMessage = "Phone Number must start with +251 or 0 and contain only digits. E.g., +251994319895 or 0994319895.";
+                }
+                break;
+            case "password":
+                if (!value) {
+                    errorMessage = "Password is required";
+                } else if (value.length < 8) {
+                    errorMessage = "Password should be at least 8 characters long.";
+                } else if (!/[A-Z]/.test(value)) {
+                    errorMessage = "Password should contain at least one uppercase letter.";
+                } else if (!/[a-z]/.test(value)) {
+                    errorMessage = "Password should contain at least one lowercase letter.";
+                } else if (!/[0-9]/.test(value)) {
+                    errorMessage = "Password should contain at least one number.";
+                } else if (!/[!@#$%^&*]/.test(value)) {
+                    errorMessage = "Password should contain at least one special character.";
+                }
+                break;
+            case "confirmPassword":
+                if (!value) {
+                    errorMessage = "Confirm Password is required";
+                } else if (value !== password) {
+                    errorMessage = "Passwords do not match";
+                }
+                break;
+            case "gender":
+                if (!value) {
+                    errorMessage = "Gender is required";
+                }
+                break;
+            case "blockNumber": // New case
+                if (!value) {
+                    errorMessage = "Block Number is required";
+                }
+                break;
+            case "dormNumber":   // New case
+                if (!value) {
+                    errorMessage = "Dorm Number is required";
+                }
+                break;
+            default:
+                break;
+        }
 
-// Update validation errors state
-setValidationErrors((prevErrors) => ({
- ...prevErrors,
- [name]: errorMessage,
- }));
-};
+        // Update validation errors state
+        setValidationErrors((prevErrors) => ({
+            ...prevErrors,
+            [name]: errorMessage,
+        }));
+    };
 
     const handleBlur = (e) => {
         const { name, value } = e.target;
@@ -170,11 +209,11 @@ setValidationErrors((prevErrors) => ({
         validateField("password", password);
         validateField("confirmPassword", confirmPassword);
         validateField("gender", gender);
-        validateField("blockNumber", blockNumber); // Validate new fields
-        validateField("dormNumber", dormNumber);   // Validate new fields
+        validateField("blockNumber", blockNumber);
+        validateField("dormNumber", dormNumber);
 
 
-if (Object.values(validationErrors).some((error) => error)) {
+        if (Object.values(validationErrors).some((error) => error)) {
             setError("Please fix the errors before submitting.");
             return;
         }
@@ -188,7 +227,7 @@ if (Object.values(validationErrors).some((error) => error)) {
         formData.append("phoneNumber", phoneNumber);
         formData.append("password", password);
         formData.append("gender", gender);
-        formData.append("blockNumber", blockNumber);  // Append to form data
+        formData.append("blockNumber", blockNumber);
         formData.append("dormNumber", dormNumber);
         if (profilePhoto) {
             formData.append("profilePhoto", profilePhoto);
@@ -268,7 +307,7 @@ if (Object.values(validationErrors).some((error) => error)) {
                         {validationErrors.fullName && <span className="error">{validationErrors.fullName}</span>}
                     </div>
 
-<div className="input-groups">
+                    <div className="input-groups">
                         <label htmlFor="email">
                             <Mail className="mr-2" />
                             Email
@@ -337,28 +376,34 @@ if (Object.values(validationErrors).some((error) => error)) {
                     </div>
 
 
-{/* College Dropdown */}
+                    {/* College Dropdown */}
                     <div className="input-groups">
                         <label htmlFor="college">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-school mr-2"><path d="M3 12v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2"></path><path d="M5 18v-6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6"></path><path d="M11 12v6"></path><path d="M7 12v6"></path><path d="M17 12v6"></path></svg>
                             College
                         </label>
-                        <select id="college" value={college} onChange={(e) => {
-                            setCollege(e.target.value);
-                            setDepartment(''); // Reset department when college changes
-                            validateField("college", e.target.value);
-
-                        }}
-                            onBlur={handleBlur}
-                            className={validationErrors.college ? "error-input" : ""}
-                        >
-                            <option value="">Select College</option>
-                            {colleges.map((col) => (
-                                <option key={col.name} value={col.name}>
-                                    {col.name}
-                                </option>
-                            ))}
-                        </select>
+                        {loadingColleges ? (
+                            <div>Loading colleges...</div>
+                        ) : (
+                            <select
+                                id="college"
+                                value={college}
+                                onChange={(e) => {
+                                    setCollege(e.target.value);
+                                    setDepartment(''); // Reset department when college changes
+                                    validateField("college", e.target.value);
+                                }}
+                                onBlur={handleBlur}
+                                className={validationErrors.college ? "error-input" : ""}
+                            >
+                                <option value="">Select College</option>
+                                {colleges.map((col) => (
+                                    <option key={col.id} value={col.name}>
+                                        {col.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                         {validationErrors.college && <span className="error">{validationErrors.college}</span>}
                     </div>
 
@@ -369,31 +414,33 @@ if (Object.values(validationErrors).some((error) => error)) {
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book-open-text mr-2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path><path d="M12 13h6"></path><path d="M12 17h6"></path></svg>
                                 Department
                             </label>
-                            <select
-                                id="department"
-                                value={department}
-                                onChange={(e) => {
-                                    setDepartment(e.target.value)
-                                    validateField("department", e.target.value);
-                                }}
-                                onBlur={handleBlur}
-                                className={validationErrors.department ? "error-input" : ""}
-                            >
-                                <option value="">Select Department</option>
-                                {colleges
-                                    .find((col) => col.name === college)
-                                    ?.departments.map((dept) => (
-                                        <option key={dept} value={dept}>
-                                            {dept}
+                            {loadingDepartments ? (
+                                <div>Loading departments...</div>
+                            ) : (
+                                <select
+                                    id="department"
+                                    value={department}
+                                    onChange={(e) => {
+                                        setDepartment(e.target.value);
+                                        validateField("department", e.target.value);
+                                    }}
+                                    onBlur={handleBlur}
+                                    className={validationErrors.department ? "error-input" : ""}
+                                >
+                                    <option value="">Select Department</option>
+                                    {departments.map((dept) => (
+                                        <option key={dept.id} value={dept.name}>
+                                            {dept.name}
                                         </option>
                                     ))}
-                            </select>
+                                </select>
+                            )}
                             {validationErrors.department && <span className="error">{validationErrors.department}</span>}
                         </div>
                     )}
 
 
-<div className="input-groups">
+                    <div className="input-groups">
                         <label htmlFor="phoneNumber">
                             <Phone className="mr-2" />
                             Phone Number
@@ -465,7 +512,7 @@ if (Object.values(validationErrors).some((error) => error)) {
                         {validationErrors.password && <span className="error">{validationErrors.password}</span>}
                     </div>
 
-<div className="input-groups">
+                    <div className="input-groups">
                         <label htmlFor="confirmPassword">
                             <CheckCircle className="mr-2" />
                             Confirm Password

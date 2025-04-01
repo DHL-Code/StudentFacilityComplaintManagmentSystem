@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const contactRoutes = require('./routes/contact'); // Import the contact route
 const complaintRoutes = require('./routes/complaints'); // Import complaints route
 const adminRoutes = require('./routes/superAdminRoutes'); // Import admin routes
+const collegeRoutes = require('./routes/colleges');
 const path = require('path');
 const dotenv = require('dotenv');
 const fs = require('fs');
@@ -42,6 +43,8 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/complaints', complaintRoutes); // Use complaints route
 app.use('/api/admin', adminRoutes); // Use your routes
+// Use college routes
+app.use('/api/colleges', collegeRoutes);
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
