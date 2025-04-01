@@ -1,7 +1,7 @@
 .proctor-dashboard {
   display: flex;
   min-height: 100vh;
-  background-image: url('../assets/dorm.webp'); /* Replace with your image path */
+  background-image: url("../assets/dorm.webp"); /* Replace with your image path */
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -49,13 +49,13 @@
 }
 
 .dashboard-content h2 {
-  color : #007bff;
+  color: #007bff;
   text-align: center;
 }
 
 .dashboard-content p {
-line-height: 1.6;
-font-size: 1.1em;
+  line-height: 1.6;
+  font-size: 1.1em;
 }
 
 .dashboard-header {
@@ -171,7 +171,6 @@ font-size: 1.1em;
   margin-top: 10px;
 }
 
-
 .urgent {
   border-left: 5px solid red;
   padding-left: 15px;
@@ -216,32 +215,32 @@ font-size: 1.1em;
   width: 80%;
   height: 40%;
   padding: 10px;
- border: 2px solid #f8f3f3; 
+  border: 2px solid #f8f3f3;
   border-radius: 5px;
   margin-bottom: 10px;
   margin-top: 10%;
   resize: vertical;
 }
 
- .txt{
-color: white;
+.txt {
+  color: white;
 }
-.report-panel textarea{
+.report-panel textarea {
   width: 90%;
   height: 200px;
   margin-left: 10px;
 }
 
-.report-panel button{
+.report-panel button {
   margin-top: 5%;
   margin-left: 40%;
 }
 
-.report-panel h2{
-text-align: center;
-color: #090909;
-font-weight: bolder;
-font-size:  xx-large;
+.report-panel h2 {
+  text-align: center;
+  color: #090909;
+  font-weight: bolder;
+  font-size: xx-large;
 }
 
 .submit-report-btn {
@@ -273,31 +272,33 @@ font-size:  xx-large;
 }
 
 .complaint-details {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    width: 80%;
-    max-width: 600px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  width: 80%;
+  max-width: 600px;
 }
 
-.complaint-details h2, .complaint-details h3, .complaint-details p{
-    margin-bottom: 10px;
+.complaint-details h2,
+.complaint-details h3,
+.complaint-details p {
+  margin-bottom: 10px;
 }
 
-.complaint-details button{
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
+.complaint-details button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 .profile-panel {
@@ -414,7 +415,7 @@ font-size:  xx-large;
 }
 
 .error-message {
-    color: red;
+  color: red;
 }
 
 .notifications-page {
@@ -426,7 +427,7 @@ font-size:  xx-large;
   margin-right: 40px;
 }
 
-.desktop-nav{
+.desktop-nav {
   margin-left: 20%;
 }
 
@@ -454,14 +455,11 @@ font-size:  xx-large;
     margin-right: 40px;
   }
 
-  .desktop-nav {
-    margin-left: 20%;
-    display: flex; /* Show desktop nav on desktop */
-    justify-content: flex-end; /* Align buttons to the right */
-    gap: 10px; /* Space between buttons */
+  .desk-nav {
+    display: none; /* Show desktop nav on desktop */
   }
 
-  .desktop-nav button {
+  .desk-nav button {
     padding: 10px 15px;
     background-color: #007bff;
     color: white;

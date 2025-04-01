@@ -37,40 +37,33 @@ const storage = multer.diskStorage({
   //Signup
   router.post('/signup', upload.single('profilePhoto'), async (req, res) => {
     try {
-      const { fullName, email, userId, phoneNumber, password, gender,college, department } = req.body;
-      const profilePhoto = req.file ? req.file.path : null;
-  
-      // Basic validation
-      if (!fullName || !email || !userId || !phoneNumber || !password || !gender || !department|| !college) {
-        return res.status(400).json({ message: 'All fields are required' });
-      }
-  
-      // Check if user already exists
-      const existingUser = await User.findOne({ $or: [{ email }, { userId }] });
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists with this email or ID' });
-      }
-  
-      // Create new user
-      const newUser = new User({
-        fullName,
-        email,
-        userId,
-        phoneNumber,
-        password,
-        gender,
-        college,
-        department,
-        profilePhoto,
-      });
-  
-      await newUser.save();
-      res.status(201).json({ message: 'User created successfully' });
+        // Destructure from req.body
+        const { fullName, email, userId, phoneNumber, password, gender, college, department, blockNumber, dormNumber } = req.body;
+
+        // Create new user WITH PLAIN TEXT PASSWORD
+        const newUser = new User({
+            fullName,
+            email,
+            userId,
+            phoneNumber,
+            password, // Pass the raw password here
+            gender,
+            college,
+            department,
+            blockNumber,
+            dormNumber,
+            profilePhoto: req.file ? req.file.path : null
+        });
+
+        // The pre-save hook will automatically hash this password before saving
+        await newUser.save();
+
+        res.status(201).json({ message: 'User created successfully' });
     } catch (error) {
-      console.error('Signup error:', error);
-      res.status(500).json({ message: error.message || 'Server error during registration' });
+        console.error('Signup error:', error);
+        res.status(500).json({ message: error.message || 'Server error during registration' });
     }
-  });
+});
 
 // Login
 router.post('/login', async (req, res) => {
@@ -121,7 +114,8 @@ router.put('/profile', authMiddleware, upload.single('profilePhoto'), async (req
       user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
       user.department = req.body.department || user.department;
       user.gender = req.body.gender || user.gender;
-
+      user.dormNumber = req.body.dormNumber || user.dormNumber;
+      user.blockNumber = req.body.blockNumber || user.blockNumber;
       // Handle profile photo upload
       if (req.file) {
           user.profilePhoto = `/uploads/profile_photos/${req.file.filename}`;
@@ -129,20 +123,21 @@ router.put('/profile', authMiddleware, upload.single('profilePhoto'), async (req
 
       // Handle password change
       if (req.body.currentPassword && req.body.newPassword) {
-          const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
-          if (!isMatch) {
-              return res.status(400).json({ message: 'Current password is incorrect' });
-          }
-          user.password = await bcrypt.hash(req.body.newPassword, 12);
-      }
+        const isMatch = await user.matchPassword(req.body.currentPassword);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+        user.password = req.body.newPassword; // Store the *plain text* new password.  The model must hash this on save.
+    }
 
-      const updatedUser = await user.save();
+    const updatedUser = await user.save();
 
-      // Return user data without password
-      const userData = updatedUser.toObject();
-      delete userData.password;
+    // Return user data without password
+    const userData = updatedUser.toObject();
+    delete userData.password;
 
-      res.json({ user: userData });
+    res.json({ user: userData });
+
 
   } catch (error) {
       console.error(error);

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from './Navbar';
 import { motion, AnimatePresence } from "framer-motion";
-import { Rocket, User, Mail, IdCard, Phone, Lock, CheckCircle, Camera } from 'lucide-react';
+import { Rocket, User, Mail, IdCard, Phone, Lock, CheckCircle, ChevronDown, Camera, } from 'lucide-react';
 import "../styles/Signup.css";
 
 const colleges = [
@@ -38,6 +38,8 @@ const Signup = () => {
     const [isCollegeOpen, setIsCollegeOpen] = useState(false);
     const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
     const collegeRef = useRef(null);
+    const [blockNumber, setBlockNumber] = useState("");  // New state for block number
+    const [dormNumber, setDormNumber] = useState("");    // New state for dorm number
     const departmentRef = useRef(null);
 
     // Close dropdowns when clicking outside
@@ -123,6 +125,20 @@ const Signup = () => {
                     errorMessage = "Gender is required";
                 }
                 break;
+            case "blockNumber":  // Validate Block Number
+                if (!value) {
+                    errorMessage = "Block Number is required";
+                } else if (!/^\d+$/.test(value)) { // Ensure it's a number
+                    errorMessage = "Block Number must be a number";
+                }
+                break;
+            case "dormNumber":    // Validate Dorm Number
+                if (!value) {
+                    errorMessage = "Dorm Number is required";
+                } else if (!/^\d+$/.test(value)) {  // Ensure it's a number
+                    errorMessage = "Dorm Number must be a number";
+                }
+                break;
             default:
                 break;
         }
@@ -183,6 +199,20 @@ const Signup = () => {
     };
 
     const handleSignup = async () => {
+        validateField("fullName", fullName);
+        validateField("email", email);
+        validateField("userId", userId);
+        validateField("department", department);
+        validateField("phoneNumber", phoneNumber);
+        validateField("password", password);
+        validateField("confirmPassword", confirmPassword);
+        validateField("gender", gender);
+
+        if (Object.values(validationErrors).some((error) => error)) {
+            setError("Please fix the errors before submitting.");
+            return;
+        }
+
         const formData = new FormData();
         formData.append("fullName", fullName);
         formData.append("email", email);
@@ -192,6 +222,8 @@ const Signup = () => {
         formData.append("phoneNumber", phoneNumber);
         formData.append("password", password);
         formData.append("gender", gender);
+        formData.append("blockNumber", blockNumber);  // Append to form data
+        formData.append("dormNumber", dormNumber);
         if (profilePhoto) {
             formData.append("profilePhoto", profilePhoto);
         }
@@ -223,28 +255,32 @@ const Signup = () => {
                         Create Your Account
                     </h2>
 
-                    <form onSubmit={handleSubmit}> {/* Wrap input elements in a form */}
-                        <div className="input-group photo-upload-group">
-                            <div className="profile-photo-container">
-                                <div className="profile-preview" onClick={() => document.getElementById("profilePhoto").click()}>
-                                    {profilePreview ? (
-                                        <img src={profilePreview} alt="Profile preview" />
-                                    ) : (
-                                        <div className="upload-placeholder">
-                                            <Camera size={24} />
-                                        </div>
-                                    )}
-                                </div>
-                                <input
-                                    type="file"
-                                    id="profilePhoto"
-                                    accept="image/*"
-                                    onChange={handlePhotoChange}
-                                    style={{ display: "none" }}
-                                />
-                                <div className="upload-instruction">Click to upload photo</div>
+                    <div className="input-group photo-upload-group">
+                        <div
+                            className="profile-photo-container"
+                        >
+                            <div
+                                className="profile-preview"
+                                onClick={() => document.getElementById("profilePhoto").click()}
+                            >
+                                {profilePreview ? (
+                                    <img src={profilePreview} alt="Profile preview" />
+                                ) : (
+                                    <div className="upload-placeholder">
+                                        <Camera size={24} />
+                                    </div>
+                                )}
                             </div>
+                            <input
+                                type="file"
+                                id="profilePhoto"
+                                accept="image/*"
+                                onChange={handlePhotoChange}
+                                style={{ display: "none" }}
+                            />
+                            <div className="upload-instruction">Click to upload photo</div>
                         </div>
+                    </div>
 
                         <div className="input-groups">
                             <label htmlFor="fullName">
@@ -264,22 +300,19 @@ const Signup = () => {
                             {validationErrors.fullName && <span className="error">{validationErrors.fullName}</span>}
                         </div>
 
-                        <div className="input-groups">
-                            <label htmlFor="email">
-                                <Mail className="mr-2" />
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                id="email"
-                                placeholder="Enter your email address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                onBlur={(e) => validateField("email", e.target.value)}
-                                className={validationErrors.email ? "error-input" : ""}
-                            />
-                            {validationErrors.email && <span className="error">{validationErrors.email}</span>}
-                        </div>
+                    <div className="input-groups">
+                        <label htmlFor="email">
+                            <Mail className="mr-2" />
+                            Email
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="Enter your email address"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                    </div>
 
                         <div className="input-groups">
                             <label htmlFor="userId">
@@ -332,107 +365,90 @@ const Signup = () => {
                             {validationErrors.gender && <span className="error">{validationErrors.gender}</span>}
                         </div>
 
-                        {/* College Dropdown */}
-                        <div className="input-groups">
-                            <label htmlFor="college">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-school mr-2">
-                                    <path d="M3 12v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2"></path>
-                                    <path d="M5 18v-6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6"></path>
-                                    <path d="M11 12v6"></path>
-                                    <path d="M7 12v6"></path>
-                                    <path d="M17 12v6"></path>
-                                </svg>
-                                College
-                            </label>
-                            <select id="college" value={college} onChange={(e) => {
-                                setCollege(e.target.value);
-                                setDepartment(''); // Reset department when college changes
-                            }}>
-                                <option value="">Select College</option>
-                                {colleges.map((col) => (
-                                    <option key={col.name} value={col.name}>
-                                        {col.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                    {/* College Dropdown */}
+                    <div className="input-groups">
+                        <label htmlFor="college">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-school mr-2"><path d="M3 12v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2"></path><path d="M5 18v-6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6"></path><path d="M11 12v6"></path><path d="M7 12v6"></path><path d="M17 12v6"></path></svg>
+                            College
+                        </label>
+                        <select id="college" value={college} onChange={(e) => {
+                            setCollege(e.target.value);
+                            setDepartment(''); // Reset department when college changes
+                        }}>
+                            <option value="">Select College</option>
+                            {colleges.map((col) => (
+                                <option key={col.name} value={col.name}>
+                                    {col.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                        {/* Department Dropdown */}
-                        {college && (
-                            <div className="input-groups">
-                                <label htmlFor="department">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book-open-text mr-2">
-                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                                        <path d="M12 13h6"></path>
-                                        <path d="M12 17h6"></path>
-                                    </svg>
-                                    Department
-                                </label>
-                                <select
-                                    id="department"
-                                    value={department}
-                                    onChange={(e) => setDepartment(e.target.value)}
-                                >
-                                    <option value="">Select Department</option>
-                                    {colleges.find((col) => col.name === college)?.departments.map((dept) => (
+                    {/* Department Dropdown */}
+                    {college && (
+                        <div className="input-groups">
+                            <label htmlFor="department">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book-open-text mr-2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path><path d="M12 13h6"></path><path d="M12 17h6"></path></svg>
+                                Department
+                            </label>
+                            <select
+                                id="department"
+                                value={department}
+                                onChange={(e) => setDepartment(e.target.value)}
+                            >
+                                <option value="">Select Department</option>
+                                {colleges
+                                    .find((col) => col.name === college)
+                                    ?.departments.map((dept) => (
                                         <option key={dept} value={dept}>
                                             {dept}
                                         </option>
                                     ))}
-                                </select>
-                            </div>
-                        )}
-
-                        <div className="input-groups">
-                            <label htmlFor="phoneNumber">
-                                <Phone className="mr-2" />
-                                Phone Number
-                            </label>
-                            <input
-                                type="text"
-                                id="phoneNumber"
-                                placeholder="Enter your phone number"
-                                value={phoneNumber}
-                                onChange={(e) => setPhoneNumber(e.target.value)}
-                                onBlur={(e) => validateField("phoneNumber", e.target.value)}
-                                className={validationErrors.phoneNumber ? "error-input" : ""}
-                            />
-                            {validationErrors.phoneNumber && <span className="error">{validationErrors.phoneNumber}</span>}
+                            </select>
                         </div>
+                    )}
 
-                        <div className="input-groups">
-                            <label htmlFor="password">
-                                <Lock className="mr-2" />
-                                Password
-                            </label>
-                            <input
-                                type="password"
-                                id="password"
-                                placeholder="Enter your password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                onBlur={(e) => validateField("password", e.target.value)}
-                                className={validationErrors.password ? "error-input" : ""}
-                            />
-                            {validationErrors.password && <span className="error">{validationErrors.password}</span>}
-                            <small className="password-suggestion">Create a strong password: at least 8 characters, and you should include uppercase, lowercase, numbers, and special characters.</small>
-                        </div>
+                    <div className="input-groups">
+                        <label htmlFor="phoneNumber">
+                            <Phone className="mr-2" />
+                            Phone Number
+                        </label>
+                        <input
+                            type="text"
+                            id="phoneNumber"
+                            placeholder="Enter your phone number"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                        />
+                    </div>
 
-                        <div className="input-groups">
-                            <label htmlFor="confirmPassword">
-                                <CheckCircle className="mr-2" />
-                                Confirm Password
-                            </label>
-                            <input
-                                type="password"
-                                id="confirmPassword"
-                                placeholder="Confirm your password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                onBlur={(e) => validateField("confirmPassword", e.target.value)}
-                            />
-                        </div>
+                    <div className="input-groups">
+                        <label htmlFor="password">
+                            <Lock className="mr-2" />
+                            Password
+                        </label>
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="input-groups">
+                        <label htmlFor="confirmPassword">
+                            <CheckCircle className="mr-2" />
+                            Confirm Password
+                        </label>
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            placeholder="Confirm your password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                    </div>
 
                         <motion.button
                             type="submit" // Change to type="submit"

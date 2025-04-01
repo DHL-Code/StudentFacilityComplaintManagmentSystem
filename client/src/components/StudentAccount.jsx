@@ -296,21 +296,21 @@ const Dashboard = () => {
         e.preventDefault();
         setIsFeedbackSubmitting(true);
         setFeedbackSubmissionStatus(null);
-    
+
         // Ensure feedbackRating and feedbackComment are valid
         if (feedbackRating === 0 && !feedbackComment.trim()) {
             setFeedbackSubmissionStatus('error');
             setIsFeedbackSubmitting(false);
             return;
         }
-    
+
         try {
             const token = localStorage.getItem('token'); // Ensure you have a valid token
             const userId = localStorage.getItem('userId'); // Make sure this is set
             if (!userId) {
                 throw new Error('User ID is not available. Please log in.');
             }
-    
+
             const response = await fetch('http://localhost:5000/api/feedback/submit', {
                 method: 'POST',
                 headers: {
@@ -323,12 +323,12 @@ const Dashboard = () => {
                     userId: userId, // Pass the userId here
                 }),
             });
-    
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to submit feedback');
             }
-    
+
             const data = await response.json();
             console.log('Feedback submitted:', data);
             setFeedbackSubmissionStatus('success');
@@ -372,7 +372,7 @@ const Dashboard = () => {
                     </div>
                 </div>
                 {/* Navigation Buttons for Desktop View */}
-                <div className="desktop-nav">
+                <div className="desk-nav">
                     <button onClick={() => handleNavigation('complaintForm')}>Complaint Form</button>
                     <button onClick={() => handleNavigation('viewProfile')}>View Profile</button>
                     <button onClick={() => handleNavigation('editProfile')}>Edit Profile</button>

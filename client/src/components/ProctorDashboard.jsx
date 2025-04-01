@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFlag,faUserEdit, faUpload, faCommentDots } from '@fortawesome/free-solid-svg-icons';
+import { faFlag, faUserEdit, faUpload, faCommentDots } from '@fortawesome/free-solid-svg-icons';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import '../styles/ProctorDashboard.css';
 
@@ -111,7 +111,7 @@ function ProctorDashboard() {
           </div>
         </div>
 
-        <div className="desktop-nav">
+        <div className="desk-nav">
           <button onClick={() => handleNavigation('notifications')}>Notifications</button>
           <button onClick={() => handleNavigation('profile')}>Profile</button>
           <button onClick={() => handleNavigation('report')}>Write Report</button>
@@ -119,100 +119,100 @@ function ProctorDashboard() {
         </div>
 
         <div className="content">
-        {activeSection === 'notifications' && (
-          <div className="notifications-page">
-            <h2>Notifications</h2>
-            {notifications.map((notification) => (
-              <div key={notification.id} className={`notification-item ${notification.isUrgent ? 'urgent' : ''}`}>
-                <h3>{notification.title}</h3>
-                <p>{notification.description}</p>
-                <div className="notification-actions">
-                  <button className="verify-btn" onClick={() => handleVerify(notification.id)}>Verify</button>
-                  <button className="dismiss-btn" onClick={() => handleDismiss(notification.id)}>Dismiss</button>
-                  {notification.isUrgent && (
-                    <button className="flag-btn" onClick={() => handleFlagUrgent(notification.id)}>
-                      <FontAwesomeIcon icon={faFlag} /> Flag Urgent
+          {activeSection === 'notifications' && (
+            <div className="notifications-page">
+              <h2>Notifications</h2>
+              {notifications.map((notification) => (
+                <div key={notification.id} className={`notification-item ${notification.isUrgent ? 'urgent' : ''}`}>
+                  <h3>{notification.title}</h3>
+                  <p>{notification.description}</p>
+                  <div className="notification-actions">
+                    <button className="verify-btn" onClick={() => handleVerify(notification.id)}>Verify</button>
+                    <button className="dismiss-btn" onClick={() => handleDismiss(notification.id)}>Dismiss</button>
+                    {notification.isUrgent && (
+                      <button className="flag-btn" onClick={() => handleFlagUrgent(notification.id)}>
+                        <FontAwesomeIcon icon={faFlag} /> Flag Urgent
+                      </button>
+                    )}
+                    <button className="feedback-btn" onClick={() => handleViewFeedback(notification)}>
+                      <FontAwesomeIcon icon={faCommentDots} /> View Feedback
                     </button>
-                  )}
-                  <button className="feedback-btn" onClick={() => handleViewFeedback(notification)}>
-                    <FontAwesomeIcon icon={faCommentDots} /> View Feedback
-                  </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {selectedComplaint && (
-              <div className="complaint-details">
-                <h2>Complaint Details</h2>
-                <h3>{selectedComplaint.title}</h3>
-                <p>{selectedComplaint.description}</p>
-                <p><strong>Feedback:</strong> {selectedComplaint.feedback}</p>
-                <button onClick={() => setSelectedComplaint(null)}>Close</button>
-              </div>
-            )}
-          </div>
-        )}
+              ))}
+              {selectedComplaint && (
+                <div className="complaint-details">
+                  <h2>Complaint Details</h2>
+                  <h3>{selectedComplaint.title}</h3>
+                  <p>{selectedComplaint.description}</p>
+                  <p><strong>Feedback:</strong> {selectedComplaint.feedback}</p>
+                  <button onClick={() => setSelectedComplaint(null)}>Close</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
 
         {activeSection === 'profile' && (
-           <div className="profile-panel">
-           <h2>Proctor Profile</h2>
-           {isEditingProfile ? (
-             <div className="profile-form">
-               <div className="form-group">
-                 <label htmlFor="proctorId">Proctor ID</label>
-                 <input type="text" name="proctorId" id="proctorId" value={proctorProfile.proctorId} onChange={handleProfileChange} />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="gender">Gender</label>
-                 <input type="text" name="gender" id="gender" value={proctorProfile.gender} onChange={handleProfileChange} />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="email">Email</label>
-                 <input type="email" name="email" id="email" value={proctorProfile.email} onChange={handleProfileChange} />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="phone">Phone</label>
-                 <input type="tel" name="phone" id="phone" value={proctorProfile.phone} onChange={handleProfileChange} />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="password">Current Password</label>
-                 <input type="password" name="password" id="password" onChange={handleProfileChange} />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="newPassword">New Password</label>
-                 <input type="password" name="newPassword" id="newPassword" onChange={handleProfileChange} />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="confirmPassword">Confirm New Password</label>
-                 <input type="password" name="confirmPassword" id="confirmPassword" onChange={handleProfileChange} />
-               </div>
-               {passwordError && <p className="error-message">{passwordError}</p>}
-               <div className="form-group">
-                 <label htmlFor="profilePictureUpload" className="profile-picture-upload">
-                   <FontAwesomeIcon icon={faUpload} /> Upload Profile Picture
-                 </label>
-                 <input id="profilePictureUpload" type="file" onChange={handleProfilePictureChange} style={{ display: 'none' }} />
-                 {proctorProfile.profilePicture && <img src={proctorProfile.profilePicture} alt="Profile" className="profile-preview" />}
-               </div>
-               <div className="form-actions">
-                 <button onClick={handleProfileSave}>Save</button>
-                 <button onClick={() => setIsEditingProfile(false)}>Cancel</button>
-               </div>
-             </div>
-           ) : (
-             <div className="profile-details">
-               {proctorProfile.profilePicture && <img src={proctorProfile.profilePicture} alt="Profile" className="profile-preview" />}
-               <p><strong>Proctor ID:</strong> {proctorProfile.proctorId}</p>
-               <p><strong>Gender:</strong> {proctorProfile.gender}</p>
-               <p><strong>Email:</strong> {proctorProfile.email}</p>
-               <p><strong>Phone:</strong> {proctorProfile.phone}</p>
-               <button className="edit-profile-btn" onClick={() => setIsEditingProfile(true)}>
-                 <FontAwesomeIcon icon={faUserEdit} /> Edit Profile
-               </button>
-             </div>
-           )}
-         </div>
+          <div className="profile-panel">
+            <h2>Proctor Profile</h2>
+            {isEditingProfile ? (
+              <div className="profile-form">
+                <div className="form-group">
+                  <label htmlFor="proctorId">Proctor ID</label>
+                  <input type="text" name="proctorId" id="proctorId" value={proctorProfile.proctorId} onChange={handleProfileChange} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="gender">Gender</label>
+                  <input type="text" name="gender" id="gender" value={proctorProfile.gender} onChange={handleProfileChange} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input type="email" name="email" id="email" value={proctorProfile.email} onChange={handleProfileChange} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="phone">Phone</label>
+                  <input type="tel" name="phone" id="phone" value={proctorProfile.phone} onChange={handleProfileChange} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="password">Current Password</label>
+                  <input type="password" name="password" id="password" onChange={handleProfileChange} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="newPassword">New Password</label>
+                  <input type="password" name="newPassword" id="newPassword" onChange={handleProfileChange} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirm New Password</label>
+                  <input type="password" name="confirmPassword" id="confirmPassword" onChange={handleProfileChange} />
+                </div>
+                {passwordError && <p className="error-message">{passwordError}</p>}
+                <div className="form-group">
+                  <label htmlFor="profilePictureUpload" className="profile-picture-upload">
+                    <FontAwesomeIcon icon={faUpload} /> Upload Profile Picture
+                  </label>
+                  <input id="profilePictureUpload" type="file" onChange={handleProfilePictureChange} style={{ display: 'none' }} />
+                  {proctorProfile.profilePicture && <img src={proctorProfile.profilePicture} alt="Profile" className="profile-preview" />}
+                </div>
+                <div className="form-actions">
+                  <button onClick={handleProfileSave}>Save</button>
+                  <button onClick={() => setIsEditingProfile(false)}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <div className="profile-details">
+                {proctorProfile.profilePicture && <img src={proctorProfile.profilePicture} alt="Profile" className="profile-preview" />}
+                <p><strong>Proctor ID:</strong> {proctorProfile.proctorId}</p>
+                <p><strong>Gender:</strong> {proctorProfile.gender}</p>
+                <p><strong>Email:</strong> {proctorProfile.email}</p>
+                <p><strong>Phone:</strong> {proctorProfile.phone}</p>
+                <button className="edit-profile-btn" onClick={() => setIsEditingProfile(true)}>
+                  <FontAwesomeIcon icon={faUserEdit} /> Edit Profile
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {activeSection === 'report' && (

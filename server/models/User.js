@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema({
   department: { type: String, required: true },
   //SprofilePhoto: { type: Buffer }, // Store image buffer
   profilePhoto: {type: String}, //Store content type
+  blockNumber: { type: String, required: true }, 
+  dormNumber: { type: String, required: true },   
   createdAt: { type: Date, default: Date.now }
 });
 
