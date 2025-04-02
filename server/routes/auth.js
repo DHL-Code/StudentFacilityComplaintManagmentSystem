@@ -1,6 +1,8 @@
 require('dotenv').config(); // Load environment variables
 const express = require('express');
 const User = require('../models/User');
+const { Proctor, Supervisor, Dean } = require('../models/Staff');
+const Admin = require('../models/Admin');
 const authMiddleware = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
 const multer = require('multer'); // Import multer
@@ -73,29 +75,88 @@ const storage = multer.diskStorage({
 // Login
 router.post('/login', async (req, res) => {
     const { userId, password } = req.body;
+    
     try {
-        if (!userId || !password) {
-            return res.status(400).json({ message: 'User ID and password are required.' });
+        console.log('Login attempt for userId:', userId);
+        let user = null;
+        let userType = null;
+
+        // Determine user type from userId prefix
+        const firstLetter = userId.charAt(0).toLowerCase();
+        
+        // Check appropriate collection based on user type
+        switch (firstLetter) {
+            case 's':
+                user = await User.findOne({ userId });
+                userType = 'student';
+                break;
+            case 'p':
+                user = await Proctor.findOne({ staffId: userId });
+                userType = 'proctor';
+                break;
+            case 'd':
+                user = await Dean.findOne({ staffId: userId });
+                userType = 'dean';
+                break;
+            case 'v':
+                user = await Supervisor.findOne({ staffId: userId });
+                userType = 'supervisor';
+                break;
+            case 'a':
+                user = await Admin.findOne({ id: userId });
+                userType = 'admin';
+                break;
+            default:
+                console.log('Invalid user type:', firstLetter);
+                return res.status(401).json({ message: 'Invalid user type' });
         }
 
-        const user = await User.findOne({ userId });
         if (!user) {
-            console.log('User not found:', userId);
-            return res.status(401).json({ message: 'Invalid user ID or password' });
+            console.log('User not found for userId:', userId);
+            return res.status(401).json({ message: 'User not found' });
         }
 
-        const isMatch = await user.matchPassword(password);
-        console.log('Password Match:', isMatch);
-
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid user ID or password' });
+        // Check password based on user type
+        let isPasswordValid = false;
+        try {
+            if (userType === 'student') {
+                isPasswordValid = await user.matchPassword(password);
+            } else {
+                isPasswordValid = await bcrypt.compare(password, user.password);
+            }
+        } catch (error) {
+            console.error('Password comparison error:', error);
+            return res.status(500).json({ message: 'Error verifying password' });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token });
+        if (isPasswordValid) {
+            const token = jwt.sign(
+                { 
+                    id: user._id,
+                    userType: userType,
+                    userId: userId
+                }, 
+                process.env.JWT_SECRET, 
+                { expiresIn: '1h' }
+            );
+
+            console.log('Login successful for user:', userId);
+            res.json({ 
+                token,
+                userType,
+                userId: userType === 'student' ? user.userId : user.staffId || user.id,
+                name: user.name || user.fullName
+            });
+        } else {
+            console.log('Invalid password for user:', userId);
+            res.status(401).json({ message: 'Invalid password' });
+        }
     } catch (error) {
         console.error('Login Error:', error);
-        res.status(400).json({ message: 'Error logging in', error: error.message });
+        res.status(500).json({ 
+            message: 'Error logging in', 
+            error: error.message 
+        });
     }
 });
 

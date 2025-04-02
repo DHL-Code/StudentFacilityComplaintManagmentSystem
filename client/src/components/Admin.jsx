@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/AdminStyles.css';
 import { AlertCircle } from 'lucide-react';
+import MessagePopup from './MessagePopup';
+
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('account-approvals');
   const [accountRequests, setAccountRequests] = useState([]);
@@ -14,7 +16,8 @@ const AdminPage = () => {
     phone: '',
     role: 'proctor',
     password: '',
-    profilePhoto: null
+    profilePhoto: null,
+    block: ''
   });
   const [newAdmin, setNewAdmin] = useState({
     name: '',
@@ -40,6 +43,11 @@ const AdminPage = () => {
   const [collegeErrorMessage, setCollegeErrorMessage] = useState('');
   const [departmentErrorMessage, setDepartmentErrorMessage] = useState('');
 
+  const [validationErrors, setValidationErrors] = useState({
+    email: '',
+    phone: '',
+    password: ''
+  });
 
   // Fetch colleges on component mount, added error state
   useEffect(() => {
@@ -147,6 +155,39 @@ const AdminPage = () => {
     }
   };
 
+  // Add validation functions
+  const handleEmailBlur = (e) => {
+    const email = e.target.value;
+    if (!email) {
+      setValidationErrors(prev => ({ ...prev, email: 'Email is required' }));
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setValidationErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+    } else {
+      setValidationErrors(prev => ({ ...prev, email: '' }));
+    }
+  };
+
+  const handlePhoneBlur = (e) => {
+    const phone = e.target.value;
+    if (!phone) {
+      setValidationErrors(prev => ({ ...prev, phone: 'Phone number is required' }));
+    } else if (!/^\d{10}$/.test(phone)) {
+      setValidationErrors(prev => ({ ...prev, phone: 'Phone number must be exactly 10 digits' }));
+    } else {
+      setValidationErrors(prev => ({ ...prev, phone: '' }));
+    }
+  };
+
+  const handlePasswordBlur = (e) => {
+    const password = e.target.value;
+    if (!password) {
+      setValidationErrors(prev => ({ ...prev, password: 'Password is required' }));
+    } else if (password.length < 6) {
+      setValidationErrors(prev => ({ ...prev, password: 'Password must be at least 6 characters long' }));
+    } else {
+      setValidationErrors(prev => ({ ...prev, password: '' }));
+    }
+  };
 
   // Generate IDs with prefixes based on role
   const generateStaffId = (role) => {
@@ -178,10 +219,19 @@ const AdminPage = () => {
     setLoading(true);
     setSuccessMessage('');
     setErrorMessage('');
+    setValidationErrors({ email: '', phone: '', password: '' });
 
-    // Validate password length
-    if (newStaff.password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long');
+    // Validate all fields
+    const emailError = validationErrors.email;
+    const phoneError = validationErrors.phone;
+    const passwordError = validationErrors.password;
+
+    if (emailError || phoneError || passwordError) {
+      setValidationErrors({
+        email: emailError,
+        phone: phoneError,
+        password: passwordError
+      });
       setLoading(false);
       return;
     }
@@ -195,6 +245,9 @@ const AdminPage = () => {
     if (newStaff.profilePhoto) {
       formData.append('profilePhoto', newStaff.profilePhoto);
     }
+    if (newStaff.role === 'proctor') {
+      formData.append('block', newStaff.block || '');
+    }
 
     try {
       const response = await fetch('http://localhost:5000/api/admin/create-staff', {
@@ -206,10 +259,10 @@ const AdminPage = () => {
 
       if (response.ok) {
         setSuccessMessage(`Staff account created successfully! Staff ID: ${data.staffId}`);
-        setNewStaff({ name: '', email: '', phone: '', role: 'proctor', password: '', profilePhoto: null });
+        setNewStaff({ name: '', email: '', phone: '', role: 'proctor', password: '', profilePhoto: null, block: '' });
         setProfilePreview(null);
       } else {
-        setErrorMessage(data.message || 'Failed to create staff account'); // Changed to data.message
+        setErrorMessage(data.error || 'Failed to create staff account');
       }
     } catch (error) {
       console.error('Error creating staff:', error);
@@ -243,9 +296,30 @@ const AdminPage = () => {
     }
   };
 
+  const handleCloseMessage = () => {
+    setSuccessMessage('');
+    setErrorMessage('');
+  };
+
   return (
     <div className="admin-container">
       <h1 style={{ color: 'white' }}>System Administration Dashboard</h1>
+
+      {/* Message Popups */}
+      {successMessage && (
+        <MessagePopup
+          type="success"
+          message={successMessage}
+          onClose={handleCloseMessage}
+        />
+      )}
+      {errorMessage && (
+        <MessagePopup
+          type="error"
+          message={errorMessage}
+          onClose={handleCloseMessage}
+        />
+      )}
 
       <nav className="admin-nav">
         <button onClick={() => setActiveTab('account-approvals')}>
@@ -270,23 +344,6 @@ const AdminPage = () => {
           Colleges & Departments
         </button>
       </nav>
-
-
-      {/* Error and Success Messages */}
-      {errorMessage && (
-        <div style={{ backgroundColor: '#f8d7da', color: '#721c24', padding: '10px', margin: '10px 0', border: '1px solid #f5c6cb', borderRadius: '4px' }}>
-          <AlertCircle className="h-4 w-4" style={{ marginRight: '8px', display: 'inline-block', verticalAlign: 'middle' }} />
-          <strong style={{ marginRight: '8px' }}>Error:</strong>
-          <span>{errorMessage}</span>
-        </div>
-      )}
-      {successMessage && (
-        <div style={{ backgroundColor: '#d4edda', color: '#155724', padding: '10px', margin: '10px 0', border: '1px solid #c3e6cb', borderRadius: '4px' }}>
-          <AlertCircle className="h-4 w-4" style={{ marginRight: '8px', display: 'inline-block', verticalAlign: 'middle' }} />
-          <strong style={{ marginRight: '8px' }}>Success:</strong>
-          <span>{successMessage}</span>
-        </div>
-      )}
 
       {/* Profile Section */}
       {activeTab === 'profile' && (
@@ -381,8 +438,13 @@ const AdminPage = () => {
                 type="email"
                 value={newStaff.email}
                 onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
-                required
+                onBlur={handleEmailBlur}
+                className={validationErrors.email ? 'error' : ''}
+                placeholder="Enter email"
               />
+              {validationErrors.email && (
+                <span className="error-message">{validationErrors.email}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -390,9 +452,20 @@ const AdminPage = () => {
               <input
                 type="tel"
                 value={newStaff.phone}
-                onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })}
-                required
+                onChange={e => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setNewStaff({ ...newStaff, phone: value });
+                }}
+                onBlur={handlePhoneBlur}
+                className={validationErrors.phone ? 'error' : ''}
+                maxLength="10"
+                pattern="[0-9]*"
+                inputMode="numeric"
+                placeholder="Enter phone number"
               />
+              {validationErrors.phone && (
+                <span className="error-message">{validationErrors.phone}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -401,9 +474,13 @@ const AdminPage = () => {
                 type="password"
                 value={newStaff.password}
                 onChange={e => setNewStaff({ ...newStaff, password: e.target.value })}
-                required
-                minLength={6}
+                onBlur={handlePasswordBlur}
+                className={validationErrors.password ? 'error' : ''}
+                placeholder="Enter password"
               />
+              {validationErrors.password && (
+                <span className="error-message">{validationErrors.password}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -417,6 +494,27 @@ const AdminPage = () => {
                 <option value="dean">Student Dean</option>
               </select>
             </div>
+
+            {newStaff.role === 'proctor' && (
+              <div className="form-group">
+                <label style={{ color: 'white' }}>Block</label>
+                <input
+                  type="text"
+                  value={newStaff.block}
+                  onChange={e => {
+                    const value = e.target.value;
+                    // Only allow numbers
+                    if (value === '' || /^\d+$/.test(value)) {
+                      setNewStaff({ ...newStaff, block: value });
+                    }
+                  }}
+                  placeholder="Enter block number"
+                  required
+                  pattern="[0-9]*"
+                  inputMode="numeric"
+                />
+              </div>
+            )}
 
             <button
               type="submit"
@@ -526,9 +624,13 @@ const AdminPage = () => {
                 type="email"
                 value={newAdmin.email}
                 onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                required
+                onBlur={handleEmailBlur}
+                className={validationErrors.email ? 'error' : ''}
                 placeholder="Enter email address"
               />
+              {validationErrors.email && (
+                <span className="error-message">{validationErrors.email}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -536,10 +638,17 @@ const AdminPage = () => {
               <input
                 type="tel"
                 value={newAdmin.phone}
-                onChange={e => setNewAdmin({ ...newAdmin, phone: e.target.value })}
-                required
+                onChange={e => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setNewAdmin({ ...newAdmin, phone: value });
+                }}
+                onBlur={handlePhoneBlur}
+                className={validationErrors.phone ? 'error' : ''}
                 placeholder="Enter phone number"
               />
+              {validationErrors.phone && (
+                <span className="error-message">{validationErrors.phone}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -548,10 +657,13 @@ const AdminPage = () => {
                 type="password"
                 value={newAdmin.password}
                 onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                required
-                minLength={6}
+                onBlur={handlePasswordBlur}
+                className={validationErrors.password ? 'error' : ''}
                 placeholder="Enter password (min 6 characters)"
               />
+              {validationErrors.password && (
+                <span className="error-message">{validationErrors.password}</span>
+              )}
             </div>
 
             <button

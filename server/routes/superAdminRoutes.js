@@ -83,17 +83,34 @@ async function generateAdminId() {
 router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => {
   try {
     console.log('Received create-staff request');
-    const { name, email, phone, role, password } = req.body;
-    console.log('Request body:', { name, email, phone, role });
+    const { name, email, phone, role, password, block } = req.body;
+    console.log('Request body:', { name, email, phone, role, block });
 
     // Validate required fields
     if (!name || !email || !phone || !role || !password) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
+    // Validate block field for proctors
+    if (role === 'proctor' && !block) {
+      return res.status(400).json({ error: 'Block field is required for proctors' });
+    }
+
     // Validate password length
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Validate phone number format (10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({ error: 'Phone number must be exactly 10 digits' });
     }
 
     // Check if email already exists in any collection
@@ -104,7 +121,18 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
     ]);
 
     if (existingEmail.some(result => result !== null)) {
-      return res.status(400).json({ error: 'Email already exists' });
+      return res.status(400).json({ error: 'Email already exists in the system' });
+    }
+
+    // Check if phone number already exists in any collection
+    const existingPhone = await Promise.all([
+      Proctor.findOne({ phone }),
+      Supervisor.findOne({ phone }),
+      Dean.findOne({ phone })
+    ]);
+
+    if (existingPhone.some(result => result !== null)) {
+      return res.status(400).json({ error: 'Phone number already exists in the system' });
     }
 
     const staffId = await generateUniqueId(role);
@@ -123,6 +151,7 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
           role,
           password: hashedPassword,
           profilePhoto: req.file ? req.file.path : null,
+          block: block || ''
         });
         break;
       case 'supervisor':
