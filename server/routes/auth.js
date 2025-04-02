@@ -1,3 +1,4 @@
+require('dotenv').config(); // Load environment variables
 const express = require('express');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
@@ -5,7 +6,11 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer'); // Import multer
 const router = express.Router();
 const path = require('path');
+const nodemailer = require('nodemailer');
+const otpGenerator = require('otp-generator');
+const crypto = require('crypto');
 const fs = require('fs');
+const bcrypt = require('bcrypt'); // Import bcrypt
 
 
 // Configure Multer for file uploads
@@ -69,17 +74,28 @@ const storage = multer.diskStorage({
 router.post('/login', async (req, res) => {
     const { userId, password } = req.body;
     try {
-        const user = await User.findOne({ userId });
-        if (user && (await user.matchPassword(password))) {
-            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-            console.log('Generated Token:', token); // Debugging: Log the generated token
-            res.json({ token });
-        } else {
-            res.status(401).json({ message: 'Invalid user ID or password' });
+        if (!userId || !password) {
+            return res.status(400).json({ message: 'User ID and password are required.' });
         }
+
+        const user = await User.findOne({ userId });
+        if (!user) {
+            console.log('User not found:', userId);
+            return res.status(401).json({ message: 'Invalid user ID or password' });
+        }
+
+        const isMatch = await user.matchPassword(password);
+        console.log('Password Match:', isMatch);
+
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid user ID or password' });
+        }
+
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.json({ token });
     } catch (error) {
-        console.error('Login Error:', error); // Debugging: Log login errors
-        res.status(400).json({ message: 'Error logging in', error });
+        console.error('Login Error:', error);
+        res.status(400).json({ message: 'Error logging in', error: error.message });
     }
 });
 
@@ -146,5 +162,112 @@ router.put('/profile', authMiddleware, upload.single('profilePhoto'), async (req
       });
   }
 });
+
+// Forgot Password Route (Modified)
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+      const user = await User.findOne({ email });
+      if (!user) {
+          return res.status(404).json({ message: 'Email not found.' });
+      }
+
+      // Generate OTP
+      const otp = otpGenerator.generate(6, { // You can adjust OTP length and options
+          upperCaseAlphabets: false,
+          specialChars: false,
+      });
+
+      const otpExpiry = Date.now() + 600000; // OTP expires in 10 minutes (adjust as needed)
+
+      user.resetPasswordOTP = otp;
+      user.resetPasswordOTPExpires = otpExpiry;
+      await user.save();
+
+      // Send OTP via Email
+      const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+          },
+      });
+
+      const mailOptions = {
+          to: email,
+          subject: 'Password Reset OTP',
+          text: `Your OTP for password reset is: ${otp}\n\nThis OTP will expire in 10 minutes.`,
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      res.json({ message: 'OTP sent successfully. Please verify.' });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'An error occurred.' });
+  }
+});
+
+// Verify OTP Route
+// Modify your /verify-otp route:
+router.post('/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const user = await User.findOne({
+            email,
+            resetPasswordOTP: otp, // Corrected field name
+            resetPasswordOTPExpires: { $gt: Date.now() }, // Corrected field name
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' }); // Use env variable
+
+        res.json({ message: 'OTP verified', token: token }); // Send token
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error during OTP verification' }); // Improved error message
+    }
+});
+
+// Reset Password Route (Modified)
+
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { token, password, otp } = req.body;
+
+        // Verify JWT token
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+        const user = await User.findOne({
+            _id: decodedToken.id,
+            resetPasswordOTP: otp,
+            resetPasswordOTPExpires: { $gt: Date.now() },
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+
+        // Set the plain text password - pre-save hook will hash it
+        user.password = password;
+        
+        user.resetPasswordOTP = null;
+        user.resetPasswordOTPExpires = null;
+
+        await user.save();
+
+        res.json({ message: 'Password reset successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error during password reset' });
+    }
+});
+
+
 
 module.exports = router;

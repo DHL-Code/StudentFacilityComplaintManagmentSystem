@@ -11,10 +11,14 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+
     if (!userId || !password) {
       setError('Please enter both User ID and Password.');
       return;
     }
+
+    console.log('Sending User ID:', userId);
+    console.log('Sending Password:', password);
 
     try {
       const response = await fetch('http://localhost:5000/api/auth/login', {

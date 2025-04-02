@@ -10,6 +10,13 @@ const userSchema = new mongoose.Schema({
   gender: { type: String, enum: ['male', 'female'], required: true },
   college:{type:String, required: true},
   department: { type: String, required: true },
+
+  // OTP Management
+  resetPasswordOTP: String,
+  resetPasswordOTPExpires: Date,
+  emailVerificationOTP: String,
+  emailVerificationExpires: Date,
+
   //SprofilePhoto: { type: Buffer }, // Store image buffer
   profilePhoto: {type: String}, //Store content type
   blockNumber: { type: String, required: true }, 
@@ -26,6 +33,11 @@ userSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password, salt);
     next();
 });
+
+// Add these to your User schema
+//userSchema.index({ resetPasswordOTPExpires: 1 }, { expireAfterSeconds: 0 });
+//userSchema.index({ emailVerificationExpires: 1 }, { expireAfterSeconds: 0 });
+
 
 // Method to compare password
 userSchema.methods.matchPassword = async function (enteredPassword) {
