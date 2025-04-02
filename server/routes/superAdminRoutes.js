@@ -176,11 +176,27 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
 router.post('/create-admin', upload.single('profilePhoto'), async (req, res) => {
   try {
     console.log('Received create-admin request');
-    const { name, email, phone, password, id } = req.body;
-    console.log('Request body:', { name, email, phone, id });
+    console.log('Full request body:', req.body);
+    console.log('Request file:', req.file);
+    
+    const { name, email, phone, password } = req.body;
+    
+    // Log each field individually
+    console.log('Parsed fields:', {
+      name: name || 'missing',
+      email: email || 'missing',
+      phone: phone || 'missing',
+      password: password ? 'present' : 'missing'
+    });
 
     // Validate required fields
-    if (!name || !email || !phone || !password || !id) {
+    if (!name || !email || !phone || !password) {
+      console.log('Missing required fields:', {
+        name: !name,
+        email: !email,
+        phone: !phone,
+        password: !password
+      });
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -195,31 +211,38 @@ router.post('/create-admin', upload.single('profilePhoto'), async (req, res) => 
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    // Check if ID already exists
-    const existingId = await Admin.findOne({ id });
-    if (existingId) {
-      return res.status(400).json({ error: 'Admin ID already exists' });
-    }
+    const adminId = await generateAdminId();
+    console.log('Generated admin ID:', adminId);
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create new admin
     const admin = new Admin({
-      id,
+      id: adminId,
       name,
       email,
       phone,
-      password,
-      profilePhoto: req.file ? `/uploads/staff-photos/${req.file.filename}` : null
+      password: hashedPassword,
+      profilePhoto: req.file ? req.file.path : null
     });
 
     await admin.save();
-
-    res.status(201).json({
+    console.log('Admin created successfully:', adminId);
+    
+    res.status(201).json({ 
       message: 'Admin account created successfully',
-      adminId: id
+      adminId,
+      email
     });
   } catch (error) {
     console.error('Error creating admin:', error);
-    res.status(500).json({ error: 'Failed to create admin account' });
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Email or admin ID already exists' });
+    }
+    res.status(500).json({ 
+      error: 'Failed to create admin account',
+      details: error.message 
+    });
   }
 });
 
