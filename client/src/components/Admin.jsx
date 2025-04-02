@@ -448,9 +448,7 @@ const AdminPage = () => {
               return;
             }
 
-            const adminId = generateAdminId();
             const formData = new FormData();
-            formData.append('id', adminId);
             formData.append('name', newAdmin.name);
             formData.append('email', newAdmin.email);
             formData.append('phone', newAdmin.phone);
@@ -468,13 +466,13 @@ const AdminPage = () => {
               const data = await response.json();
 
               if (response.ok) {
-                setSuccessMessage(`Admin account created successfully! Admin ID: ${adminId}`);
+                setSuccessMessage(`Admin account created successfully! Admin ID: ${data.adminId}`);
                 setNewAdmin({ name: '', email: '', phone: '', password: '', profilePhoto: null });
                 setProfilePreview(null);
                 // Update admin accounts list
-                setAdminAccounts([...adminAccounts, { id: adminId, ...newAdmin }]);
+                setAdminAccounts([...adminAccounts, { id: data.adminId, ...newAdmin }]);
               } else {
-                setErrorMessage(data.message || 'Failed to create admin account');
+                setErrorMessage(data.error || 'Failed to create admin account');
               }
             } catch (error) {
               console.error('Error creating admin:', error);
@@ -518,6 +516,7 @@ const AdminPage = () => {
                 value={newAdmin.name}
                 onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })}
                 required
+                placeholder="Enter full name"
               />
             </div>
 
@@ -528,6 +527,7 @@ const AdminPage = () => {
                 value={newAdmin.email}
                 onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
                 required
+                placeholder="Enter email address"
               />
             </div>
 
@@ -538,6 +538,7 @@ const AdminPage = () => {
                 value={newAdmin.phone}
                 onChange={e => setNewAdmin({ ...newAdmin, phone: e.target.value })}
                 required
+                placeholder="Enter phone number"
               />
             </div>
 
@@ -549,6 +550,7 @@ const AdminPage = () => {
                 onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
                 required
                 minLength={6}
+                placeholder="Enter password (min 6 characters)"
               />
             </div>
 
