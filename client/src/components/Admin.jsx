@@ -5,6 +5,7 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('account-approvals');
   const [accountRequests, setAccountRequests] = useState([]);
   const [staffAccounts, setStaffAccounts] = useState([]);
+  const [adminAccounts, setAdminAccounts] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [reports, setReports] = useState([]);
   const [newStaff, setNewStaff] = useState({
@@ -12,6 +13,13 @@ const AdminPage = () => {
     email: '',
     phone: '',
     role: 'proctor',
+    password: '',
+    profilePhoto: null
+  });
+  const [newAdmin, setNewAdmin] = useState({
+    name: '',
+    email: '',
+    phone: '',
     password: '',
     profilePhoto: null
   });
@@ -155,6 +163,15 @@ const AdminPage = () => {
     return `${prefix}${String(lastId + 1).padStart(3, '0')}`;
   };
 
+  // Generate Admin ID
+  const generateAdminId = () => {
+    const lastId = adminAccounts.reduce((max, acc) => {
+      const num = parseInt(acc.id.slice(1)) || 0;
+      return num > max ? num : max;
+    }, 0);
+    return `A${String(lastId + 1).padStart(3, '0')}`;
+  };
+
   // Create staff account
   const handleCreateStaff = async (e) => {
     e.preventDefault();
@@ -236,6 +253,9 @@ const AdminPage = () => {
         </button>
         <button onClick={() => setActiveTab('create-staff')}>
           Create Staff
+        </button>
+        <button onClick={() => setActiveTab('create-admin')}>
+          Create Admin
         </button>
         <button onClick={() => setActiveTab('feedback')}>
           Student Feedback
@@ -407,6 +427,138 @@ const AdminPage = () => {
             </button>
 
 
+          </form>
+        </div>
+      )}
+
+      {/* Create Admin Section */}
+      {activeTab === 'create-admin' && (
+        <div className="section">
+          <h2 style={{ color: 'white' }}>Create Admin Account</h2>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setLoading(true);
+            setSuccessMessage('');
+            setErrorMessage('');
+
+            // Validate password length
+            if (newAdmin.password.length < 6) {
+              setErrorMessage('Password must be at least 6 characters long');
+              setLoading(false);
+              return;
+            }
+
+            const adminId = generateAdminId();
+            const formData = new FormData();
+            formData.append('id', adminId);
+            formData.append('name', newAdmin.name);
+            formData.append('email', newAdmin.email);
+            formData.append('phone', newAdmin.phone);
+            formData.append('password', newAdmin.password);
+            if (newAdmin.profilePhoto) {
+              formData.append('profilePhoto', newAdmin.profilePhoto);
+            }
+
+            try {
+              const response = await fetch('http://localhost:5000/api/admin/create-admin', {
+                method: 'POST',
+                body: formData,
+              });
+
+              const data = await response.json();
+
+              if (response.ok) {
+                setSuccessMessage(`Admin account created successfully! Admin ID: ${adminId}`);
+                setNewAdmin({ name: '', email: '', phone: '', password: '', profilePhoto: null });
+                setProfilePreview(null);
+                // Update admin accounts list
+                setAdminAccounts([...adminAccounts, { id: adminId, ...newAdmin }]);
+              } else {
+                setErrorMessage(data.message || 'Failed to create admin account');
+              }
+            } catch (error) {
+              console.error('Error creating admin:', error);
+              setErrorMessage('An error occurred while creating the admin account. Please try again.');
+            } finally {
+              setLoading(false);
+            }
+          }} className="admin-form">
+            <div className="photo-upload">
+              <div className="profile-preview" onClick={() => document.getElementById('adminPhoto').click()}>
+                {profilePreview ? (
+                  <img src={profilePreview} alt="Preview" />
+                ) : (
+                  <div className="upload-placeholder" style={{ color: 'white' }}>
+                    <span>+</span>
+                    <p>Upload Photo</p>
+                  </div>
+                )}
+              </div>
+              <input
+                type="file"
+                id="adminPhoto"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setProfilePreview(reader.result);
+                    reader.readAsDataURL(file);
+                    setNewAdmin({ ...newAdmin, profilePhoto: file });
+                  }
+                }}
+                hidden
+              />
+            </div>
+
+            <div className="form-group">
+              <label style={{ color: 'white' }}>Full Name</label>
+              <input
+                type="text"
+                value={newAdmin.name}
+                onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label style={{ color: 'white' }}>Email</label>
+              <input
+                type="email"
+                value={newAdmin.email}
+                onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label style={{ color: 'white' }}>Phone Number</label>
+              <input
+                type="tel"
+                value={newAdmin.phone}
+                onChange={e => setNewAdmin({ ...newAdmin, phone: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label style={{ color: 'white' }}>Password</label>
+              <input
+                type="password"
+                value={newAdmin.password}
+                onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                required
+                minLength={6}
+              />
+            </div>
+
+            <button
+              type="submit"
+              style={{ background: 'blue', color: 'white' }}
+              disabled={loading}
+            >
+              {loading ? 'Creating Account...' : 'Create Admin Account'}
+            </button>
           </form>
         </div>
       )}
