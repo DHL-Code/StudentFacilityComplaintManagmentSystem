@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const { Proctor, Supervisor, Dean } = require('../models/Staff.js');
+const Admin = require('../models/Admin.js');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
@@ -69,6 +70,13 @@ async function generateUniqueId(role) {
   }
 
   return `${prefix}${String(lastId + 1).padStart(3, '0')}`;
+}
+
+// Helper function to generate admin ID
+async function generateAdminId() {
+  const lastAdmin = await Admin.findOne().sort({ id: -1 });
+  const lastId = lastAdmin ? parseInt(lastAdmin.id.slice(1)) : 0;
+  return `A${String(lastId + 1).padStart(3, '0')}`;
 }
 
 // Create Staff Account
@@ -161,6 +169,57 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
       error: 'Failed to create staff account',
       details: error.message 
     });
+  }
+});
+
+// Create Admin Account
+router.post('/create-admin', upload.single('profilePhoto'), async (req, res) => {
+  try {
+    console.log('Received create-admin request');
+    const { name, email, phone, password, id } = req.body;
+    console.log('Request body:', { name, email, phone, id });
+
+    // Validate required fields
+    if (!name || !email || !phone || !password || !id) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    // Check if email already exists
+    const existingEmail = await Admin.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+
+    // Check if ID already exists
+    const existingId = await Admin.findOne({ id });
+    if (existingId) {
+      return res.status(400).json({ error: 'Admin ID already exists' });
+    }
+
+    // Create new admin
+    const admin = new Admin({
+      id,
+      name,
+      email,
+      phone,
+      password,
+      profilePhoto: req.file ? `/uploads/staff-photos/${req.file.filename}` : null
+    });
+
+    await admin.save();
+
+    res.status(201).json({
+      message: 'Admin account created successfully',
+      adminId: id
+    });
+  } catch (error) {
+    console.error('Error creating admin:', error);
+    res.status(500).json({ error: 'Failed to create admin account' });
   }
 });
 
