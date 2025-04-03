@@ -498,3 +498,15 @@ button:hover {
   font-size: 1rem;
   color: #555;
 }
+
+.readonly-input {
+    background-color: #2e2e2e !important;
+    color: #888 !important;
+    cursor: not-allowed;
+    border: 1px solid #444 !important;
+}
+
+.readonly-input:focus {
+    outline: none;
+    box-shadow: none;
+}

@@ -254,6 +254,9 @@ const Dashboard = () => {
         formData.append('complaintType', complaintType);
         formData.append('specificInfo', specificInfo);
         formData.append('description', description);
+        formData.append('blockNumber', profile?.blockNumber || '');
+        formData.append('dormNumber', profile?.dormNumber || '');
+        formData.append('userId', profile?.userId || '');
         if (file) {
             formData.append('file', file);
         }
@@ -383,6 +386,33 @@ const Dashboard = () => {
                     <section className="complaint-form">
                         <h2>Complaint Form</h2>
                         <form onSubmit={handleSubmitComplaint}>
+                            <div className="form-group">
+                                <label>User ID:</label>
+                                <input
+                                    type="text"
+                                    value={profile?.userId || ''}
+                                    readOnly
+                                    className="readonly-input"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Block Number:</label>
+                                <input
+                                    type="text"
+                                    value={profile?.blockNumber || ''}
+                                    readOnly
+                                    className="readonly-input"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Dorm Number:</label>
+                                <input
+                                    type="text"
+                                    value={profile?.dormNumber || ''}
+                                    readOnly
+                                    className="readonly-input"
+                                />
+                            </div>
                             <label>
                                 Type of Problem:
                                 <select value={complaintType} onChange={(e) => setComplaintType(e.target.value)} required>

@@ -6,7 +6,9 @@ const complaintSchema = new mongoose.Schema({
   specificInfo: { type: String, required: true, maxlength: 100 },
   description: { type: String, required: true, maxlength: 500 },
   file: { type: String }, // Store path to uploaded file
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true }, // Reference to User
+  userId: { type: String, required: true }, // Store the user's ID directly
+  blockNumber: { type: String, required: true }, // Added block number field
+  dormNumber: { type: String, required: true }, // Added dorm number field
 }, { timestamps: true });
 
 const Complaint = mongoose.model('Complaint', complaintSchema);

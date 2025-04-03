@@ -6,6 +6,7 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+const User = require('../models/User');
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -36,10 +37,10 @@ const upload = multer({
 
 // Create a new complaint
 router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
-  const { complaintType, specificInfo, description } = req.body;
+  const { complaintType, specificInfo, description, blockNumber, dormNumber, userId } = req.body;
   const file = req.file ? req.file.path : null;
 
-  console.log('Received complaint data:', { complaintType, specificInfo, description, file });
+  console.log('Received complaint data:', { complaintType, specificInfo, description, blockNumber, dormNumber, userId, file });
 
   try {
     const newComplaint = new Complaint({
@@ -47,7 +48,9 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
       specificInfo,
       description,
       file,
-      user: req.user.id // Ensure this is set correctly
+      userId, // Store the user ID directly
+      blockNumber,
+      dormNumber
     });
 
     const savedComplaint = await newComplaint.save();
@@ -62,7 +65,7 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 // Get all complaints (for admin or user)
 router.get('/', async (req, res) => {
   try {
-    const complaints = await Complaint.find().populate('user');
+    const complaints = await Complaint.find();
     res.json(complaints);
   } catch (error) {
     console.error('Error retrieving complaints:', error);
