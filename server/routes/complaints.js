@@ -63,8 +63,18 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 });
 
 // Get all complaints (for admin or user)
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
+    // Get userId from query parameters
+    const { userId } = req.query;
+    
+    // If userId is provided, filter complaints for that user
+    if (userId) {
+      const userComplaints = await Complaint.find({ userId });
+      return res.json(userComplaints);
+    }
+    
+    // If no userId provided, return all complaints (for admin)
     const complaints = await Complaint.find();
     res.json(complaints);
   } catch (error) {
