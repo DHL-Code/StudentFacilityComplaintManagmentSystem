@@ -52,6 +52,10 @@ const Dashboard = () => {
     const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
     const [feedbackSubmissionStatus, setFeedbackSubmissionStatus] = useState(null);
 
+    // Add new state for complaints
+    const [complaints, setComplaints] = useState([]);
+    const [loadingComplaints, setLoadingComplaints] = useState(false);
+
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
@@ -350,6 +354,44 @@ const Dashboard = () => {
         setFeedbackRating(selectedRating);
     };
 
+    // Add new function to fetch complaints
+    const fetchComplaints = async () => {
+        try {
+            setLoadingComplaints(true);
+            const token = localStorage.getItem('token');
+            const userId = profile?.userId;
+            
+            if (!userId) {
+                throw new Error('User ID not available');
+            }
+
+            const response = await fetch(`http://localhost:5000/api/complaints?userId=${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch complaints');
+            }
+
+            const data = await response.json();
+            setComplaints(data);
+        } catch (error) {
+            console.error('Error fetching complaints:', error);
+            setError('Failed to load complaints');
+        } finally {
+            setLoadingComplaints(false);
+        }
+    };
+
+    // Add useEffect to fetch complaints when the component mounts and when activeSection changes
+    useEffect(() => {
+        if (activeSection === 'complaintStatus') {
+            fetchComplaints();
+        }
+    }, [activeSection, profile?.userId]);
+
     return (
         <div className="dashboard">
             <div className="sidebar">
@@ -358,6 +400,7 @@ const Dashboard = () => {
                     <li onClick={() => handleNavigation('complaintForm')}>Complaint Form</li>
                     <li onClick={() => handleNavigation('viewProfile')}>View Profile</li>
                     <li onClick={() => handleNavigation('editProfile')}>Edit Profile</li>
+                    <li onClick={() => handleNavigation('complaintStatus')}>Complaint Status</li>
                     <li onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</li>
                 </ul>
             </div>
@@ -371,6 +414,7 @@ const Dashboard = () => {
                         <span onClick={() => handleNavigation('complaintForm')}>Complaint Form</span>
                         <span onClick={() => handleNavigation('viewProfile')}>View Profile</span>
                         <span onClick={() => handleNavigation('editProfile')}>Edit Profile</span>
+                        <span onClick={() => handleNavigation('complaintStatus')}>Complaint Status</span>
                         <span onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</span>
                     </div>
                 </div>
@@ -379,6 +423,7 @@ const Dashboard = () => {
                     <button onClick={() => handleNavigation('complaintForm')}>Complaint Form</button>
                     <button onClick={() => handleNavigation('viewProfile')}>View Profile</button>
                     <button onClick={() => handleNavigation('editProfile')}>Edit Profile</button>
+                    <button onClick={() => handleNavigation('complaintStatus')}>Complaint Status</button>
                     <button onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</button>
                 </div>
 
@@ -750,6 +795,46 @@ const Dashboard = () => {
                             </AnimatePresence>
                         </form>
                     </motion.section>
+                )}
+
+                {activeSection === 'complaintStatus' && (
+                    <section className="complaint-status">
+                        <h2>Complaint Status</h2>
+                        {loadingComplaints ? (
+                            <p>Loading complaints...</p>
+                        ) : complaints.length === 0 ? (
+                            <p>No complaints submitted yet.</p>
+                        ) : (
+                            <div className="complaints-list">
+                                {complaints.map((complaint) => (
+                                    <div key={complaint._id} className="complaint-card">
+                                        <div className="complaint-header">
+                                            <h3>{complaint.complaintType}</h3>
+                                            <span className={`status ${complaint.status?.toLowerCase() || 'pending'}`}>
+                                                {complaint.status || 'Pending'}
+                                            </span>
+                                        </div>
+                                        <div className="complaint-details">
+                                            <p><strong>Specific Issue:</strong> {complaint.specificInfo}</p>
+                                            <p><strong>Description:</strong> {complaint.description}</p>
+                                            <p><strong>Block:</strong> {complaint.blockNumber}</p>
+                                            <p><strong>Dorm:</strong> {complaint.dormNumber}</p>
+                                            <p><strong>Submitted:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                        {complaint.file && (
+                                            <div className="complaint-image">
+                                                <img 
+                                                    src={`http://localhost:5000/${complaint.file}`} 
+                                                    alt="Complaint evidence" 
+                                                    className="complaint-photo"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
                 )}
             </div>
         </div>
