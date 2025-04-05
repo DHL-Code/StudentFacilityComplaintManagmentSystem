@@ -12,7 +12,7 @@ const nodemailer = require('nodemailer');
 const otpGenerator = require('otp-generator');
 const crypto = require('crypto');
 const fs = require('fs');
-const bcrypt = require('bcrypt'); // Import bcrypt
+const bcrypt = require('bcryptjs'); // Import bcrypt
 
 
 // Configure Multer for file uploads
@@ -44,14 +44,28 @@ const storage = multer.diskStorage({
   //Signup
   router.post('/signup', upload.single('profilePhoto'), async (req, res) => {
     try {
+
+        const { userId } = req.body;
+        
+        // Check if user is trying to register as non-student
+        if (userId && userId.charAt(0).toUpperCase() !== 'S') {
+            return res.status(403).json({ 
+                message: 'Only student accounts can self-register' 
+            });
+        }
+
         // Destructure from req.body
-        const { fullName, email, userId, phoneNumber, password, gender, college, department, blockNumber, dormNumber } = req.body;
+        const { fullName, email, phoneNumber, password, gender, college, department, blockNumber, dormNumber } = req.body;
+
+
+        const finalUserId = userId || 'S' + Math.floor(10000 + Math.random() * 90000);
+
 
         // Create new user WITH PLAIN TEXT PASSWORD
         const newUser = new User({
             fullName,
             email,
-            userId,
+            userId: finalUserId,
             phoneNumber,
             password, // Pass the raw password here
             gender,
@@ -73,92 +87,86 @@ const storage = multer.diskStorage({
 });
 
 // Login
+// Enhanced login route
+// In routes/auth.js - REPLACE the existing login route with this:
+
 router.post('/login', async (req, res) => {
     const { userId, password } = req.body;
-    
+    const upperUserId = userId.toUpperCase(); // Normalize case
+    const prefix = upperUserId.charAt(0);
+
     try {
-        console.log('Login attempt for userId:', userId);
-        let user = null;
-        let userType = null;
+      let user = null;
+      let userType = null;
+      
+  
+      // Determine user type and find in appropriate collection
+      switch(prefix) {
+        case 'A': // Admin
+          user = await Admin.findOne({ id: upperUserId });
+          userType = 'admin';
+          break;
+        case 'P': // Proctor
+          user = await Proctor.findOne({ staffId: upperUserId });
+          userType = 'proctor';
+          break;
+        case 'V': // Supervisor
+          user = await Supervisor.findOne({ staffId: upperUserId });
+          userType = 'supervisor';
+          break;
+        case 'D': // Dean
+          user = await Dean.findOne({ staffId: upperUserId });
+          userType = 'dean';
+          break;
+        case 'S': // Student
+          user = await User.findOne({ userId: upperUserId });
+          userType = 'student';
+          break;
+        default:
+          return res.status(400).json({ message: 'Invalid user ID format' });
+      }
+  
+      if (!user) {
+        console.log(`User not found: ${upperUserId}`);
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+  
 
-        // Determine user type from userId prefix
-        const firstLetter = userId.charAt(0).toLowerCase();
-        
-        // Check appropriate collection based on user type
-        switch (firstLetter) {
-            case 's':
-                user = await User.findOne({ userId });
-                userType = 'student';
-                break;
-            case 'p':
-                user = await Proctor.findOne({ staffId: userId });
-                userType = 'proctor';
-                break;
-            case 'd':
-                user = await Dean.findOne({ staffId: userId });
-                userType = 'dean';
-                break;
-            case 'v':
-                user = await Supervisor.findOne({ staffId: userId });
-                userType = 'supervisor';
-                break;
-            case 'a':
-                user = await Admin.findOne({ id: userId });
-                userType = 'admin';
-                break;
-            default:
-                console.log('Invalid user type:', firstLetter);
-                return res.status(401).json({ message: 'Invalid user type' });
-        }
+      console.log(`Comparing password for ${userType} ${user.id}`);
+    console.log(`Stored hash: ${user.password.substring(0, 10)}...`);
 
-        if (!user) {
-            console.log('User not found for userId:', userId);
-            return res.status(401).json({ message: 'User not found' });
-        }
-
-        // Check password based on user type
-        let isPasswordValid = false;
-        try {
-            if (userType === 'student') {
-                isPasswordValid = await user.matchPassword(password);
-            } else {
-                isPasswordValid = await bcrypt.compare(password, user.password);
-            }
-        } catch (error) {
-            console.error('Password comparison error:', error);
-            return res.status(500).json({ message: 'Error verifying password' });
-        }
-
-        if (isPasswordValid) {
-            const token = jwt.sign(
-                { 
-                    id: user._id,
-                    userType: userType,
-                    userId: userId
-                }, 
-                process.env.JWT_SECRET, 
-                { expiresIn: '1h' }
-            );
-
-            console.log('Login successful for user:', userId);
-            res.json({ 
-                token,
-                userType,
-                userId: userType === 'student' ? user.userId : user.staffId || user.id,
-                name: user.name || user.fullName
-            });
-        } else {
-            console.log('Invalid password for user:', userId);
-            res.status(401).json({ message: 'Invalid password' });
-        }
+      // Compare passwords (different method for students)
+       const isMatch = await bcrypt.compare(password, user.password);
+    console.log(`Password match: ${isMatch}`);
+    
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+  
+      // Create JWT token
+      const token = jwt.sign(
+        { 
+          id: user._id,
+          userType,
+          userId: user.id || user.userId || user.staffId
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '8h' }
+      );
+  
+      res.json({
+        token,
+        userType,
+        userId: user.id || user.userId || user.staffId,
+        name: user.name || user.fullName,
+        email: user.email
+      });
+  
     } catch (error) {
-        console.error('Login Error:', error);
-        res.status(500).json({ 
-            message: 'Error logging in', 
-            error: error.message 
-        });
+      console.error('Login error:', error);
+      res.status(500).json({ message: 'Login failed', error: error.message });
     }
-});
+  });
 
 router.get('/profile', authMiddleware, async (req, res) => {
     try {
@@ -234,14 +242,16 @@ router.post('/forgot-password', async (req, res) => {
           return res.status(404).json({ message: 'Email not found.' });
       }
 
-      // Generate OTP
-      const otp = otpGenerator.generate(6, { // You can adjust OTP length and options
-          upperCaseAlphabets: false,
-          specialChars: false,
-      });
+      //Generate 6-character alphanumeric OTP
+      const otp = otpGenerator.generate(6, {
+          digits: true,
+          upperCaseAlphabets: true,
+          lowerCaseAlphabets: false, // We'll convert to uppercase anyway
+          specialChars: false
+      }).toUpperCase(); // Ensure uppercase for consistency
 
-      const otpExpiry = Date.now() + 600000; // OTP expires in 10 minutes (adjust as needed)
-
+      const otpExpiry = Date.now() + 60000; // OTP expires in 1 minute
+      
       user.resetPasswordOTP = otp;
       user.resetPasswordOTPExpires = otpExpiry;
       await user.save();

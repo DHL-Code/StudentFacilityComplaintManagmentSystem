@@ -4,7 +4,21 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  userId: { type: String, required: true, unique: true },
+  userId: { type: String, required: true, unique: true ,
+    set: function(v) {
+      // Ensure the value is a string before calling toUpperCase
+      if (typeof v === 'string' || v instanceof String) {
+        return v.toUpperCase();
+      }
+      return v;
+    },
+    validate: {
+      validator: function(v) {
+        return /^S\d+$/i.test(v); // Case-insensitive validation
+      },
+      message: props => `${props.value} is not a valid student ID!`
+    }
+  },
   phoneNumber: { type: String, required: true },
   password: { type: String, required: true },
   gender: { type: String, enum: ['male', 'female'], required: true },
