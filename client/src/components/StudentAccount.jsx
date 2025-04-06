@@ -360,7 +360,7 @@ const Dashboard = () => {
             setLoadingComplaints(true);
             const token = localStorage.getItem('token');
             const userId = profile?.userId;
-            
+
             if (!userId) {
                 throw new Error('User ID not available');
             }
@@ -431,7 +431,7 @@ const Dashboard = () => {
                     <section className="complaint-form">
                         <h2>Complaint Form</h2>
                         <form onSubmit={handleSubmitComplaint}>
-                            <div className="form-group">
+                            <div className="form-groups">
                                 <label>User ID:</label>
                                 <input
                                     type="text"
@@ -440,7 +440,7 @@ const Dashboard = () => {
                                     className="readonly-input"
                                 />
                             </div>
-                            <div className="form-group">
+                            <div className="form-groups">
                                 <label>Block Number:</label>
                                 <input
                                     type="text"
@@ -449,7 +449,7 @@ const Dashboard = () => {
                                     className="readonly-input"
                                 />
                             </div>
-                            <div className="form-group">
+                            <div className="form-groups">
                                 <label>Dorm Number:</label>
                                 <input
                                     type="text"
@@ -823,9 +823,9 @@ const Dashboard = () => {
                                         </div>
                                         {complaint.file && (
                                             <div className="complaint-image">
-                                                <img 
-                                                    src={`http://localhost:5000/${complaint.file}`} 
-                                                    alt="Complaint evidence" 
+                                                <img
+                                                    src={`http://localhost:5000/${complaint.file}`}
+                                                    alt="Complaint evidence"
                                                     className="complaint-photo"
                                                 />
                                             </div>
