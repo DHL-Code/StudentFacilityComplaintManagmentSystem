@@ -526,17 +526,23 @@ button:hover {
 }
 
 .complaint-card {
-    background-color: #3a3a3a;
+    background: white;
     border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.complaint-card.urgent {
+    border-left: 4px solid #ff4444;
+    background-color: rgba(255, 68, 68, 0.05);
 }
 
 .complaint-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
+    align-items: flex-start;
+    margin-bottom: 15px;
 }
 
 .complaint-header h3 {
@@ -567,7 +573,7 @@ button:hover {
 }
 
 .complaint-details {
-    color: #ccc;
+    color: #333;
 }
 
 .complaint-details p {
@@ -584,8 +590,74 @@ button:hover {
     margin-top: 10px;
 }
 
+.complaint-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-transform: capitalize;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-badge.pending {
+    background-color: #ffd700;
+    color: #000;
+}
+
+.status-badge.verified {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status-badge.dismissed {
+    background-color: #f44336;
+    color: white;
+}
+
+.status-badge.urgent {
+    background-color: #ff9800;
+    color: white;
+}
+
+.status-badge.urgent svg {
+    width: 14px;
+    height: 14px;
+}
+
 /* Add to existing dashboard-nav styles */
 .dashboard-nav button {
     /* ... existing styles ... */
     margin-right: 10px;
+}
+
+.complaint-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
 }

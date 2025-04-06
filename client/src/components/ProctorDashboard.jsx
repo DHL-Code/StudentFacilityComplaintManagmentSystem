@@ -101,7 +101,7 @@ function ProctorDashboard() {
     }
   };
 
-  const handleFlagUrgent = async (complaintId) => {
+  const handleFlagUrgent = async (complaintId, isUrgent) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}/flag`, {
@@ -109,27 +109,30 @@ function ProctorDashboard() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ isUrgent: !isUrgent })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to flag complaint as urgent');
+        throw new Error('Failed to update flag status');
       }
+
+      const updatedComplaint = await response.json();
 
       // Update the local state to reflect the change
       setNotifications(prevNotifications =>
         prevNotifications.map(notification =>
           notification._id === complaintId
-            ? { ...notification, isUrgent: true }
+            ? { ...notification, isUrgent: !isUrgent }
             : notification
         )
       );
 
       // Show success message
-      alert('Complaint flagged as urgent successfully');
+      alert(`Complaint ${!isUrgent ? 'flagged as urgent' : 'unflagged'} successfully`);
     } catch (error) {
-      console.error('Error flagging complaint as urgent:', error);
-      alert('Failed to flag complaint as urgent. Please try again.');
+      console.error('Error updating flag status:', error);
+      alert('Failed to update flag status. Please try again.');
     }
   };
 
@@ -140,6 +143,38 @@ function ProctorDashboard() {
 
   const handleViewFeedback = (complaint) => {
     setSelectedComplaint(complaint);
+  };
+
+  const handleDeleteComplaint = async (complaintId) => {
+    if (!window.confirm('Are you sure you want to delete this complaint?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete complaint');
+      }
+
+      // Remove the deleted complaint from the state
+      setNotifications(prevNotifications => 
+        prevNotifications.filter(notification => notification._id !== complaintId)
+      );
+
+      alert('Complaint deleted successfully');
+    } catch (error) {
+      console.error('Error deleting complaint:', error);
+      alert('Failed to delete complaint. Please try again.');
+    }
   };
 
   const fetchProctorData = async () => {
@@ -160,8 +195,7 @@ function ProctorDashboard() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        signal: abortController?.signal
+        }
       });
 
       if (!response.ok) {
@@ -205,10 +239,6 @@ function ProctorDashboard() {
 
       await fetchComplaints(proctorInfo.block);
     } catch (err) {
-      if (err.name === 'AbortError') {
-        console.log('Fetch aborted');
-        return;
-      }
       console.error('Error fetching proctor data:', err);
       setError(err.message || 'Failed to fetch proctor data');
     } finally {
@@ -302,9 +332,19 @@ function ProctorDashboard() {
                   <div key={notification._id} className={`notification-item ${notification.isUrgent ? 'urgent' : ''}`}>
                     <div className="notification-header">
                       <h3>{notification.title}</h3>
-                      <span className="notification-time">
-                        {new Date(notification.createdAt).toLocaleString()}
-                      </span>
+                      <div className="notification-status">
+                        <span className={`status-badge ${notification.status || 'pending'}`}>
+                          {notification.status || 'Pending'}
+                        </span>
+                        {notification.isUrgent && (
+                          <span className="status-badge urgent">
+                            <FontAwesomeIcon icon={faFlag} /> Urgent
+                          </span>
+                        )}
+                        <span className="notification-time">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                     <div className="notification-details">
                       <p><strong>Student ID:</strong> {notification.userId}</p>
@@ -321,16 +361,37 @@ function ProctorDashboard() {
                       )}
                     </div>
                     <div className="notification-actions">
-                      <button className="verify-btn" onClick={() => handleVerify(notification._id)}>Verify</button>
-                      <button className="dismiss-btn" onClick={() => handleDismiss(notification._id)}>Dismiss</button>
-                      {notification.isUrgent && (
-                        <button className="flag-btn" onClick={() => handleFlagUrgent(notification._id)}>
-                          <FontAwesomeIcon icon={faFlag} /> Flag Urgent
-                        </button>
-                      )}
+                      <button 
+                        className="verify-btn" 
+                        onClick={() => handleVerify(notification._id)}
+                        disabled={notification.status === 'verified'}
+                      >
+                        Verify
+                      </button>
+                      <button 
+                        className="dismiss-btn" 
+                        onClick={() => handleDismiss(notification._id)}
+                        disabled={notification.status === 'dismissed'}
+                      >
+                        Dismiss
+                      </button>
+                      <button 
+                        className={`flag-btn ${notification.isUrgent ? 'flagged' : ''}`}
+                        onClick={() => handleFlagUrgent(notification._id, notification.isUrgent)}
+                      >
+                        <FontAwesomeIcon icon={faFlag} /> {notification.isUrgent ? 'Unflag' : 'Flag Urgent'}
+                      </button>
                       <button className="feedback-btn" onClick={() => handleViewFeedback(notification)}>
                         <FontAwesomeIcon icon={faCommentDots} /> View Feedback
                       </button>
+                      {(notification.status === 'verified' || notification.status === 'dismissed') && (
+                        <button 
+                          className="delete-btn"
+                          onClick={() => handleDeleteComplaint(notification._id)}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

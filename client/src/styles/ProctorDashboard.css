@@ -512,21 +512,52 @@
 .notification-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 10px;
 }
 
-.notification-time {
+.notification-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
   font-size: 0.9em;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.pending {
+  background-color: #ffd700;
+  color: #000;
+}
+
+.status-badge.verified {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.status-badge.dismissed {
+  background-color: #f44336;
+  color: white;
+}
+
+.notification-time {
+  font-size: 0.8em;
   color: #666;
 }
 
 .notification-details {
-  margin: 15px 0;
+  margin-top: 10px;
+  color: #fff; /* Changed from #333 to white */
 }
 
 .notification-details p {
-  margin: 8px 0;
+  margin: 5px 0;
 }
 
 .complaint-photo {
@@ -551,6 +582,7 @@
 
 .notification-item.urgent {
   border-left: 4px solid #ff4444;
+  background-color: rgba(255, 68, 68, 0.05);
 }
 
 .notification-actions {
@@ -581,6 +613,23 @@
 .flag-btn {
   background-color: #ff9800;
   color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.flag-btn:hover {
+  background-color: #f57c00;
+}
+
+.flag-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .feedback-btn {
@@ -624,4 +673,47 @@
 
 .complaint-details button:hover {
   background-color: #1976D2;
+}
+
+.notification-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.flag-btn.flagged {
+  background-color: #ff5722;
+  cursor: not-allowed;
+}
+
+.flag-btn.flagged:hover {
+  background-color: #ff5722;
+}
+
+.status-badge.urgent {
+  background-color: #ff5722;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-badge.urgent svg {
+  width: 14px;
+  height: 14px;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  margin-left: 10px;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
 }

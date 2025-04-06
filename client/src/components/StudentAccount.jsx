@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Student.css';
 import { Star, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFlag } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
     const [activeSection, setActiveSection] = useState('complaintForm');
@@ -391,6 +393,40 @@ const Dashboard = () => {
             fetchComplaints();
         }
     }, [activeSection, profile?.userId]);
+
+    // Add this function to handle complaint deletion
+    const handleDeleteComplaint = async (complaintId) => {
+        if (!window.confirm('Are you sure you want to delete this complaint?')) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Delete error response:', errorText);
+                throw new Error('Failed to delete complaint');
+            }
+
+            // Remove the deleted complaint from the state
+            setComplaints(prevComplaints => 
+                prevComplaints.filter(complaint => complaint._id !== complaintId)
+            );
+
+            alert('Complaint deleted successfully');
+        } catch (error) {
+            console.error('Error deleting complaint:', error);
+            alert('Failed to delete complaint. Please try again.');
+        }
+    };
 
     return (
         <div className="dashboard">
@@ -807,12 +843,19 @@ const Dashboard = () => {
                         ) : (
                             <div className="complaints-list">
                                 {complaints.map((complaint) => (
-                                    <div key={complaint._id} className="complaint-card">
+                                    <div key={complaint._id} className={`complaint-card ${complaint.isUrgent ? 'urgent' : ''}`}>
                                         <div className="complaint-header">
                                             <h3>{complaint.complaintType}</h3>
-                                            <span className={`status ${complaint.status?.toLowerCase() || 'pending'}`}>
-                                                {complaint.status || 'Pending'}
-                                            </span>
+                                            <div className="complaint-status">
+                                                <span className={`status-badge ${complaint.status?.toLowerCase() || 'pending'}`}>
+                                                    {complaint.status || 'Pending'}
+                                                </span>
+                                                {complaint.isUrgent && (
+                                                    <span className="status-badge urgent">
+                                                        <FontAwesomeIcon icon={faFlag} /> Urgent
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="complaint-details">
                                             <p><strong>Specific Issue:</strong> {complaint.specificInfo}</p>
@@ -830,6 +873,14 @@ const Dashboard = () => {
                                                 />
                                             </div>
                                         )}
+                                        <div className="complaint-actions">
+                                            <button 
+                                                className="delete-btn"
+                                                onClick={() => handleDeleteComplaint(complaint._id)}
+                                            >
+                                                Delete Complaint
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

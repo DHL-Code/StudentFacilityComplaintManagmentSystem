@@ -130,9 +130,10 @@ router.put('/:id/dismiss', authMiddleware, async (req, res) => {
 // Flag complaint as urgent
 router.put('/:id/flag', authMiddleware, async (req, res) => {
   try {
+    const { isUrgent } = req.body;
     const complaint = await Complaint.findByIdAndUpdate(
       req.params.id,
-      { isUrgent: true },
+      { isUrgent },
       { new: true }
     );
     
@@ -144,6 +145,33 @@ router.put('/:id/flag', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error flagging complaint:', error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete a complaint
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    // Delete the associated file if it exists
+    if (complaint.file) {
+      const filePath = path.join(__dirname, '..', complaint.file);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Delete the complaint from the database
+    await Complaint.findByIdAndDelete(req.params.id);
+    
+    res.status(200).json({ message: 'Complaint deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting complaint:', error);
+    res.status(500).json({ message: 'Error deleting complaint' });
   }
 });
 
