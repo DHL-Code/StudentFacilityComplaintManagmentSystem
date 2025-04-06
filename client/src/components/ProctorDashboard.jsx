@@ -37,102 +37,88 @@ function ProctorDashboard() {
     setIsNavActive(!isNavActive);
   };
 
-  const handleVerify = async (complaintId) => {
+  const handleVerify = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}/verify`, {
+      const response = await fetch(`http://localhost:5000/api/complaints/${id}/verify`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        signal: abortController?.signal
       });
 
       if (!response.ok) {
         throw new Error('Failed to verify complaint');
       }
 
-      // Update the local state to reflect the change
-      setNotifications(prevNotifications =>
-        prevNotifications.map(notification =>
-          notification._id === complaintId
-            ? { ...notification, status: 'verified' }
-            : notification
-        )
-      );
-
-      // Show success message
-      alert('Complaint verified successfully');
+      setNotifications(notifications.map(notification => 
+        notification._id === id ? { ...notification, status: 'verified' } : notification
+      ));
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
       console.error('Error verifying complaint:', error);
-      alert('Failed to verify complaint. Please try again.');
+      setError('Failed to verify complaint');
     }
   };
 
-  const handleDismiss = async (complaintId) => {
+  const handleDismiss = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}/dismiss`, {
+      const response = await fetch(`http://localhost:5000/api/complaints/${id}/dismiss`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        signal: abortController?.signal
       });
 
       if (!response.ok) {
         throw new Error('Failed to dismiss complaint');
       }
 
-      // Update the local state to reflect the change
-      setNotifications(prevNotifications =>
-        prevNotifications.map(notification =>
-          notification._id === complaintId
-            ? { ...notification, status: 'dismissed' }
-            : notification
-        )
-      );
-
-      // Show success message
-      alert('Complaint dismissed successfully');
+      setNotifications(notifications.filter(notification => notification._id !== id));
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
       console.error('Error dismissing complaint:', error);
-      alert('Failed to dismiss complaint. Please try again.');
+      setError('Failed to dismiss complaint');
     }
   };
 
-  const handleFlagUrgent = async (complaintId, isUrgent) => {
+  const handleFlagUrgent = async (id, isUrgent) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}/flag`, {
+      const response = await fetch(`http://localhost:5000/api/complaints/${id}/flag`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ isUrgent: !isUrgent })
+        signal: abortController?.signal
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update flag status');
+        throw new Error('Failed to flag complaint as urgent');
       }
 
-      const updatedComplaint = await response.json();
-
-      // Update the local state to reflect the change
-      setNotifications(prevNotifications =>
-        prevNotifications.map(notification =>
-          notification._id === complaintId
-            ? { ...notification, isUrgent: !isUrgent }
-            : notification
-        )
-      );
-
-      // Show success message
-      alert(`Complaint ${!isUrgent ? 'flagged as urgent' : 'unflagged'} successfully`);
+      setNotifications(notifications.map(notification => 
+        notification._id === id ? { ...notification, isUrgent: !isUrgent } : notification
+      ));
     } catch (error) {
-      console.error('Error updating flag status:', error);
-      alert('Failed to update flag status. Please try again.');
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
+      console.error('Error flagging complaint:', error);
+      setError('Failed to flag complaint as urgent');
     }
   };
 
@@ -143,38 +129,6 @@ function ProctorDashboard() {
 
   const handleViewFeedback = (complaint) => {
     setSelectedComplaint(complaint);
-  };
-
-  const handleDeleteComplaint = async (complaintId) => {
-    if (!window.confirm('Are you sure you want to delete this complaint?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete complaint');
-      }
-
-      // Remove the deleted complaint from the state
-      setNotifications(prevNotifications => 
-        prevNotifications.filter(notification => notification._id !== complaintId)
-      );
-
-      alert('Complaint deleted successfully');
-    } catch (error) {
-      console.error('Error deleting complaint:', error);
-      alert('Failed to delete complaint. Please try again.');
-    }
   };
 
   const fetchProctorData = async () => {
@@ -195,7 +149,8 @@ function ProctorDashboard() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        signal: abortController?.signal
       });
 
       if (!response.ok) {
@@ -239,6 +194,10 @@ function ProctorDashboard() {
 
       await fetchComplaints(proctorInfo.block);
     } catch (err) {
+      if (err.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
       console.error('Error fetching proctor data:', err);
       setError(err.message || 'Failed to fetch proctor data');
     } finally {
