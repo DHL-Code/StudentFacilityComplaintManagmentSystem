@@ -158,34 +158,37 @@ function ProctorDashboard() {
         <div className="content">
           {activeSection === 'notifications' && (
             <div className="notifications-page">
-              <h2>Notifications</h2>
-              {notifications.map((notification) => (
-                <div key={notification.id} className={`notification-item ${notification.isUrgent ? 'urgent' : ''}`}>
-                  <h3>{notification.title}</h3>
-                  <p>{notification.description}</p>
-                  <div className="notification-actions">
-                    <button className="verify-btn" onClick={() => handleVerify(notification.id)}>Verify</button>
-                    <button className="dismiss-btn" onClick={() => handleDismiss(notification.id)}>Dismiss</button>
-                    {notification.isUrgent && (
-                      <button className="flag-btn" onClick={() => handleFlagUrgent(notification.id)}>
-                        <FontAwesomeIcon icon={faFlag} /> Flag Urgent
+              <h1>Block {proctorData?.block || 'Not Assigned'}</h1>
+              <div className="notifications-container">
+                <h2>Notifications</h2>
+                {notifications.map((notification) => (
+                  <div key={notification.id} className={`notification-item ${notification.isUrgent ? 'urgent' : ''}`}>
+                    <h3>{notification.title}</h3>
+                    <p>{notification.description}</p>
+                    <div className="notification-actions">
+                      <button className="verify-btn" onClick={() => handleVerify(notification.id)}>Verify</button>
+                      <button className="dismiss-btn" onClick={() => handleDismiss(notification.id)}>Dismiss</button>
+                      {notification.isUrgent && (
+                        <button className="flag-btn" onClick={() => handleFlagUrgent(notification.id)}>
+                          <FontAwesomeIcon icon={faFlag} /> Flag Urgent
+                        </button>
+                      )}
+                      <button className="feedback-btn" onClick={() => handleViewFeedback(notification)}>
+                        <FontAwesomeIcon icon={faCommentDots} /> View Feedback
                       </button>
-                    )}
-                    <button className="feedback-btn" onClick={() => handleViewFeedback(notification)}>
-                      <FontAwesomeIcon icon={faCommentDots} /> View Feedback
-                    </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {selectedComplaint && (
-                <div className="complaint-details">
-                  <h2>Complaint Details</h2>
-                  <h3>{selectedComplaint.title}</h3>
-                  <p>{selectedComplaint.description}</p>
-                  <p><strong>Feedback:</strong> {selectedComplaint.feedback}</p>
-                  <button onClick={() => setSelectedComplaint(null)}>Close</button>
-                </div>
-              )}
+                ))}
+                {selectedComplaint && (
+                  <div className="complaint-details">
+                    <h2>Complaint Details</h2>
+                    <h3>{selectedComplaint.title}</h3>
+                    <p>{selectedComplaint.description}</p>
+                    <p><strong>Feedback:</strong> {selectedComplaint.feedback}</p>
+                    <button onClick={() => setSelectedComplaint(null)}>Close</button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
