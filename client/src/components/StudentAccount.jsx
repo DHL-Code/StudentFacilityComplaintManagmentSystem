@@ -57,6 +57,7 @@ const Dashboard = () => {
     // Add new state for complaints
     const [complaints, setComplaints] = useState([]);
     const [loadingComplaints, setLoadingComplaints] = useState(false);
+    const [statusNotification, setStatusNotification] = useState(null);
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -379,6 +380,13 @@ const Dashboard = () => {
 
             const data = await response.json();
             setComplaints(data);
+
+            // Check for status changes and show notifications
+            data.forEach(complaint => {
+                if (complaint.status === 'verified' || complaint.status === 'dismissed' || complaint.isUrgent) {
+                    handleStatusNotification(complaint);
+                }
+            });
         } catch (error) {
             console.error('Error fetching complaints:', error);
             setError('Failed to load complaints');
@@ -426,6 +434,25 @@ const Dashboard = () => {
             console.error('Error deleting complaint:', error);
             alert('Failed to delete complaint. Please try again.');
         }
+    };
+
+    // Add this function to handle status notifications
+    const handleStatusNotification = (complaint) => {
+        let message = '';
+        if (complaint.status === 'verified') {
+            message = 'Your complaint has been verified by the proctor.';
+        } else if (complaint.status === 'dismissed') {
+            message = 'Your complaint has been dismissed by the proctor.';
+        }
+        if (complaint.isUrgent) {
+            message += ' This complaint has been flagged as urgent.';
+        }
+        setStatusNotification({ message, complaintId: complaint._id });
+    };
+
+    // Add this function to close the notification
+    const closeStatusNotification = () => {
+        setStatusNotification(null);
     };
 
     return (
@@ -888,6 +915,13 @@ const Dashboard = () => {
                     </section>
                 )}
             </div>
+
+            {statusNotification && (
+                <div className="status-notification">
+                    <p>{statusNotification.message}</p>
+                    <button onClick={closeStatusNotification}>OK</button>
+                </div>
+            )}
         </div>
     );
 };
