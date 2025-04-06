@@ -99,15 +99,17 @@ const Signup = () => {
                 }
                 break;
             case "email":
-    if (!value) {
-        errorMessage = "Email is required";
-    } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(value)) { // Updated regex for @gmail.com validation
-        errorMessage = "Email must be in the format: example@gmail.com";
-    }
-    break;
+                if (!value) {
+                    errorMessage = "Email is required";
+                } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(value)) { // Updated regex for @gmail.com validation
+                    errorMessage = "Email must be in the format: example@gmail.com";
+                }
+                break;
             case "userId":
                 if (!value) {
                     errorMessage = "User ID is required";
+                } else if (/^[pvda]/i.test(value)) {
+                    errorMessage = "User ID cannot start with P, V, D, or A";
                 }
                 break;
             case "department":
@@ -128,30 +130,30 @@ const Signup = () => {
                 }
                 break;
             // Validation logic in validateField function
-case "password":
-    const passwordErrors = [];
-    if (!value) {
-        passwordErrors.push("Password is required.");
-    }
-    if (value.length < 8) {
-        passwordErrors.push("Password should be at least 8 characters long.");
-    }
-    if (!/[A-Z]/.test(value)) {
-        passwordErrors.push("Password should contain at least one uppercase letter.");
-    }
-    if (!/[a-z]/.test(value)) {
-        passwordErrors.push("Password should contain at least one lowercase letter.");
-    }
-    if (!/[0-9]/.test(value)) {
-        passwordErrors.push("Password should contain at least one number.");
-    }
-    if (!/[!@#$%^&*]/.test(value)) {
-        passwordErrors.push("Password should contain at least one special character.");
-    }
-    if (passwordErrors.length > 0) {
-        errorMessage = passwordErrors.join(" "); // Join all errors into one message
-    }
-    break;
+            case "password":
+                const passwordErrors = [];
+                if (!value) {
+                    passwordErrors.push("Password is required.");
+                }
+                if (value.length < 8) {
+                    passwordErrors.push("Password should be at least 8 characters long.");
+                }
+                if (!/[A-Z]/.test(value)) {
+                    passwordErrors.push("Password should contain at least one uppercase letter.");
+                }
+                if (!/[a-z]/.test(value)) {
+                    passwordErrors.push("Password should contain at least one lowercase letter.");
+                }
+                if (!/[0-9]/.test(value)) {
+                    passwordErrors.push("Password should contain at least one number.");
+                }
+                if (!/[!@#$%^&*]/.test(value)) {
+                    passwordErrors.push("Password should contain at least one special character.");
+                }
+                if (passwordErrors.length > 0) {
+                    errorMessage = passwordErrors.join(" "); // Join all errors into one message
+                }
+                break;
 
             case "confirmPassword":
                 if (!value) {
@@ -166,19 +168,19 @@ case "password":
                 }
                 break;
             case "blockNumber":
-    if (!value) {
-        errorMessage = "Block Number is required";
-    } else if (!/^\d+$/.test(value)) { // Check for integer
-        errorMessage = "Block Number must be an integer.";
-    }
-    break;
-case "dormNumber":
-    if (!value) {
-        errorMessage = "Dorm Number is required";
-    } else if (!/^\d+$/.test(value)) { // Check for integer
-        errorMessage = "Dorm Number must be an integer.";
-    }
-    break;
+                if (!value) {
+                    errorMessage = "Block Number is required";
+                } else if (!/^\d+$/.test(value)) { // Check for integer
+                    errorMessage = "Block Number must be an integer.";
+                }
+                break;
+            case "dormNumber":
+                if (!value) {
+                    errorMessage = "Dorm Number is required";
+                } else if (!/^\d+$/.test(value)) { // Check for integer
+                    errorMessage = "Dorm Number must be an integer.";
+                }
+                break;
             default:
                 break;
         }
@@ -323,24 +325,24 @@ case "dormNumber":
                     </div>
 
                     <div className="input-groups">
-    <label htmlFor="email">
-        <Mail className="mr-2" />
-        Email
-    </label>
-    <input
-        type="email"
-        id="email"
-        placeholder="Enter your email address"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)} // Set email value
-        onBlur={(e) => {
-            handleBlur(e);
-            validateField("email", e.target.value); // Validate on blur
-        }}
-        className={validationErrors.email ? "error-input" : ""}
-    />
-    {validationErrors.email && <span className="error">{validationErrors.email}</span>}
-</div>
+                        <label htmlFor="email">
+                            <Mail className="mr-2" />
+                            Email
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="Enter your email address"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)} // Set email value
+                            onBlur={(e) => {
+                                handleBlur(e);
+                                validateField("email", e.target.value); // Validate on blur
+                            }}
+                            className={validationErrors.email ? "error-input" : ""}
+                        />
+                        {validationErrors.email && <span className="error">{validationErrors.email}</span>}
+                    </div>
 
                     <div className="input-groups">
                         <label htmlFor="userId">
@@ -481,19 +483,19 @@ case "dormNumber":
                             <Home className="mr-2" />
                             Block Number
                         </label>
-                       <input
-    type="text"
-    id="blockNumber"
-    name="blockNumber"
-    placeholder="Enter your block number"
-    value={blockNumber}
-    onChange={(e) => setBlockNumber(e.target.value)}
-    onBlur={(e) => {
-        handleBlur(e);
-        validateField("blockNumber", e.target.value); // Validate on blur
-    }}
-    className={validationErrors.blockNumber ? "error-input" : ""}
-/>
+                        <input
+                            type="text"
+                            id="blockNumber"
+                            name="blockNumber"
+                            placeholder="Enter your block number"
+                            value={blockNumber}
+                            onChange={(e) => setBlockNumber(e.target.value)}
+                            onBlur={(e) => {
+                                handleBlur(e);
+                                validateField("blockNumber", e.target.value); // Validate on blur
+                            }}
+                            className={validationErrors.blockNumber ? "error-input" : ""}
+                        />
                         {validationErrors.blockNumber && <span className="error">{validationErrors.blockNumber}</span>}
                     </div>
 
@@ -502,19 +504,19 @@ case "dormNumber":
                             <Home className="mr-2" />
                             Dorm Number
                         </label>
-                       <input
-    type="text"
-    id="dormNumber"
-    name="dormNumber"
-    placeholder="Enter your dorm number"
-    value={dormNumber}
-    onChange={(e) => setDormNumber(e.target.value)}
-    onBlur={(e) => {
-        handleBlur(e);
-        validateField("dormNumber", e.target.value); // Validate on blur
-    }}
-    className={validationErrors.dormNumber ? "error-input" : ""}
-/>
+                        <input
+                            type="text"
+                            id="dormNumber"
+                            name="dormNumber"
+                            placeholder="Enter your dorm number"
+                            value={dormNumber}
+                            onChange={(e) => setDormNumber(e.target.value)}
+                            onBlur={(e) => {
+                                handleBlur(e);
+                                validateField("dormNumber", e.target.value); // Validate on blur
+                            }}
+                            className={validationErrors.dormNumber ? "error-input" : ""}
+                        />
                         {validationErrors.dormNumber && <span className="error">{validationErrors.dormNumber}</span>}
                     </div>
 
@@ -524,16 +526,16 @@ case "dormNumber":
                             Password
                         </label>
                         <input
-    type="password"
-    id="password"
-    name="password"
-    placeholder="Enter your password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    onBlur={handleBlur}
-    className={validationErrors.password ? "error-input" : ""}
-/>
-{validationErrors.password && <span className="error">{validationErrors.password}</span>}
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onBlur={handleBlur}
+                            className={validationErrors.password ? "error-input" : ""}
+                        />
+                        {validationErrors.password && <span className="error">{validationErrors.password}</span>}
                     </div>
 
                     <div className="input-groups">

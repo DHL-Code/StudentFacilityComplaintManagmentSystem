@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFlag, faUserEdit, faUpload, faCommentDots } from '@fortawesome/free-solid-svg-icons';
+import { faFlag, faCommentDots } from '@fortawesome/free-solid-svg-icons';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import '../styles/ProctorDashboard.css';
 
@@ -14,18 +14,11 @@ function ProctorDashboard() {
   ]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [report, setReport] = useState('');
-  const [proctorProfile, setProctorProfile] = useState({
-    proctorId: 'P12345',
-    gender: 'Male',
-    email: 'john.doe@example.com',
-    phone: '123-456-7890',
-    password: '',
-    newPassword: '',
-    confirmPassword: '',
-    profilePicture: null,
-  });
-  const [passwordError, setPasswordError] = useState('');
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [proctorId, setProctorId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [proctorData, setProctorData] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
 
   const handleNavigation = (section) => {
     setActiveSection(section);
@@ -57,34 +50,78 @@ function ProctorDashboard() {
     setSelectedComplaint(complaint);
   };
 
-  const handleProfileEdit = () => {
-    setIsEditingProfile(true);
-  };
-
-  const handleProfileSave = () => {
-    if (proctorProfile.newPassword) {
-      if (proctorProfile.newPassword !== proctorProfile.confirmPassword) {
-        setPasswordError('New password and confirm password do not match.');
-        return;
+  const fetchProctorData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found. Please log in.');
       }
-      if (proctorProfile.password !== 'currentPassword') {
-        setPasswordError('Incorrect current password.');
-        return;
+
+      const userData = JSON.parse(localStorage.getItem('user'));
+      if (!userData || !userData.userId) {
+        throw new Error('No user data found. Please log in again.');
       }
+
+      const response = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || `Failed to fetch proctor data. Status: ${response.status}`;
+        } catch (e) {
+          errorMessage = `Failed to fetch proctor data. Status: ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('Fetched proctor data:', data);
+      
+      if (!data) {
+        throw new Error('No data received from server');
+      }
+
+      // Process profile photo
+      let profilePhotoUrl = null;
+      if (data.profilePhoto) {
+        // Extract just the filename from the full path
+        const filename = data.profilePhoto.split('\\').pop();
+        profilePhotoUrl = `http://localhost:5000/uploads/staff-photos/${filename}`;
+        console.log('Profile photo URL:', profilePhotoUrl);
+      }
+
+      const proctorInfo = {
+        name: data.name || 'Not available',
+        staffId: data.staffId || 'Not available',
+        email: data.email || 'Not available',
+        role: data.role || 'Not available',
+        phone: data.phone || 'Not available',
+        profilePhoto: profilePhotoUrl,
+        block: data.block || 'Not available',
+        createdAt: data.createdAt || new Date().toISOString()
+      };
+      
+      console.log('Processed proctor data:', proctorInfo);
+      setProctorData(proctorInfo);
+    } catch (err) {
+      console.error('Error fetching proctor data:', err);
+      setError(err.message || 'Failed to fetch proctor data');
+    } finally {
+      setLoading(false);
     }
-    setIsEditingProfile(false);
-    setPasswordError('');
   };
 
-  const handleProfileChange = (e) => {
-    setProctorProfile({ ...proctorProfile, [e.target.name]: e.target.value });
-  };
-
-  const handleProfilePictureChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setProctorProfile({ ...proctorProfile, profilePicture: URL.createObjectURL(e.target.files[0]) });
-    }
-  };
+  useEffect(() => {
+    fetchProctorData();
+  }, []);
 
   return (
     <div className="proctor-dashboard">
@@ -151,66 +188,80 @@ function ProctorDashboard() {
               )}
             </div>
           )}
-        </div>
-
 
         {activeSection === 'profile' && (
           <div className="profile-panel">
             <h2>Proctor Profile</h2>
-            {isEditingProfile ? (
-              <div className="profile-form">
-                <div className="form-group">
-                  <label htmlFor="proctorId">Proctor ID</label>
-                  <input type="text" name="proctorId" id="proctorId" value={proctorProfile.proctorId} onChange={handleProfileChange} />
+            {loading ? (
+              <p>Loading profile data...</p>
+            ) : error ? (
+              <p className="error-message">{error}</p>
+            ) : proctorData ? (
+              <div className="profile-container">
+                <div className="profile-header">
+                  <div className="photo-upload">
+                    <div className="profile-preview">
+                      {proctorData.profilePhoto ? (
+                        <img 
+                          src={proctorData.profilePhoto} 
+                          alt="Profile" 
+                          onError={(e) => {
+                            console.log('Error loading profile photo');
+                            e.target.style.display = 'none';
+                            const placeholder = e.target.parentElement.querySelector('.upload-placeholder');
+                            if (placeholder) {
+                              placeholder.style.display = 'flex';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className="upload-placeholder" style={{ display: proctorData.profilePhoto ? 'none' : 'flex' }}>
+                        <span>+</span>
+                        <p>No Photo</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="profile-info">
+                    <h3 className="full-name">{proctorData.name}</h3>
+                    <p className="user-id">ID: {proctorData.staffId}</p>
+                    <p className="role">{proctorData.role}</p>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="gender">Gender</label>
-                  <input type="text" name="gender" id="gender" value={proctorProfile.gender} onChange={handleProfileChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="email">Email</label>
-                  <input type="email" name="email" id="email" value={proctorProfile.email} onChange={handleProfileChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="phone">Phone</label>
-                  <input type="tel" name="phone" id="phone" value={proctorProfile.phone} onChange={handleProfileChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="password">Current Password</label>
-                  <input type="password" name="password" id="password" onChange={handleProfileChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="newPassword">New Password</label>
-                  <input type="password" name="newPassword" id="newPassword" onChange={handleProfileChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="confirmPassword">Confirm New Password</label>
-                  <input type="password" name="confirmPassword" id="confirmPassword" onChange={handleProfileChange} />
-                </div>
-                {passwordError && <p className="error-message">{passwordError}</p>}
-                <div className="form-group">
-                  <label htmlFor="profilePictureUpload" className="profile-picture-upload">
-                    <FontAwesomeIcon icon={faUpload} /> Upload Profile Picture
-                  </label>
-                  <input id="profilePictureUpload" type="file" onChange={handleProfilePictureChange} style={{ display: 'none' }} />
-                  {proctorProfile.profilePicture && <img src={proctorProfile.profilePicture} alt="Profile" className="profile-preview" />}
-                </div>
-                <div className="form-actions">
-                  <button onClick={handleProfileSave}>Save</button>
-                  <button onClick={() => setIsEditingProfile(false)}>Cancel</button>
+                
+                <div className="profile-details">
+                  <div className="detail-section">
+                    <h4>Contact Information</h4>
+                    <div className="detail-item">
+                      <span className="detail-label">Email:</span>
+                      <span className="detail-value">{proctorData.email}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Phone Number:</span>
+                      <span className="detail-value">{proctorData.phone}</span>
+                    </div>
+                  </div>
+
+                  <div className="detail-section">
+                    <h4>Assignment Information</h4>
+                    <div className="detail-item">
+                      <span className="detail-label">Block:</span>
+                      <span className="detail-value">{proctorData.block}</span>
+                    </div>
+                  </div>
+
+                  <div className="detail-section">
+                    <h4>Account Information</h4>
+                    <div className="detail-item">
+                      <span className="detail-label">Account Created:</span>
+                      <span className="detail-value">
+                        {new Date(proctorData.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="profile-details">
-                {proctorProfile.profilePicture && <img src={proctorProfile.profilePicture} alt="Profile" className="profile-preview" />}
-                <p><strong>Proctor ID:</strong> {proctorProfile.proctorId}</p>
-                <p><strong>Gender:</strong> {proctorProfile.gender}</p>
-                <p><strong>Email:</strong> {proctorProfile.email}</p>
-                <p><strong>Phone:</strong> {proctorProfile.phone}</p>
-                <button className="edit-profile-btn" onClick={() => setIsEditingProfile(true)}>
-                  <FontAwesomeIcon icon={faUserEdit} /> Edit Profile
-                </button>
-              </div>
+              <p>No profile data available</p>
             )}
           </div>
         )}
@@ -244,6 +295,7 @@ function ProctorDashboard() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

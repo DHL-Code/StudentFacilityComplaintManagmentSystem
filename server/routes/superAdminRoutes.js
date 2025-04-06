@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { Proctor, Supervisor, Dean } = require('../models/Staff.js');
 const Admin = require('../models/Admin.js');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -48,30 +48,34 @@ async function generateUniqueId(role) {
   const prefixMap = {
     proctor: 'P',
     supervisor: 'V',
-    dean: 'D'
+    dean: 'D',
+    admin: 'A'
   };
+  
   const prefix = prefixMap[role];
   let lastId = 0;
 
-  // Find the last ID in the appropriate collection
-  switch (role) {
-    case 'proctor':
-      const lastProctor = await Proctor.findOne().sort({ staffId: -1 });
-      lastId = lastProctor ? parseInt(lastProctor.staffId.slice(1)) : 0;
-      break;
-    case 'supervisor':
-      const lastSupervisor = await Supervisor.findOne().sort({ staffId: -1 });
-      lastId = lastSupervisor ? parseInt(lastSupervisor.staffId.slice(1)) : 0;
-      break;
-    case 'dean':
-      const lastDean = await Dean.findOne().sort({ staffId: -1 });
-      lastId = lastDean ? parseInt(lastDean.staffId.slice(1)) : 0;
-      break;
+  // Find the highest existing ID
+  let Model;
+  switch(role) {
+    case 'proctor': Model = Proctor; break;
+    case 'supervisor': Model = Supervisor; break;
+    case 'dean': Model = Dean; break;
+    case 'admin': Model = Admin; break;
   }
 
-  return `${prefix}${String(lastId + 1).padStart(3, '0')}`;
-}
+  const lastUser = await Model.findOne().sort({ 
+    [role === 'admin' ? 'id' : 'staffId']: -1 
+  });
+  
+  if (lastUser) {
+    const idField = role === 'admin' ? 'id' : 'staffId';
+    const lastIdStr = lastUser[idField].slice(1);
+    lastId = parseInt(lastIdStr) || 0;
+  }
 
+  return `${prefix}${String(lastId + 1).padStart(4, '0')}`; // 4-digit number
+}
 // Helper function to generate admin ID
 async function generateAdminId() {
   const lastAdmin = await Admin.findOne().sort({ id: -1 });
@@ -204,73 +208,84 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
 // Create Admin Account
 router.post('/create-admin', upload.single('profilePhoto'), async (req, res) => {
   try {
-    console.log('Received create-admin request');
-    console.log('Full request body:', req.body);
-    console.log('Request file:', req.file);
-    
     const { name, email, phone, password } = req.body;
     
-    // Log each field individually
-    console.log('Parsed fields:', {
-      name: name || 'missing',
-      email: email || 'missing',
-      phone: phone || 'missing',
-      password: password ? 'present' : 'missing'
-    });
-
     // Validate required fields
     if (!name || !email || !phone || !password) {
-      console.log('Missing required fields:', {
-        name: !name,
-        email: !email,
-        phone: !phone,
-        password: !password
+      return res.status(400).json({ 
+        error: 'All fields are required',
+        missingFields: {
+          name: !name,
+          email: !email,
+          phone: !phone,
+          password: !password
+        }
       });
-      return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Validate password length
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    // Check if email already exists
-    const existingEmail = await Admin.findOne({ email });
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({ 
+        error: 'Password must be at least 8 characters long' 
+      });
+    }
+
+    // Check for existing email (case-insensitive)
+    const existingEmail = await Admin.findOne({ 
+      email: { $regex: new RegExp(`^${email.trim()}$`, 'i') } 
+    });
     if (existingEmail) {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    const adminId = await generateAdminId();
-    console.log('Generated admin ID:', adminId);
-    
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate admin ID (more flexible format)
+    const lastAdmin = await Admin.findOne().sort({ id: -1 });
+    const lastId = lastAdmin ? parseInt(lastAdmin.id.slice(1)) || 0 : 0;
+    const adminId = `A${String(lastId + 1).padStart(3, '0')}`;
 
-    // Create new admin
+    // Create new admin with PLAIN TEXT password
+    // Let the model's pre-save hook handle hashing
     const admin = new Admin({
       id: adminId,
-      name,
-      email,
-      phone,
-      password: hashedPassword,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      phone: phone.trim(),
+      password: password, // Will be hashed by pre-save hook
       profilePhoto: req.file ? req.file.path : null
     });
 
     await admin.save();
-    console.log('Admin created successfully:', adminId);
     
-    res.status(201).json({ 
+    // Omit sensitive data from response
+    const adminData = admin.toObject();
+    delete adminData.password;
+
+    return res.status(201).json({ 
       message: 'Admin account created successfully',
-      adminId,
-      email
+      admin: adminData,
+      adminId: admin.id
     });
+    
   } catch (error) {
-    console.error('Error creating admin:', error);
+    console.error('Admin creation error:', error);
+    
     if (error.code === 11000) {
-      return res.status(400).json({ error: 'Email or admin ID already exists' });
+      const field = error.message.includes('email') ? 'Email' : 'Admin ID';
+      return res.status(400).json({ 
+        error: `${field} already exists`,
+        details: error.message
+      });
     }
-    res.status(500).json({ 
+    
+    return res.status(500).json({ 
       error: 'Failed to create admin account',
-      details: error.message 
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
@@ -334,6 +349,63 @@ router.post('/change-password', async (req, res) => {
   } catch (error) {
     console.error('Password change error:', error);
     res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// Get Staff by ID
+router.get('/staff/:staffId', async (req, res) => {
+  try {
+    const { staffId } = req.params;
+    console.log('Fetching staff with ID:', staffId);
+    console.log('Request headers:', req.headers);
+
+    // Normalize the staffId to uppercase
+    const normalizedStaffId = staffId.toUpperCase();
+    console.log('Normalized staff ID:', normalizedStaffId);
+
+    // Check all collections for the staff member
+    console.log('Checking Proctor collection...');
+    const proctor = await Proctor.findOne({ staffId: normalizedStaffId });
+    console.log('Proctor found:', proctor ? 'Yes' : 'No');
+
+    console.log('Checking Supervisor collection...');
+    const supervisor = await Supervisor.findOne({ staffId: normalizedStaffId });
+    console.log('Supervisor found:', supervisor ? 'Yes' : 'No');
+
+    console.log('Checking Dean collection...');
+    const dean = await Dean.findOne({ staffId: normalizedStaffId });
+    console.log('Dean found:', dean ? 'Yes' : 'No');
+
+    const staff = proctor || supervisor || dean;
+
+    if (!staff) {
+      console.log('No staff member found with ID:', normalizedStaffId);
+      return res.status(404).json({ 
+        error: 'Staff member not found',
+        details: `No staff member found with ID: ${normalizedStaffId}`
+      });
+    }
+
+    // Return staff data without sensitive information
+    const staffData = {
+      staffId: staff.staffId,
+      name: staff.name,
+      email: staff.email,
+      phone: staff.phone,
+      role: staff.role,
+      profilePhoto: staff.profilePhoto,
+      block: staff.block,
+      createdAt: staff.createdAt
+    };
+
+    console.log('Found staff data:', staffData);
+    res.json(staffData);
+  } catch (error) {
+    console.error('Error fetching staff:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch staff data',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 

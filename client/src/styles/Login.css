@@ -1,109 +1,185 @@
+/* General Styles */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
 .login-container {
-	display: flex;
-	font-size: large;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	min-height: 100vh;
-	background-color: #222; /* Dark background */
-	color: rgb(250, 241, 241);
-	opacity: 0.95; /* Slightly increase opacity for better visibility */
-  }
-  
-  .login-form {
-	background-color: #2c3e50; /* Darker background for the form */
-	padding: 40px;
-	border-radius: 12px;
-	width: 480px; /* Adjust width as needed */
-	text-align: center;
-	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* Added shadow for depth */
-	transition: transform 0.3s;
-  }
-  
-  .login-form:hover {
-	transform: scale(1.02); /* Slight scaling effect on hover */
-  }
-  
-  .welcome-back {
-	font-size: 2.5em;
-	font-weight: bolder;
-	margin-bottom: 30px;
-	color: #b3c95b; /* Slightly lighter for emphasis */
-	
-  }
-  
-  .input-group {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	margin-bottom: 20px;
-	color: #e67e22; /* Updated color for better visibility */
-	font-size: xx-large;
-  }
-  
-  .input-group label {
-	font-weight: bold;
-	margin-bottom: 5px;
-	text-align: left;
-	color: #ecf0f1; /* Light label color */
-  }
-  
-  .input-group input {
-	width: 100%;
-	padding: 10px;
-	border: 1px solid #faf5f5;
-	border-radius: 4px;
-	background-color: #34495e; /* Darker input background */
-	color: #ecf0f1; /* Light input text color */
-	transition: border 0.3s, background-color 0.3s;
-  }
-  
-  .input-group input:focus {
-	border: 1px solid #3498db; /* Change border color on focus */
-	background-color: #2c3e50; /* Change background on focus */
-  }
-  
-  .login-button {
-	background-color: #3498db;
-	color: white;
-	padding: 12px 20px;
-	border: none;
-	border-radius: 4px;
-	cursor: pointer;
-	font-size: 1em;
-	width: 100%;
-	transition: background-color 0.3s, transform 0.3s; /* Added transition */
-  }
-  
-  .login-button:hover {
-	background-color: #2980b9; /* Darker blue on hover */
-	transform: translateY(-2px); /* Slight lift effect */
-  }
-  
-  .error {
-	color: #e74c3c;
-	margin-top: 10px;
-  }
-  
-  .additional-login-options {
-	margin-top: 20px;
-	text-align: center;
-  }
-  
-  .forgot-password,
-  .signup-link {
-	color: #3498db; /* Updated link color */
-	text-decoration: none;
-	transition: color 0.3s; /* Added transition for hover effect */
-  }
-  
-  .forgot-password:hover,
-  .signup-link:hover {
-	text-decoration: underline;
-	color: #2980b9; /* Darker link color on hover */
-  }
-  
-  .no-account {
-	margin-top: 10px;
-	color: #ecf0f1; /* Light color for better visibility */
-  }
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 2rem;
+}
+
+/* Login Card */
+.login-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  transition: all 0.3s ease;
+}
+
+.login-card:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-header h2 {
+  color: #2c3e50;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.login-header p {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* Form Control Base Style */
+.form-control {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background-color: white; /* Changed from #f8f9fa to white */
+  color: #2c3e50;
+}
+
+/* Select Dropdown Specific Styles */
+select.form-control {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234299E1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2em;
+  padding-right: 2.8rem;
+  cursor: pointer;
+  border: 2px solid #e0e6ed;
+  transition: all 0.3s ease;
+}
+
+select.form-control:hover {
+  border-color: #b3cde0;
+}
+
+select.form-control:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+/* Focus State */
+.form-control:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.input-hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+/* Button */
+.login-button {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 0.5rem;
+}
+
+.login-button:hover {
+  background: linear-gradient(135deg, #2980b9 0%, #1a252f 100%);
+  transform: translateY(-2px);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+.login-button:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Footer Links */
+.login-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.forgot-password {
+  color: #3498db;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+}
+
+.forgot-password:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+.signup-link {
+  color: #7f8c8d;
+  margin-top: 1rem;
+}
+
+.signup-link a {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fdecea;
+  color: #d32f2f;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  border-left: 4px solid #d32f2f;
+}
