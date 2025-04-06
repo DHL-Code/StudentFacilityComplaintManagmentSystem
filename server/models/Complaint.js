@@ -9,6 +9,12 @@ const complaintSchema = new mongoose.Schema({
   userId: { type: String, required: true }, // Store the user's ID directly
   blockNumber: { type: String, required: true }, // Added block number field
   dormNumber: { type: String, required: true }, // Added dorm number field
+  status: { 
+    type: String, 
+    enum: ['pending', 'verified', 'dismissed'],
+    default: 'pending'
+  },
+  isUrgent: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const Complaint = mongoose.model('Complaint', complaintSchema);
