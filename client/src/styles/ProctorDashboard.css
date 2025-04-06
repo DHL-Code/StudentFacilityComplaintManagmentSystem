@@ -508,3 +508,120 @@
   max-width: 800px;
   margin: 0 auto;
 }
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.notification-time {
+  font-size: 0.9em;
+  color: #666;
+}
+
+.notification-details {
+  margin: 15px 0;
+}
+
+.notification-details p {
+  margin: 8px 0;
+}
+
+.complaint-photo {
+  margin: 15px 0;
+  max-width: 300px;
+}
+
+.complaint-image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notification-item {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notification-item.urgent {
+  border-left: 4px solid #ff4444;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.notification-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.verify-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.dismiss-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.flag-btn {
+  background-color: #ff9800;
+  color: white;
+}
+
+.feedback-btn {
+  background-color: #2196F3;
+  color: white;
+}
+
+.complaint-details {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.complaint-details h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.complaint-details h3 {
+  color: #444;
+  margin-bottom: 15px;
+}
+
+.complaint-details p {
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+.complaint-details button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.complaint-details button:hover {
+  background-color: #1976D2;
+}

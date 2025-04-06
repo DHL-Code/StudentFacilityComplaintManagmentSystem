@@ -7,11 +7,7 @@ import '../styles/ProctorDashboard.css';
 function ProctorDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isNavActive, setIsNavActive] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'New Complaint: Cheating Allegation', description: 'Student XYZ reported for cheating in exam.', isUrgent: false, feedback: "Student claims unfair accusation." },
-    { id: 2, title: 'Complaint: Technical Issue', description: 'Student ABC reports technical difficulties during assessment.', isUrgent: true, feedback: "Student reports website crash" },
-    { id: 3, title: 'Complaint: Unfair Question', description: 'Student DEF reports an ambiguous question.', isUrgent: false, feedback: "Student asking for question clarification" },
-  ]);
+  const [notifications, setNotifications] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [report, setReport] = useState('');
   const [proctorId, setProctorId] = useState('');
@@ -19,6 +15,18 @@ function ProctorDashboard() {
   const [error, setError] = useState(null);
   const [proctorData, setProctorData] = useState(null);
   const [profilePreview, setProfilePreview] = useState(null);
+  const [abortController, setAbortController] = useState(null);
+
+  useEffect(() => {
+    // Create a new AbortController for this component instance
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    // Cleanup function
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const handleNavigation = (section) => {
     setActiveSection(section);
@@ -29,16 +37,89 @@ function ProctorDashboard() {
     setIsNavActive(!isNavActive);
   };
 
-  const handleVerify = (id) => {
-    setNotifications(notifications.filter((notification) => notification.id !== id));
+  const handleVerify = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/complaints/${id}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        signal: abortController?.signal
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to verify complaint');
+      }
+
+      setNotifications(notifications.map(notification => 
+        notification._id === id ? { ...notification, status: 'verified' } : notification
+      ));
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
+      console.error('Error verifying complaint:', error);
+      setError('Failed to verify complaint');
+    }
   };
 
-  const handleDismiss = (id) => {
-    setNotifications(notifications.filter((notification) => notification.id !== id));
+  const handleDismiss = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/complaints/${id}/dismiss`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        signal: abortController?.signal
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to dismiss complaint');
+      }
+
+      setNotifications(notifications.filter(notification => notification._id !== id));
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
+      console.error('Error dismissing complaint:', error);
+      setError('Failed to dismiss complaint');
+    }
   };
 
-  const handleFlagUrgent = (id) => {
-    setNotifications(notifications.map((notification) => (notification.id === id ? { ...notification, isUrgent: true } : notification)));
+  const handleFlagUrgent = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/complaints/${id}/flag`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        signal: abortController?.signal
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to flag complaint as urgent');
+      }
+
+      setNotifications(notifications.map(notification => 
+        notification._id === id ? { ...notification, isUrgent: true } : notification
+      ));
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
+      console.error('Error flagging complaint:', error);
+      setError('Failed to flag complaint as urgent');
+    }
   };
 
   const handleWriteReport = () => {
@@ -69,6 +150,7 @@ function ProctorDashboard() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        signal: abortController?.signal
       });
 
       if (!response.ok) {
@@ -89,10 +171,8 @@ function ProctorDashboard() {
         throw new Error('No data received from server');
       }
 
-      // Process profile photo
       let profilePhotoUrl = null;
       if (data.profilePhoto) {
-        // Extract just the filename from the full path
         const filename = data.profilePhoto.split('\\').pop();
         profilePhotoUrl = `http://localhost:5000/uploads/staff-photos/${filename}`;
         console.log('Profile photo URL:', profilePhotoUrl);
@@ -111,11 +191,57 @@ function ProctorDashboard() {
       
       console.log('Processed proctor data:', proctorInfo);
       setProctorData(proctorInfo);
+
+      await fetchComplaints(proctorInfo.block);
     } catch (err) {
+      if (err.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
       console.error('Error fetching proctor data:', err);
       setError(err.message || 'Failed to fetch proctor data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchComplaints = async (blockNumber) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/complaints?blockNumber=${blockNumber}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        signal: abortController?.signal
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch complaints');
+      }
+
+      const data = await response.json();
+      const transformedComplaints = data.map(complaint => ({
+        _id: complaint._id,
+        title: `${complaint.complaintType}: ${complaint.specificInfo}`,
+        description: complaint.description,
+        isUrgent: complaint.isUrgent || false,
+        status: complaint.status || 'pending',
+        feedback: complaint.feedback || '',
+        file: complaint.file,
+        dormNumber: complaint.dormNumber,
+        userId: complaint.userId,
+        createdAt: complaint.createdAt
+      }));
+
+      setNotifications(transformedComplaints);
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
+      console.error('Error fetching complaints:', error);
+      setError('Failed to fetch complaints');
     }
   };
 
@@ -162,14 +288,32 @@ function ProctorDashboard() {
               <div className="notifications-container">
                 <h2>Notifications</h2>
                 {notifications.map((notification) => (
-                  <div key={notification.id} className={`notification-item ${notification.isUrgent ? 'urgent' : ''}`}>
-                    <h3>{notification.title}</h3>
-                    <p>{notification.description}</p>
+                  <div key={notification._id} className={`notification-item ${notification.isUrgent ? 'urgent' : ''}`}>
+                    <div className="notification-header">
+                      <h3>{notification.title}</h3>
+                      <span className="notification-time">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="notification-details">
+                      <p><strong>Student ID:</strong> {notification.userId}</p>
+                      <p><strong>Dorm Number:</strong> {notification.dormNumber}</p>
+                      <p><strong>Description:</strong> {notification.description}</p>
+                      {notification.file && (
+                        <div className="complaint-photo">
+                          <img 
+                            src={`http://localhost:5000/${notification.file}`}
+                            alt="Complaint evidence"
+                            className="complaint-image"
+                          />
+                        </div>
+                      )}
+                    </div>
                     <div className="notification-actions">
-                      <button className="verify-btn" onClick={() => handleVerify(notification.id)}>Verify</button>
-                      <button className="dismiss-btn" onClick={() => handleDismiss(notification.id)}>Dismiss</button>
+                      <button className="verify-btn" onClick={() => handleVerify(notification._id)}>Verify</button>
+                      <button className="dismiss-btn" onClick={() => handleDismiss(notification._id)}>Dismiss</button>
                       {notification.isUrgent && (
-                        <button className="flag-btn" onClick={() => handleFlagUrgent(notification.id)}>
+                        <button className="flag-btn" onClick={() => handleFlagUrgent(notification._id)}>
                           <FontAwesomeIcon icon={faFlag} /> Flag Urgent
                         </button>
                       )}
@@ -183,8 +327,19 @@ function ProctorDashboard() {
                   <div className="complaint-details">
                     <h2>Complaint Details</h2>
                     <h3>{selectedComplaint.title}</h3>
-                    <p>{selectedComplaint.description}</p>
+                    <p><strong>Student ID:</strong> {selectedComplaint.userId}</p>
+                    <p><strong>Dorm Number:</strong> {selectedComplaint.dormNumber}</p>
+                    <p><strong>Description:</strong> {selectedComplaint.description}</p>
                     <p><strong>Feedback:</strong> {selectedComplaint.feedback}</p>
+                    {selectedComplaint.file && (
+                      <div className="complaint-photo">
+                        <img 
+                          src={`http://localhost:5000/${selectedComplaint.file}`}
+                          alt="Complaint evidence"
+                          className="complaint-image"
+                        />
+                      </div>
+                    )}
                     <button onClick={() => setSelectedComplaint(null)}>Close</button>
                   </div>
                 )}
