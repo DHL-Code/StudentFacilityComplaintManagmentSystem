@@ -48,16 +48,16 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
       specificInfo,
       description,
       file,
-      userId, // Store the user ID directly
+      userId,
       blockNumber,
       dormNumber
     });
 
     const savedComplaint = await newComplaint.save();
-    console.log('Saved complaint:', savedComplaint); // Log saved complaint
+    console.log('Saved complaint:', savedComplaint);
     res.status(201).json(savedComplaint);
   } catch (error) {
-    console.error('Error saving complaint:', error); // Log the error for debugging
+    console.error('Error saving complaint:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -65,21 +65,113 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 // Get all complaints (for admin or user)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    // Get userId from query parameters
-    const { userId } = req.query;
+    const { userId, blockNumber } = req.query;
+    
+    let query = {};
     
     // If userId is provided, filter complaints for that user
     if (userId) {
-      const userComplaints = await Complaint.find({ userId });
-      return res.json(userComplaints);
+      query.userId = userId;
     }
     
-    // If no userId provided, return all complaints (for admin)
-    const complaints = await Complaint.find();
+    // If blockNumber is provided, filter complaints for that block
+    if (blockNumber) {
+      query.blockNumber = blockNumber;
+    }
+    
+    const complaints = await Complaint.find(query);
     res.json(complaints);
   } catch (error) {
     console.error('Error retrieving complaints:', error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Update complaint status to verified
+router.put('/:id/verify', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { status: 'verified' },
+      { new: true }
+    );
+    
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+    
+    res.json(complaint);
+  } catch (error) {
+    console.error('Error verifying complaint:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update complaint status to dismissed
+router.put('/:id/dismiss', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { status: 'dismissed' },
+      { new: true }
+    );
+    
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+    
+    res.json(complaint);
+  } catch (error) {
+    console.error('Error dismissing complaint:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Flag complaint as urgent
+router.put('/:id/flag', authMiddleware, async (req, res) => {
+  try {
+    const { isUrgent } = req.body;
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { isUrgent },
+      { new: true }
+    );
+    
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+    
+    res.json(complaint);
+  } catch (error) {
+    console.error('Error flagging complaint:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete a complaint
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    // Delete the associated file if it exists
+    if (complaint.file) {
+      const filePath = path.join(__dirname, '..', complaint.file);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Delete the complaint from the database
+    await Complaint.findByIdAndDelete(req.params.id);
+    
+    res.status(200).json({ message: 'Complaint deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting complaint:', error);
+    res.status(500).json({ message: 'Error deleting complaint' });
   }
 });
 

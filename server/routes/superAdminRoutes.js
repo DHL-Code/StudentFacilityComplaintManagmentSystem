@@ -352,4 +352,61 @@ router.post('/change-password', async (req, res) => {
   }
 });
 
+// Get Staff by ID
+router.get('/staff/:staffId', async (req, res) => {
+  try {
+    const { staffId } = req.params;
+    console.log('Fetching staff with ID:', staffId);
+    console.log('Request headers:', req.headers);
+
+    // Normalize the staffId to uppercase
+    const normalizedStaffId = staffId.toUpperCase();
+    console.log('Normalized staff ID:', normalizedStaffId);
+
+    // Check all collections for the staff member
+    console.log('Checking Proctor collection...');
+    const proctor = await Proctor.findOne({ staffId: normalizedStaffId });
+    console.log('Proctor found:', proctor ? 'Yes' : 'No');
+
+    console.log('Checking Supervisor collection...');
+    const supervisor = await Supervisor.findOne({ staffId: normalizedStaffId });
+    console.log('Supervisor found:', supervisor ? 'Yes' : 'No');
+
+    console.log('Checking Dean collection...');
+    const dean = await Dean.findOne({ staffId: normalizedStaffId });
+    console.log('Dean found:', dean ? 'Yes' : 'No');
+
+    const staff = proctor || supervisor || dean;
+
+    if (!staff) {
+      console.log('No staff member found with ID:', normalizedStaffId);
+      return res.status(404).json({ 
+        error: 'Staff member not found',
+        details: `No staff member found with ID: ${normalizedStaffId}`
+      });
+    }
+
+    // Return staff data without sensitive information
+    const staffData = {
+      staffId: staff.staffId,
+      name: staff.name,
+      email: staff.email,
+      phone: staff.phone,
+      role: staff.role,
+      profilePhoto: staff.profilePhoto,
+      block: staff.block,
+      createdAt: staff.createdAt
+    };
+
+    console.log('Found staff data:', staffData);
+    res.json(staffData);
+  } catch (error) {
+    console.error('Error fetching staff:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch staff data',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
 module.exports = router;

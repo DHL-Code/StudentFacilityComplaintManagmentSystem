@@ -45,9 +45,28 @@ baseStaffSchema.pre('save', async function(next) {
 
 // Proctor Schema
 const proctorSchema = new mongoose.Schema({
-  ...baseStaffSchema.obj, // Use .obj to get the raw schema definition
-  role: { type: String, enum: ['proctor'], required: true }
-});
+  staffId: { 
+    type: String, 
+    unique: true, 
+    required: true,
+    validate: {
+      validator: function(v) {
+        const upperV = v.toUpperCase();
+        return /^P\d+$/i.test(upperV);
+      },
+      message: props => `${props.value} is not a valid proctor ID!`
+    },
+    set: v => v.toUpperCase()
+  },
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
+  password: { type: String, required: true },
+  profilePhoto: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  role: { type: String, enum: ['proctor'], required: true },
+  block: { type: String, required: true }
+}, { collection: 'proctors' });
 
 // Supervisor Schema
 const supervisorSchema = new mongoose.Schema({
