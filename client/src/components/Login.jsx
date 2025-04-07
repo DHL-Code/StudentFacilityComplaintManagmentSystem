@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from './Navbar';
 
@@ -11,6 +12,7 @@ const Login = () => {
   const [role, setRole] = useState('student'); // Added role state
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
 
   const handleLogin = async () => {
 
@@ -87,7 +89,7 @@ const Login = () => {
   };
 
   return (
-    <div className="login-page">
+    <div className={`login-page"${darkMode ? 'dark-mode' : ''}`}>
       <Navbar />
       <div className="login-container">
         <div className="login-card">

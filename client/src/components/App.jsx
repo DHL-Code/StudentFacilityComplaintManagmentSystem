@@ -1,6 +1,7 @@
 // src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, BrowserRouter } from 'react-router-dom'; // Import Router, Route, and Routes
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Import Router, Route, and Routes
+import { ThemeProvider } from '../context/ThemeContext';
 import Navbar from './Navbar';
 import Home from './Home';
 import StudentAccount from './StudentAccount';
@@ -19,10 +20,9 @@ import OTPVerification from './OTPVerification';
 
 function App() {
   return (
-    <BrowserRouter>
-
-      <div>
-
+    < ThemeProvider>
+      <Router>
+        <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/Signup" element={<Signup />} />
@@ -36,11 +36,9 @@ function App() {
           <Route path="/SupervisorPage" element={<SupervisorPage />} />
           <Route path="/DeanPage" element={<DeanPage />} />
           <Route path="/Admin" element={<Admin />} />
-
-
         </Routes>
-      </div>
-    </BrowserRouter>
+      </Router>
+    </ThemeProvider>
   );
 }
 

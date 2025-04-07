@@ -1,85 +1,579 @@
 /* Home.css */
-:root {
-  --primary: #2A4365;
-  --secondary: #4299E1;
-  --accent: #F6AD55;
+
+.home-containers {
+  width: 100%; /* Ensure it takes full width */
+  /* You might need a min-height depending on your layout */
+}
+
+/* General Styles */
+.home-hero-sections,
+.home-features-sections,
+.home-steps-section,
+.home-roles-section,
+.home-about-section,
+.home-testimonials-section,
+.home-cta-section,
+.home-contact-section {
+  padding: 60px 20px;
+  text-align: center;
+  overflow: hidden; /* To contain floated elements and animations */
+}
+
+.home-section-headers {
+  margin-bottom: 40px;
+}
+
+.home-section-headers h2 {
+  font-size: 2.5em;
+  color: #f3f0f0;
+  margin-bottom: 10px;
+  position: relative;
+  display: inline-block;
+}
+
+.home-section-headers h2::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 3px;
+  background-color: #007bff; /* Primary color */
+}
+
+.home-section-headers p {
+  color: #777;
+  font-size: 1.1em;
 }
 
 /* Hero Section */
-.hero-section {
-  height: 70vh;
-  background-size: cover;
-  background-size: 100% auto;
-  background-position: center;
-  transition: background-image 1s ease-in-out;
+/* Hero Section */
+.home-hero-sections {
   position: relative;
-}
-
-.hero-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  padding: 2rem;
-  text-align: center;
+  height: 600px; /* Adjust as needed */
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: white;
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-}
-
-.hero-title {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 1.8rem;
-  }
-  
-  .hero-subtitle {
-    font-size: 1.2rem;
-  }
-}
-
-/* Welcome Section */
-.welcome-section {
-  padding: 4rem 2rem;
-  background: #F7FAFC;
-}
-
-.welcome-content {
-  max-width: 1200px;
-  margin: 0 auto;
   text-align: center;
-  color: #2A4365;
+  overflow: hidden; /* Important to contain the absolute positioned backgrounds */
+  background-image: url(../assets/wolkite.jpg);
 }
 
-.welcome-text {
-  font-size: 1.2rem;
+.home-hero-backgrounds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+.home-hero-overlays {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.home-hero-titles {
+  font-size: 3em;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.home-hero-subtitles {
+  font-size: 1.2em;
+  margin-bottom: 30px;
+  max-width: 700px;
   line-height: 1.6;
-  color: #4A5568;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.home-hero-button {
+  display: flex;
+  gap: 20px;
+}
+
+.home-primary-buttons,
+.home-secondary-buttons {
+  display: inline-block;
+  padding: 15px 30px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.home-primary-buttons {
+  background-color: #007bff;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 123, 255, 0.3);
+}
+
+.home-secondary-buttons {
+  background-color: transparent;
+  color: white;
+  border: 2px solid #fff;
+}
+
+.home-primary-buttons:hover {
+  background-color: #0056b3;
+}
+
+.home-secondary-buttons:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.home-primary-buttons svg,
+.home-secondary-buttons svg {
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+/* Features Section */
+.home-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.home-feature-card {
+  background-color: #f9f9f9;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.home-feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.home-feature-icon {
+  font-size: 2em;
+  color: #007bff;
+  margin-bottom: 15px;
+}
+
+.home-feature-card h3 {
+  font-size: 1.5em;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.home-feature-card p {
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Steps Section */
+.home-steps-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.home-step {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.home-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.home-step h3 {
+  font-size: 1.3em;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.home-step p {
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Roles Section */
+.home-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.home-role-card {
+  background-color: #e9ecef;
+  padding: 30px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease-in-out;
+}
+
+.home-role-card:hover {
+  transform: translateY(-3px);
+}
+
+.home-role-icon {
+  font-size: 2.5em;
+  color: #28a745; /* Success color */
+  margin-bottom: 15px;
+}
+
+.home-role-card h3 {
+  font-size: 1.4em;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.home-role-card p {
+  color: #666;
+  line-height: 1.6;
+}
+
+/* About Us Section */
+.home-about-section {
+  background-color: #f8f9fa;
+}
+
+.home-about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+@media (min-width: 768px) {
+  .home-about-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .home-about-text {
+    flex: 1;
+    padding-right: 40px;
+    text-align: left;
+  }
+
+  .home-about-image {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.home-about-text h2 {
+  font-size: 2em;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.home-about-text p {
+  color: #666;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.home-about-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.home-about-text .home-primary-button {
+  display: inline-block;
+  padding: 12px 25px;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.home-about-text .home-primary-button:hover {
+  background-color: #0056b3;
+}
+
+/* Testimonials Section */
+.home-testimonials-section {
+  background-color: #fff;
+}
+
+.home-testimonials-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.home-testimonial-card {
+  background-color: #f9f9f9;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  text-align: left;
+  transition: transform 0.3s ease-in-out;
+}
+
+.home-testimonial-card:hover {
+  transform: translateY(-3px);
+}
+
+.home-testimonial-text {
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 15px;
+  font-style: italic;
+}
+
+.home-testimonial-author {
+  font-weight: bold;
+  color: #333;
+  text-align: right;
+}
+.home-section-header {
+  color: #333;
+}
+
+/* Call to Action Section */
+.home-cta-section {
+  background-color: #e9ecef;
+  padding: 80px 20px;
+}
+
+.home-cta-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.home-cta-content h2 {
+  font-size: 2.2em;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.home-cta-content p {
+  color: #666;
+  font-size: 1.1em;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.home-cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.home-cta-buttons .home-primary-button,
+.home-cta-buttons .home-secondary-button {
+  display: inline-block;
+  padding: 15px 30px;
+  border-radius: 5px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.home-cta-buttons .home-primary-button {
+  background-color: #28a745; /* Success color */
+  color: white;
+  box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3);
+}
+
+.home-cta-buttons .home-secondary-button {
+  background-color: transparent;
+  color: #333;
+  border: 2px solid #333;
+}
+
+.home-cta-buttons .home-primary-button:hover {
+  background-color: #1e7e34;
+}
+
+.home-cta-buttons .home-secondary-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #333;
 }
 
 /* Contact Section */
-.contact-section {
-  padding: 4rem 2rem;
-  background: var(--primary);
+.home-contact-section {
+  background: linear-gradient(
+    135deg,
+    #020f1d,
+    #381a03
+  ); /* Gradient background */
   color: white;
+  padding: 80px 20px;
+  text-align: center;
 }
 
-.contact-card {
+.home-contact-card {
   max-width: 600px;
   margin: 0 auto;
-  background: rgba(255,255,255,0.1);
-  padding: 2rem;
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white card */
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  padding: 40px;
+  text-align: center;
 }
 
-.contact-info p {
-  margin: 1rem 0;
+.home-contact-card h3 {
+  font-size: 2.2em;
+  color: #333;
+  margin-bottom: 30px;
+  position: relative;
+  display: inline-block;
+}
+
+.home-contact-card h3::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background-color: #007bff; /* Accent color */
+  border-radius: 2px;
+}
+
+.home-contact-info {
+  margin-top: 20px;
+}
+
+.home-contact-info p {
+  color: #555;
+  font-size: 1.1em;
+  line-height: 1.8;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  justify-content: center;
+  gap: 15px;
+}
+
+.home-contact-info svg {
+  font-size: 1.5em;
+  color: #007bff; /* Accent color for icons */
+}
+
+.home-contact-info span {
+  cursor: pointer;
+  border-bottom: 1px dashed #007bff;
+  transition: color 0.3s ease;
+}
+
+.home-contact-info span:hover {
+  color: #0056b3;
+}
+
+/* Scroll to Top Button */
+.home-scroll-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.5em;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 100;
+}
+
+.home-scroll-to-top.visible {
+  opacity: 1;
+}
+
+.home-scroll-to-top:hover {
+  transform: translateY(-3px);
+  background-color: #0056b3;
+}
+
+/* Dark Mode Styles */
+.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.dark-mode .home-feature-card,
+.dark-mode .home-step,
+.dark-mode .home-role-card,
+.dark-mode .home-testimonial-card,
+.dark-mode .home-contact-card {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .home-section-headers h2,
+.dark-mode .home-section-headers p,
+.dark-mode .home-hero-titles,
+.dark-mode .home-hero-subtitles {
+  color: #ffffff;
+}
+
+.dark-mode .home-primary-button,
+.dark-mode .home-primary-buttons {
+  background-color: #4dabf7;
+}
+
+.dark-mode .home-secondary-button,
+.dark-mode .home-secondary-buttons {
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.dark-mode .home-hero-overlays {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .home-contact-card {
+    padding: 30px;
+  }
+
+  .home-contact-info p {
+    font-size: 1em;
+    gap: 10px;
+  }
+
+  .home-contact-info svg {
+    font-size: 1.3em;
+  }
 }
