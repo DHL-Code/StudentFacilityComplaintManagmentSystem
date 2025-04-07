@@ -3,6 +3,7 @@ import '../styles/Student.css';
 import { Star, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { faFlag } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
@@ -14,39 +15,19 @@ const Dashboard = () => {
     const [fileError, setFileError] = useState('');
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [darkMode, setDarkMode] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
-    const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phoneNumber: '',
-        department: '',
-        gender: '',
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: '',
-        college: ''
-    });
     const [newProfilePhoto, setNewProfilePhoto] = useState(null);
     const [newProfilePreview, setNewProfilePreview] = useState(null);
     const [isNavActive, setIsNavActive] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [colleges, setColleges] = useState([
-        {
-            name: "Computing and Informatics",
-            departments: ["Computer Science", "Software Engineering", "Information Technology", "Information Systems"],
-        },
-        {
-            name: "Engineering",
-            departments: ["Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"],
-        },
-        {
-            name: "Business",
-            departments: ["Business Administration", "Accounting", "Marketing", "Finance"],
-        },
-    ]);
-    const [availableDepartments, setAvailableDepartments] = useState([]);
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
+
+    const [allColleges, setAllColleges] = useState([]); // For dynamic colleges
+    const [loadingColleges, setLoadingColleges] = useState(false);
+    const [loadingDepartments, setLoadingDepartments] = useState(false);
+    const [availableDepartments, setAvailableDepartments] = useState([]);
 
     // New state for feedback form
     const [feedbackRating, setFeedbackRating] = useState(0);
@@ -58,6 +39,17 @@ const Dashboard = () => {
     const [complaints, setComplaints] = useState([]);
     const [loadingComplaints, setLoadingComplaints] = useState(false);
     const [statusNotification, setStatusNotification] = useState(null);
+    const [formData, setFormData] = useState({
+        fullName: '',
+        email: '',
+        phoneNumber: '',
+        department: '',
+        gender: '',
+        currentPassword: '',
+        newPassword: '',
+        confirmNewPassword: '',
+        college: ''
+    });
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -197,17 +189,65 @@ const Dashboard = () => {
     };
 
     useEffect(() => {
-        if (formData.college) {
-            const selectedCollege = colleges.find((col) => col.name === formData.college);
-            if (selectedCollege) {
-                setAvailableDepartments(selectedCollege.departments);
-            } else {
-                setAvailableDepartments([]);
+        const fetchColleges = async () => {
+            try {
+                setLoadingColleges(true);
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:5000/api/colleges', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch colleges');
+
+                const data = await response.json();
+                setAllColleges(data);
+            } catch (error) {
+                console.error('Error fetching colleges:', error);
+                setError('Failed to load colleges');
+            } finally {
+                setLoadingColleges(false);
             }
-        } else {
-            setAvailableDepartments([]);
+        };
+
+        fetchColleges();
+    }, []);
+
+    // Update departments when college changes
+    useEffect(() => {
+        const fetchDepartments = async (collegeId) => {
+            try {
+                if (!collegeId) {
+                    setAvailableDepartments([]);
+                    return;
+                }
+
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:5000/api/colleges/${collegeId}/departments`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch departments');
+
+                const data = await response.json();
+                setAvailableDepartments(data);
+            } catch (error) {
+                console.error('Error fetching departments:', error);
+                setError('Failed to load departments');
+            }
+        };
+
+        if (formData.college) {
+            // Find the college ID from the selected college name
+            const selectedCollege = allColleges.find(c => c.name === formData.college);
+            if (selectedCollege) {
+                fetchDepartments(selectedCollege._id);
+            }
         }
-    }, [formData.college, colleges]);
+    }, [formData.college, allColleges]);
 
     useEffect(() => {
         fetchProfile();
@@ -215,6 +255,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         if (profile && activeSection === 'editProfile') {
+            console.log("Profile data:", profile); // Add this line
             setFormData({
                 fullName: profile.fullName,
                 email: profile.email,
@@ -226,14 +267,14 @@ const Dashboard = () => {
                 confirmNewPassword: '',
                 college: profile.college
             });
-            const selectedCollege = colleges.find((col) => col.name === profile.college);
-            if (selectedCollege) {
-                setAvailableDepartments(selectedCollege.departments);
-            } else {
-                setAvailableDepartments([]);
+            if (profile.college) {
+                // Pass the college name directly to fetchDepartments
+                fetchDepartments(profile.college).then(() => {
+                    // Departments are now loaded and formData.department is set
+                });
             }
         }
-    }, [profile, activeSection, colleges]);
+    }, [profile, activeSection]);
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -402,6 +443,12 @@ const Dashboard = () => {
         }
     }, [activeSection, profile?.userId]);
 
+    useEffect(() => {
+        if (availableDepartments.length > 0) {
+            setError(null); // Clear error if we have departments
+        }
+    }, [availableDepartments]);
+
     // Add this function to handle complaint deletion
     const handleDeleteComplaint = async (complaintId) => {
         if (!window.confirm('Are you sure you want to delete this complaint?')) {
@@ -455,6 +502,85 @@ const Dashboard = () => {
         setStatusNotification(null);
     };
 
+    // Toggle dark mode
+    const toggleDarkMode = () => {
+        const newDarkMode = !darkMode;
+        setDarkMode(newDarkMode);
+        document.body.classList.toggle('dark-mode', newDarkMode);
+        localStorage.setItem('darkMode', newDarkMode ? 'enabled' : 'disabled');
+    };
+    useEffect(() => {
+        const savedMode = localStorage.getItem('darkMode');
+        if (savedMode === 'enabled') {
+            setDarkMode(true);
+            document.body.classList.add('dark-mode');
+        }
+    }, []);
+
+
+    // Handle logout
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+    };
+    const fetchColleges = async () => {
+        try {
+            setLoadingColleges(true);
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/colleges', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch colleges');
+
+            const data = await response.json();
+            setAllColleges(data);
+        } catch (error) {
+            console.error('Error fetching colleges:', error);
+            setError('Failed to load colleges');
+        } finally {
+            setLoadingColleges(false);
+        }
+    };
+
+    const fetchDepartments = async (collegeName) => {
+        try {
+            setLoadingDepartments(true);
+            setError(null); // Clear any previous errors
+            if (!collegeName) {
+                setAvailableDepartments([]);
+                return Promise.resolve();
+            }
+
+            const token = localStorage.getItem('token');
+            const response = await fetch(
+                `http://localhost:5000/api/colleges/${encodeURIComponent(collegeName)}/departments`,
+                {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch departments');
+            }
+
+            const data = await response.json();
+            setAvailableDepartments(data || []);
+            return Promise.resolve();
+        } catch (error) {
+            console.error('Error fetching departments:', error);
+            // Only set error if departments array is empty
+            if (!availableDepartments.length) {
+                setError('Failed to load departments');
+            }
+            return Promise.reject(error);
+        } finally {
+            setLoadingDepartments(false);
+        }
+    };
     return (
         <div className="student-dashboard">
             <div className="student-sidebar">
@@ -468,6 +594,19 @@ const Dashboard = () => {
                 </ul>
             </div>
 
+            {/* Top Navigation Bar */}
+            <div className="student-top-nav">
+                <div className="nav-actions">
+                    <button className="dark-mode-toggle" onClick={toggleDarkMode}>
+                        <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+                        {darkMode ? ' Light Mode' : ' Dark Mode'}
+                    </button>
+                    <button className="logout-btn" onClick={handleLogout}>
+                        <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+                    </button>
+                </div>
+            </div>
+
             <div className="student-content">
                 <div className="student-top-nav">
                     <span className="student-hamburger" onClick={toggleNav}>
@@ -479,6 +618,13 @@ const Dashboard = () => {
                         <span onClick={() => handleNavigation('editProfile')}>Edit Profile</span>
                         <span onClick={() => handleNavigation('complaintStatus')}>Complaint Status</span>
                         <span onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</span>
+                        <button className="dark-mode-toggle" onClick={toggleDarkMode}>
+                            <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+                            {darkMode ? ' Light Mode' : ' Dark Mode'}
+                        </button>
+                        <button className="proctor-mobile-nav-item" onClick={handleLogout}>
+                            <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+                        </button>
                     </div>
                 </div>
                 {/* Navigation Buttons for Desktop View */}
@@ -683,33 +829,53 @@ const Dashboard = () => {
                                 <label>
                                     College:
                                     <select
-                                        value={formData.college}
+                                        value={formData.college || ''}
                                         onChange={(e) => {
                                             const selectedCollegeName = e.target.value;
                                             setFormData({ ...formData, college: selectedCollegeName, department: '' });
                                         }}
+                                        disabled={loadingColleges}
                                     >
-                                        <option value="">Select College</option>
-                                        {colleges.map((col) => (
-                                            <option key={col.name} value={col.name}>
-                                                {col.name}
+                                        <option value="">
+                                            {loadingColleges ? 'Loading colleges...' : 'Select College'}
+                                        </option>
+                                        {allColleges?.length > 0 ? (
+                                            allColleges.map((college) => (
+                                                <option key={college._id} value={college.name}>
+                                                    {college.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="" disabled>
+                                                No colleges available
                                             </option>
-                                        ))}
+                                        )}
                                     </select>
                                 </label>
 
                                 <label>
                                     Department:
                                     <select
-                                        value={formData.department}
+                                        value={formData.department || ''}
                                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                        disabled={!formData.college || loadingDepartments}
                                     >
-                                        <option value="">Select Department</option>
-                                        {availableDepartments.map((dept) => (
-                                            <option key={dept} value={dept}>
-                                                {dept}
-                                            </option>
-                                        ))}
+                                        <option value="">
+                                            {loadingDepartments
+                                                ? 'Loading departments...'
+                                                : !formData.college
+                                                    ? 'Select a college first'
+                                                    : availableDepartments?.length === 0
+                                                        ? error ? 'Error loading departments' : 'No departments available'
+                                                        : 'Select Department'}
+                                        </option>
+                                        {availableDepartments?.length > 0 &&
+                                            availableDepartments.map((dept) => (
+                                                <option key={dept._id} value={dept.name}>
+                                                    {dept.name}
+                                                </option>
+                                            ))
+                                        }
                                     </select>
                                 </label>
 

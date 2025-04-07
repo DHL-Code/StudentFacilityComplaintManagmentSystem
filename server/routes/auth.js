@@ -237,11 +237,8 @@ router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
 
   try {
-      console.log('Forgot password request for email:', email);
-      
       const user = await User.findOne({ email });
       if (!user) {
-          console.log('User not found for email:', email);
           return res.status(404).json({ message: 'Email not found.' });
       }
 
@@ -253,16 +250,12 @@ router.post('/forgot-password', async (req, res) => {
           specialChars: false
       }).toUpperCase();
 
-      console.log('Generated OTP:', otp);
-
-      const otpExpiry = Date.now() + 600000; // OTP expires in 10 minutes
+      const otpExpiry = Date.now() + 60000; // OTP expires in 1 minute
       
       user.resetPasswordOTP = otp;
       user.resetPasswordOTPExpires = otpExpiry;
       await user.save();
 
-      console.log('Attempting to send email...');
-      
       // Send OTP via Email
       const transporter = nodemailer.createTransport({
           service: 'gmail',
