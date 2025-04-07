@@ -10,7 +10,7 @@ const StudentNav = () => {
         <li style={styles.li}>
           <Link to="/Login" style={styles.link}>Logout</Link>
         </li>
-        
+
       </ul>
     </nav>
   );
@@ -20,7 +20,7 @@ const styles = {
   nav: {
     backgroundColor: 'black',
     padding: '10px',
-    borderRadius:'10px',
+    borderRadius: '10px',
   },
   ul: {
     listStyle: 'none',
@@ -31,13 +31,13 @@ const styles = {
   },
   li: {
     margin: 0,
-    
+
   },
   link: {
     color: 'white',
     textDecoration: 'none',
     fontSize: '18px',
-    
+
   },
 };
 

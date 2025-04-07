@@ -23,6 +23,7 @@ body {
   overflow-y: auto;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   justify-content: center;
+  margin-top: 3%;
 }
 
 .student-sidebar h1 {
@@ -47,13 +48,20 @@ body {
 /* Top Navigation Bar */
 .student-top-nav {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   /* Space between hamburger and nav items */
   align-items: center;
   /* Center items vertically */
   margin-bottom: 20px;
   padding: 0 10px;
   /* Add padding for touch targets */
+  gap: 10px; /* Add gap between buttons */
+}
+
+.student-top-nav button {
+  margin-left: 0;
+  background-color: #0056b3;
+  margin-top: 3%;
 }
 
 .student-hamburger {
@@ -458,7 +466,7 @@ button:hover {
   margin-top: 5%;
 }
 .gender {
-  color: #0b0b0b;
+  color: #f3eeee;
 }
 
 .student-edit-profile form button[type="submit"] {
@@ -526,6 +534,8 @@ button:hover {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 300px;
+  justify-content: space-between;
 }
 
 .student-complaint-card.urgent {
@@ -551,6 +561,12 @@ button:hover {
   flex-direction: column;
   gap: 5px;
   align-items: flex-start;
+}
+
+.student-complaints-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .student-complaint-details {
@@ -716,4 +732,99 @@ button:hover {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+@media (min-width: 1024px) {
+  .student-complaints-list {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns on larger screens */
+  }
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+  .student-complaints-list {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on medium screens */
+  }
+}
+
+@media (max-width: 767px) {
+  .student-complaints-list {
+    grid-template-columns: 1fr; /* 1 column on mobile */
+  }
+}
+
+/* Add these to your CSS file */
+
+/* Dark mode styles */
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+body.dark-mode .student-sidebar {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+body.dark-mode .student-profile-container {
+  background-color: #1e1e1e;
+}
+
+body.dark-mode .student-detail-item {
+  background-color: black;
+  color: #ffffff;
+}
+
+body.dark-mode section {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #2d2d2d;
+  color: #ffffff;
+  border: 1px solid #444;
+}
+
+body.dark-mode .student-complaint-card {
+  background-color: #2d2d2d;
+  color: #ffffff;
+}
+
+body.dark-mode .student-complaint-details p,
+body.dark-mode .student-complaint-header h3 {
+  color: #ffffff;
+}
+
+body.dark-mode .student-detail-label,
+body.dark-mode .student-detail-value,
+body.dark-mode .full-name,
+body.dark-mode .user-id {
+  color: #ffffff !important;
+}
+
+body.dark-mode .student-password-change-section h3,
+body.dark-mode .student-gender-selection .gender {
+  color: #ffffff !important;
+}
+
+body.dark-mode .student-edit-profile form .gender-selection label {
+  color: #ffffff !important;
+}
+
+/* Light mode styles (ensure good contrast) */
+body:not(.dark-mode) .student-sidebar {
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+body:not(.dark-mode) section {
+  background-color: #ffffff;
+  color: #333;
+}
+
+body:not(.dark-mode) .student-complaint-card {
+  background-color: #ffffff;
+  color: #333;
 }
