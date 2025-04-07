@@ -22,14 +22,13 @@ function App() {
   return (
     < ThemeProvider>
       <Router>
-        <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/Signup" element={<Signup />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/ContactUs" element={<ContactUs />} />
           <Route path="/StudentAccount" element={<><StudentNav /><StudentAccount /></>} />
-          <Route path="/ProctorDashboard" element={<><StudentNav /><ProctorDashboard /></>} />
+          <Route path="/ProctorDashboard" element={<ProctorDashboard />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/OTPVerification" element={< OTPVerification />} />

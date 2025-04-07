@@ -425,7 +425,7 @@ const Dashboard = () => {
             }
 
             // Remove the deleted complaint from the state
-            setComplaints(prevComplaints => 
+            setComplaints(prevComplaints =>
                 prevComplaints.filter(complaint => complaint._id !== complaintId)
             );
 
@@ -456,8 +456,8 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="dashboard">
-            <div className="sidebar">
+        <div className="student-dashboard">
+            <div className="student-sidebar">
                 <h1>Student Dashboard</h1>
                 <ul>
                     <li onClick={() => handleNavigation('complaintForm')}>Complaint Form</li>
@@ -468,12 +468,12 @@ const Dashboard = () => {
                 </ul>
             </div>
 
-            <div className="content">
-                <div className="top-nav">
-                    <span className="hamburger" onClick={toggleNav}>
+            <div className="student-content">
+                <div className="student-top-nav">
+                    <span className="student-hamburger" onClick={toggleNav}>
                         {isNavActive ? 'x' : '☰'}
                     </span>
-                    <div className={`nav-items ${isNavActive ? 'active' : ''}`}>
+                    <div className={`student-nav-items ${isNavActive ? 'active' : ''}`}>
                         <span onClick={() => handleNavigation('complaintForm')}>Complaint Form</span>
                         <span onClick={() => handleNavigation('viewProfile')}>View Profile</span>
                         <span onClick={() => handleNavigation('editProfile')}>Edit Profile</span>
@@ -482,7 +482,7 @@ const Dashboard = () => {
                     </div>
                 </div>
                 {/* Navigation Buttons for Desktop View */}
-                <div className="desk-nav">
+                <div className="student-desk-nav">
                     <button onClick={() => handleNavigation('complaintForm')}>Complaint Form</button>
                     <button onClick={() => handleNavigation('viewProfile')}>View Profile</button>
                     <button onClick={() => handleNavigation('editProfile')}>Edit Profile</button>
@@ -491,34 +491,34 @@ const Dashboard = () => {
                 </div>
 
                 {activeSection === 'complaintForm' && (
-                    <section className="complaint-form">
+                    <section className="student-complaint-form">
                         <h2>Complaint Form</h2>
                         <form onSubmit={handleSubmitComplaint}>
-                            <div className="form-groups">
+                            <div className="student-form-groups">
                                 <label>User ID:</label>
                                 <input
                                     type="text"
                                     value={profile?.userId || ''}
                                     readOnly
-                                    className="readonly-input"
+                                    className="student-readonly-input"
                                 />
                             </div>
-                            <div className="form-groups">
+                            <div className="student-form-groups">
                                 <label>Block Number:</label>
                                 <input
                                     type="text"
                                     value={profile?.blockNumber || ''}
                                     readOnly
-                                    className="readonly-input"
+                                    className="student-readonly-input"
                                 />
                             </div>
-                            <div className="form-groups">
+                            <div className="student-form-groups">
                                 <label>Dorm Number:</label>
                                 <input
                                     type="text"
                                     value={profile?.dormNumber || ''}
                                     readOnly
-                                    className="readonly-input"
+                                    className="student-readonly-input"
                                 />
                             </div>
                             <label>
@@ -552,63 +552,63 @@ const Dashboard = () => {
                             <label>
                                 Upload a Photograph (max 5 MB):
                                 <input type="file" accept=".jpg,.png" onChange={handleFileChange} />
-                                {fileError && <p className="error">{fileError}</p>}
+                                {fileError && <p className="student-error">{fileError}</p>}
                             </label>
                             <button type="submit">Submit Complaint</button>
                         </form>
-                        {successMessage && <p className="success">{successMessage}</p>}
-                        {error && <p className="error">{error}</p>}
+                        {successMessage && <p className="student-success">{successMessage}</p>}
+                        {error && <p className="student-error">{error}</p>}
                     </section>
                 )}
 
                 {activeSection === 'viewProfile' && (
-                    <section className="view-profile">
+                    <section className="student-view-profile">
                         <h2>View Profile</h2>
-                        {loading && <p className="loading">Loading profile...</p>}
-                        {error && <p className="error">Error: {error}</p>}
+                        {loading && <p className="student-loading">Loading profile...</p>}
+                        {error && <p className="student-error">Error: {error}</p>}
                         {profile && (
-                            <div className="profile-container">
-                                <div className="profile-header">
+                            <div className="student-profile-container">
+                                <div className="student-profile-header">
                                     {currentProfilePhoto ? (
                                         <img
                                             src={currentProfilePhoto}
                                             alt="Profile"
-                                            className="profile-photo"
+                                            className="student-profile-photo"
                                             onError={(e) => {
                                                 e.target.style.display = 'none';
                                                 setError('Failed to load profile photo');
                                             }}
                                         />
                                     ) : (
-                                        <div className="profile-photo-placeholder">No Photo</div>
+                                        <div className="student-profile-photo-placeholder">No Photo</div>
                                     )}
                                     <h3 className='full-name'>{profile.fullName}</h3>
                                     <p className="user-id">{profile.userId}</p>
                                 </div>
-                                <div className="profile-details">
-                                    <div className="detail-item">
-                                        <span className="detail-label">Department:</span>
-                                        <span className="detail-value">{profile.department}</span>
+                                <div className="student-profile-details">
+                                    <div className="student-detail-item">
+                                        <span className="student-detail-label">Department:</span>
+                                        <span className="student-detail-value">{profile.department}</span>
                                     </div>
-                                    <div className="detail-item">
-                                        <span className="detail-label">Email:</span>
-                                        <span className="detail-value">{profile.email}</span>
+                                    <div className="student-detail-item">
+                                        <span className="student-detail-label">Email:</span>
+                                        <span className="student-detail-value">{profile.email}</span>
                                     </div>
-                                    <div className="detail-item">
-                                        <span className="detail-label">Phone Number:</span>
-                                        <span className="detail-value">{profile.phoneNumber}</span>
+                                    <div className="student-detail-item">
+                                        <span className="student-detail-label">Phone Number:</span>
+                                        <span className="student-detail-value">{profile.phoneNumber}</span>
                                     </div>
-                                    <div className="detail-item">
-                                        <span className="detail-label">Gender:</span>
-                                        <span className="detail-value">{profile.gender}</span>
+                                    <div className="student-detail-item">
+                                        <span className="student-detail-label">Gender:</span>
+                                        <span className="student-detail-value">{profile.gender}</span>
                                     </div>
-                                    <div className="detail-item">
-                                        <span className="detail-label">College:</span>
-                                        <span className="detail-value">{profile.college}</span>
+                                    <div className="student-detail-item">
+                                        <span className="student-detail-label">College:</span>
+                                        <span className="student-detail-value">{profile.college}</span>
                                     </div>
-                                    <div className="detail-item">
-                                        <span className="detail-label">Account Created:</span>
-                                        <span className="detail-value">
+                                    <div className="student-detail-item">
+                                        <span className="student-detail-label">Account Created:</span>
+                                        <span className="student-detail-value">
                                             {new Date(profile.createdAt).toLocaleDateString()}
                                         </span>
                                     </div>
@@ -619,25 +619,25 @@ const Dashboard = () => {
                 )}
 
                 {activeSection === 'editProfile' && (
-                    <section className="edit-profile">
+                    <section className="student-edit-profile">
                         <h2>Edit Profile</h2>
-                        {loading && <p className="loading">Saving changes...</p>}
-                        {error && <p className="error">Error: {error}</p>}
+                        {loading && <p className="student-loading">Saving changes...</p>}
+                        {error && <p className="student-error">Error: {error}</p>}
 
                         <form onSubmit={handleProfileUpdate}>
-                            <div className="profile-photo-edit">
+                            <div className="student-profile-photo-edit">
                                 <div
-                                    className="photo-preview"
+                                    className="student-photo-preview"
                                     onClick={() => document.getElementById('profilePhotoInput').click()}
                                 >
                                     {newProfilePreview ? (
-                                        <img src={newProfilePreview} alt="Preview" className="profile-image" />
+                                        <img src={newProfilePreview} alt="Preview" className="student-profile-image" />
                                     ) : profile?.profilePhoto ? (
-                                        <img src={profile.profilePhoto} alt="Current Profile" className="profile-image" />
+                                        <img src={profile.profilePhoto} alt="Current Profile" className="student-profile-image" />
                                     ) : (
-                                        <div className="upload-placeholder">
-                                            <span className="upload-icon">+</span>
-                                            <span className="upload-text">Upload Photo</span>
+                                        <div className="student-upload-placeholder">
+                                            <span className="student-upload-icon">+</span>
+                                            <span className="student-upload-text">Upload Photo</span>
                                         </div>
                                     )}
                                 </div>
@@ -648,13 +648,13 @@ const Dashboard = () => {
                                     onChange={handlePhotoChange}
                                     style={{ display: 'none' }}
                                 />
-                                {fileError && <p className="error">{fileError}</p>}
+                                {fileError && <p className="student-error">{fileError}</p>}
                             </div>
-                            <div className="form-fields">
+                            <div className="student-form-fields">
                                 <label>
                                     Full Name:
                                     <input
-                                        className="narrow-input"
+                                        className="student-narrow-input"
                                         type="text"
                                         value={formData.fullName}
                                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -664,7 +664,7 @@ const Dashboard = () => {
                                 <label>
                                     Email:
                                     <input
-                                        className="narrow-input"
+                                        className="student-narrow-input"
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -713,7 +713,7 @@ const Dashboard = () => {
                                     </select>
                                 </label>
 
-                                <div className="gender-selection">
+                                <div className="student-gender-selection">
                                     <span className='gender'>Gender:</span>
                                     <label>
                                         <input
@@ -735,7 +735,7 @@ const Dashboard = () => {
                                     </label>
                                 </div>
 
-                                <div className="password-change-section">
+                                <div className="student-password-change-section">
                                     <h3>Change Password</h3>
 
                                     <label>
@@ -779,14 +779,14 @@ const Dashboard = () => {
 
                 {activeSection === 'provideFeedback' && (
                     <motion.section
-                        className="feedback-section"
+                        className="student-feedback-section"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <h2 className="feedback-title">Provide Feedback</h2>
-                        <form onSubmit={handleFeedbackSubmit} className="feedback-form">
-                            <div className="star-rating" style={{ gap: '18px' }}> {/* Added gap here */}
+                        <h2 className="student-feedback-title">Provide Feedback</h2>
+                        <form onSubmit={handleFeedbackSubmit} className="student-feedback-form">
+                            <div className="student-star-rating" style={{ gap: '18px' }}> {/* Added gap here */}
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <motion.button
                                         key={star}
@@ -802,7 +802,7 @@ const Dashboard = () => {
                                         />
                                     </motion.button>
                                 ))}
-                                <p className="rating-text">
+                                <p className="student-rating-text">
                                     {feedbackRating
                                         ? `Rated ${feedbackRating} ${feedbackRating === 1 ? 'star' : 'stars'}`
                                         : 'Click to rate'}
@@ -813,7 +813,7 @@ const Dashboard = () => {
                                 placeholder="Provide your feedback..."
                                 value={feedbackComment}
                                 onChange={(e) => setFeedbackComment(e.target.value)}
-                                className="feedback-textarea"
+                                className="student-feedback-textarea"
                                 rows={4}
                                 disabled={isFeedbackSubmitting}
                             />
@@ -823,14 +823,14 @@ const Dashboard = () => {
                                         initial={{ opacity: 0, y: -10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -10 }}
-                                        className="error-message"
+                                        className="student-error-message"
                                     >
                                         Please provide a rating or feedback comment.
                                     </motion.p>
                                 )}
                             </AnimatePresence>
 
-                            <button type="submit" disabled={isFeedbackSubmitting} className="feedback-button">
+                            <button type="submit" disabled={isFeedbackSubmitting} className="student-feedback-button">
                                 {isFeedbackSubmitting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -850,7 +850,7 @@ const Dashboard = () => {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: 10 }}
-                                        className="success-message"
+                                        className="student-success-message"
                                     >
                                         Thank you for your feedback!
                                     </motion.p>
@@ -861,30 +861,30 @@ const Dashboard = () => {
                 )}
 
                 {activeSection === 'complaintStatus' && (
-                    <section className="complaint-status">
+                    <section className="student-complaint-status">
                         <h2>Complaint Status</h2>
                         {loadingComplaints ? (
                             <p>Loading complaints...</p>
                         ) : complaints.length === 0 ? (
                             <p>No complaints submitted yet.</p>
                         ) : (
-                            <div className="complaints-list">
+                            <div className="student-complaints-list">
                                 {complaints.map((complaint) => (
-                                    <div key={complaint._id} className={`complaint-card ${complaint.isUrgent ? 'urgent' : ''}`}>
-                                        <div className="complaint-header">
+                                    <div key={complaint._id} className={`student-complaint-card ${complaint.isUrgent ? 'urgent' : ''}`}>
+                                        <div className="student-complaint-header">
                                             <h3>{complaint.complaintType}</h3>
-                                            <div className="complaint-status">
-                                                <span className={`status-badge ${complaint.status?.toLowerCase() || 'pending'}`}>
+                                            <div className="student-complaint-status">
+                                                <span className={`student-status-badge ${complaint.status?.toLowerCase() || 'pending'}`}>
                                                     {complaint.status || 'Pending'}
                                                 </span>
                                                 {complaint.isUrgent && (
-                                                    <span className="status-badge urgent">
+                                                    <span className="student-status-badge urgent">
                                                         <FontAwesomeIcon icon={faFlag} /> Urgent
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="complaint-details">
+                                        <div className="student-complaint-details">
                                             <p><strong>Specific Issue:</strong> {complaint.specificInfo}</p>
                                             <p><strong>Description:</strong> {complaint.description}</p>
                                             <p><strong>Block:</strong> {complaint.blockNumber}</p>
@@ -892,17 +892,17 @@ const Dashboard = () => {
                                             <p><strong>Submitted:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
                                         </div>
                                         {complaint.file && (
-                                            <div className="complaint-image">
+                                            <div className="student-complaint-image">
                                                 <img
                                                     src={`http://localhost:5000/${complaint.file}`}
                                                     alt="Complaint evidence"
-                                                    className="complaint-photo"
+                                                    className="student-complaint-photo"
                                                 />
                                             </div>
                                         )}
-                                        <div className="complaint-actions">
-                                            <button 
-                                                className="delete-btn"
+                                        <div className="student-complaint-actions">
+                                            <button
+                                                className="student-delete-btn"
                                                 onClick={() => handleDeleteComplaint(complaint._id)}
                                             >
                                                 Delete Complaint
@@ -917,7 +917,7 @@ const Dashboard = () => {
             </div>
 
             {statusNotification && (
-                <div className="status-notification">
+                <div className="student-status-notification">
                     <p>{statusNotification.message}</p>
                     <button onClick={closeStatusNotification}>OK</button>
                 </div>

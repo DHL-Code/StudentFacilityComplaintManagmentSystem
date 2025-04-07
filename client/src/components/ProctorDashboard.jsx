@@ -1,590 +1,750 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFlag, faCommentDots, faTimes, faExpand, faBell } from '@fortawesome/free-solid-svg-icons';
-import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../styles/ProctorDashboard.css';
 
 function ProctorDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [isNavActive, setIsNavActive] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  // Update your state and functions
+  const [viewedComplaints, setViewedComplaints] = useState([]);
   const [report, setReport] = useState('');
-  const [proctorId, setProctorId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [proctorData, setProctorData] = useState(null);
-  const [profilePreview, setProfilePreview] = useState(null);
-  const [abortController, setAbortController] = useState(null);
-  const [expandedImage, setExpandedImage] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [expandedImage, setExpandedImage] = useState(null);
+  const [summaryStats, setSummaryStats] = useState({
+    totalComplaints: 0,
+    pending: 0,
+    verified: 0,
+    urgent: 0
+  });
 
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.body.classList.toggle('dark-mode');
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
+  // Fetch proctor data and complaints
   useEffect(() => {
-    const controller = new AbortController();
-    setAbortController(controller);
-    return () => controller.abort();
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const userData = JSON.parse(localStorage.getItem('user'));
+
+        // Fetch proctor data
+        const proctorResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!proctorResponse.ok) throw new Error('Failed to fetch proctor data');
+        const proctorData = await proctorResponse.json();
+
+        // Process proctor data
+        const processedData = {
+          name: proctorData.name || 'Not available',
+          staffId: proctorData.staffId || 'Not available',
+          email: proctorData.email || 'Not available',
+          role: proctorData.role || 'Not available',
+          phone: proctorData.phone || 'Not available',
+          block: proctorData.block || 'Not assigned',
+          createdAt: proctorData.createdAt || new Date().toISOString()
+        };
+
+        setProctorData(processedData);
+
+        // Fetch complaints
+        const complaintsResponse = await fetch(`http://localhost:5000/api/complaints?blockNumber=${processedData.block}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!complaintsResponse.ok) throw new Error('Failed to fetch complaints');
+        const complaintsData = await complaintsResponse.json();
+
+        // Process complaints
+        const transformedComplaints = complaintsData.map(complaint => ({
+          ...complaint,
+          isNew: true // Mark all fetched complaints as new initially
+        }));
+
+        setNotifications(transformedComplaints);
+        updateUnreadCount(transformedComplaints);
+        updateSummaryStats(transformedComplaints);
+
+      } catch (error) {
+        console.error('Error:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const handleNavigation = (section) => {
-    setActiveSection(section);
-    setIsNavActive(false);
-    if (section === 'notifications') {
-      setUnreadCount(0); // Reset unread count when viewing notifications
-    }
+  /* Update unread count function */
+  const updateUnreadCount = (complaints) => {
+    const newCount = complaints.filter(c => c.isNew).length;
+    setUnreadCount(newCount);
   };
 
-  const toggleNav = () => {
-    setIsNavActive(!isNavActive);
+  // Update summary statistics
+  const updateSummaryStats = (complaints) => {
+    setSummaryStats({
+      totalComplaints: complaints.length,
+      pending: complaints.filter(c => c.status === 'pending').length,
+      verified: complaints.filter(c => c.status === 'verified').length,
+      urgent: complaints.filter(c => c.isUrgent).length
+    });
   };
 
-  const handleVerify = async (id) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/complaints/${id}/verify`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        signal: abortController?.signal
-      });
-
-      if (!response.ok) throw new Error('Failed to verify complaint');
-
-      setNotifications(notifications.map(notification =>
-        notification._id === id ? { ...notification, status: 'verified' } : notification
-      ));
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Error verifying complaint:', error);
-        setError('Failed to verify complaint');
-      }
-    }
-  };
-
-  const handleDismiss = async (id) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/complaints/${id}/dismiss`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        signal: abortController?.signal
-      });
-
-      if (!response.ok) throw new Error('Failed to dismiss complaint');
-
-      setNotifications(notifications.filter(notification => notification._id !== id));
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Error dismissing complaint:', error);
-        setError('Failed to dismiss complaint');
-      }
-    }
-  };
-
-  const handleFlagUrgent = async (id, isUrgent) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/complaints/${id}/flag`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        signal: abortController?.signal
-      });
-
-      if (!response.ok) throw new Error('Failed to flag complaint as urgent');
-
-      setNotifications(notifications.map(notification =>
-        notification._id === id ? { ...notification, isUrgent: !isUrgent } : notification
-      ));
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Error flagging complaint:', error);
-        setError('Failed to flag complaint as urgent');
-      }
-    }
-  };
-
-  const handleWriteReport = () => {
-    console.log('Report submitted:', report);
-    setReport('');
-  };
-
+  // Handle viewing a complaint (marks it as read)
+  // Update handleViewComplaint
   const handleViewComplaint = (complaint) => {
     setSelectedComplaint(complaint);
+
+    // Mark as read and store in viewed complaints
+    if (complaint.isNew) {
+      const updatedNotifications = notifications.map(n =>
+        n._id === complaint._id ? { ...n, isNew: false } : n
+      );
+      setNotifications(updatedNotifications);
+      updateUnreadCount(updatedNotifications);
+      setViewedComplaints(prev => [...prev, complaint._id]);
+      localStorage.setItem(`viewed_${proctorData?.staffId}`, JSON.stringify([...viewedComplaints, complaint._id]));
+    }
   };
 
+  // Update useEffect to load viewed complaints
+  useEffect(() => {
+    if (proctorData?.staffId) {
+      const viewed = JSON.parse(localStorage.getItem(`viewed_${proctorData.staffId}`)) || [];
+      setViewedComplaints(viewed);
+
+      // Mark complaints as viewed on load
+      const updatedNotifications = notifications.map(complaint => ({
+        ...complaint,
+        isNew: !viewed.includes(complaint._id)
+      }));
+      setNotifications(updatedNotifications);
+      updateUnreadCount(updatedNotifications);
+    }
+  }, [proctorData?.staffId]);
+
+  // Handle complaint actions (verify, dismiss, flag)
+  const handleComplaintAction = async (action, id, currentValue) => {
+    try {
+      const token = localStorage.getItem('token');
+      const endpoint = `http://localhost:5000/api/complaints/${id}/${action}`;
+
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (!response.ok) throw new Error(`Failed to ${action} complaint`);
+
+      // Update local state
+      const updatedNotifications = notifications.map(notification => {
+        if (notification._id === id) {
+          if (action === 'verify') return { ...notification, status: 'verified' };
+          if (action === 'dismiss') return { ...notification, status: 'dismissed' };
+          if (action === 'flag') return { ...notification, isUrgent: !currentValue };
+          return notification;
+        }
+        return notification;
+      });
+
+      setNotifications(updatedNotifications);
+      updateSummaryStats(updatedNotifications);
+
+    } catch (error) {
+      console.error(`Error ${action}ing complaint:`, error);
+      setError(`Failed to ${action} complaint`);
+    }
+  };
+
+  // Handle image expansion
   const handleExpandImage = (imageUrl) => {
     setExpandedImage(imageUrl);
   };
 
-  const fetchProctorData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No token found. Please log in.');
+  // Update the complaints filtering
+  const filteredComplaints = notifications.filter(complaint => {
+    if (selectedFilter === 'pending') return complaint.status === 'pending';
+    if (selectedFilter === 'verified') return complaint.status === 'verified';
+    if (selectedFilter === 'urgent') return complaint.isUrgent;
+    return true; // all complaints
+  });
 
-      const userData = JSON.parse(localStorage.getItem('user'));
-      if (!userData?.userId) throw new Error('No user data found. Please log in again.');
-
-      const response = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        signal: abortController?.signal
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || `Failed to fetch proctor data. Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Fetched proctor data:', data);
-
-      if (!data) throw new Error('No data received from server');
-
-      let profilePhotoUrl = null;
-      if (data.profilePhoto) {
-        const filename = data.profilePhoto.split('\\').pop();
-        profilePhotoUrl = `http://localhost:5000/uploads/staff-photos/${filename}`;
-      }
-
-      const proctorInfo = {
-        name: data.name || 'Not available',
-        staffId: data.staffId || 'Not available',
-        email: data.email || 'Not available',
-        role: data.role || 'Not available',
-        phone: data.phone || 'Not available',
-        profilePhoto: profilePhotoUrl,
-        block: data.block || 'Not available',
-        createdAt: data.createdAt || new Date().toISOString()
-      };
-
-      setProctorData(proctorInfo);
-      await fetchComplaints(proctorInfo.block);
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Error fetching proctor data:', err);
-        setError(err.message || 'Failed to fetch proctor data');
-      }
-    } finally {
-      setLoading(false);
-    }
+  // Print report handler
+  const handlePrintReport = () => {
+    window.print();
   };
 
-  const fetchComplaints = async (blockNumber) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/complaints?blockNumber=${blockNumber}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        signal: abortController?.signal
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch complaints');
-
-      const data = await response.json();
-      const transformedComplaints = data.map(complaint => ({
-        _id: complaint._id,
-        title: `${complaint.complaintType}: ${complaint.specificInfo}`,
-        description: complaint.description,
-        isUrgent: complaint.isUrgent || false,
-        status: complaint.status || 'pending',
-        feedback: complaint.feedback || '',
-        file: complaint.file,
-        dormNumber: complaint.dormNumber,
-        userId: complaint.userId,
-        createdAt: complaint.createdAt,
-        isRead: false // Add read status
-      }));
-
-      // Count unread notifications
-      const newUnreadCount = transformedComplaints.filter(c => !c.isRead).length;
-      setUnreadCount(newUnreadCount);
-
-      setNotifications(transformedComplaints);
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Error fetching complaints:', error);
-        setError('Failed to fetch complaints');
-      }
-    }
+  const handleNavigation = (section) => {
+    setActiveSection(section);
+    setIsMobileNavOpen(false); // Close mobile nav when a link is clicked
   };
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(notification =>
-      notification._id === id ? { ...notification, isRead: true } : notification
-    ));
-    setUnreadCount(prev => prev > 0 ? prev - 1 : 0); // Add this line
-  };
-
-  useEffect(() => {
-    fetchProctorData();
-  }, []);
 
   return (
-    <div className="proctor-dashboard">
-      <div className="sidebar">
-        <h1>Proctor Dashboard</h1>
-        <ul>
-          <li onClick={() => handleNavigation('notifications')}>
-            Notifications {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
-          </li>
-          <li onClick={() => handleNavigation('profile')}>Profile</li>
-          <li onClick={() => handleNavigation('report')}>Write Report</li>
-          <li onClick={() => handleNavigation('summary-report')}>Summary Report</li>
-        </ul>
+    <div className={`proctor-dashboard ${darkMode ? 'dark-mode' : ''}`}>
+      <button className="proctor-mobile-nav-toggle" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
+        ☰
+      </button>
+      {/* Top Navigation Bar */}
+      <div className="top-nav">
+        <div className="nav-brand">
+          <h1>Proctor Dashboard</h1>
+          {proctorData?.block && <span className="block-badge">Block {proctorData.block}</span>}
+        </div>
+        <div className="nav-actions">
+          <button className="dark-mode-toggle" onClick={toggleDarkMode}>
+            <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+            {darkMode ? ' Light Mode' : ' Dark Mode'}
+          </button>
+          <button className="logout-btn" onClick={handleLogout}>
+            <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+          </button>
+        </div>
       </div>
 
-      <div className="content">
+      <div className={`proctor-mobile-nav ${isMobileNavOpen ? 'active' : ''}`}>
+
+        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('dashboard')}>
+          Dashboard
+        </button>
+        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('notifications')}>
+          Complaints {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+        </button>
+        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('profile')}>
+          My Profile
+        </button>
+        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('report')}>
+          Write Report
+        </button>
+        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('summary-report')}>
+          Summary Report
+        </button>
+        <button className="proctor-mobile-nav-item" onClick={toggleDarkMode}>
+          <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+          {darkMode ? ' Light Mode' : ' Dark Mode'}
+        </button>
+        <button className="proctor-mobile-nav-item" onClick={handleLogout}>
+          <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+        </button>
+      </div>
+
+      <div className="dashboard-container">
+        {/* Sidebar Navigation */}
+        <div className="sidebar">
+          <div className="sidebar-menu">
+            <button
+              className={`menu-item ${activeSection === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveSection('dashboard')}
+            >
+              Dashboard Overview
+            </button>
+            <button
+              className={`menu-item ${activeSection === 'notifications' ? 'active' : ''}`}
+              onClick={() => setActiveSection('notifications')}
+            >
+              <span className="menu-item-content">
+                Complaints
+                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              </span>
+            </button>
+            <button
+              className={`menu-item ${activeSection === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveSection('profile')}
+            >
+              My Profile
+            </button>
+            <button
+              className={`menu-item ${activeSection === 'report' ? 'active' : ''}`}
+              onClick={() => setActiveSection('report')}
+            >
+              Write Report
+            </button>
+            <button
+              className={`menu-item ${activeSection === 'summary-report' ? 'active' : ''}`}
+              onClick={() => setActiveSection('summary-report')}
+            >
+              Summary Report
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
         <div className="main-content">
-          {activeSection === 'notifications' && (
-            <div className="notifications-page">
-              <div className="block-indicator">
-                <h1>Block {proctorData?.block || 'Not Assigned'}</h1>
-                {notifications.length > 0 && (
-                  <div className="complaint-indicator">
-                    <span className="indicator-dot"></span>
-                    <span>Active Complaints: {notifications.length}</span>
-                  </div>
-                )}
+          {loading && <div className="loading-overlay">Loading...</div>}
+          {error && <div className="error-message">{error}</div>}
+
+          {/* Dashboard Overview */}
+          {activeSection === 'dashboard' && (
+            <div className="dashboard-overview">
+              <h2>Welcome, {proctorData?.name || 'Proctor'}</h2>
+              <p className="welcome-message">
+                Manage student complaints and dormitory issues efficiently from your dashboard.
+                Quickly access all the tools you need to verify, flag, and resolve complaints.
+              </p>
+
+              <div className="stats-cards">
+                <div className="stat-card total">
+                  <h3>Total Complaints</h3>
+                  <p>{summaryStats.totalComplaints}</p>
+                </div>
+                <div className="stat-card pending">
+                  <h3>Pending</h3>
+                  <p>{summaryStats.pending}</p>
+                </div>
+                <div className="stat-card verified">
+                  <h3>Verified</h3>
+                  <p>{summaryStats.verified}</p>
+                </div>
+                <div className="stat-card urgent">
+                  <h3>Urgent</h3>
+                  <p>{summaryStats.urgent}</p>
+                </div>
               </div>
 
-              <div className="notifications-container">
-                <h2>Complaints</h2>
-                {notifications.length === 0 ? (
+              <div className="quick-actions">
+                <h3>Quick Actions</h3>
+                <div className="action-buttons">
+                  <button
+                    className="action-btn view-complaints"
+                    onClick={() => setActiveSection('notifications')}
+                  >
+                    <FontAwesomeIcon icon={faBell} /> View Complaints
+                  </button>
+                  <button
+                    className="action-btn write-report"
+                    onClick={() => setActiveSection('report')}
+                  >
+                    <FontAwesomeIcon icon={faCommentDots} /> Write Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Complaints Section */}
+          {activeSection === 'notifications' && (
+            <div className="complaints-section">
+              <div className="section-header">
+                <h2>Student Complaints</h2>
+                <div className="complaint-filters">
+                  <button
+                    className={`filter-btn ${selectedFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => setSelectedFilter('all')}
+                  >
+                    All ({notifications.length})
+                  </button>
+                  <button
+                    className={`filter-btn ${selectedFilter === 'pending' ? 'active' : ''}`}
+                    onClick={() => setSelectedFilter('pending')}
+                  >
+                    Pending ({summaryStats.pending})
+                  </button>
+                  <button
+                    className={`filter-btn ${selectedFilter === 'verified' ? 'active' : ''}`}
+                    onClick={() => setSelectedFilter('verified')}
+                  >
+                    Verified ({summaryStats.verified})
+                  </button>
+                  <button
+                    className={`filter-btn ${selectedFilter === 'urgent' ? 'active' : ''}`}
+                    onClick={() => setSelectedFilter('urgent')}
+                  >
+                    Urgent ({summaryStats.urgent})
+                  </button>
+                </div>
+              </div>
+
+              <div className="complaints-list">
+                {filteredComplaints.length === 0 ? (
                   <div className="no-complaints">
-                    <p>No complaints found for your block.</p>
+                    <p>No complaints found matching the current filter</p>
                   </div>
                 ) : (
-                  notifications.map((notification) => (
-                    <div
-                      key={notification._id}
-                      className={`notification-item ${notification.isUrgent ? 'urgent' : ''} ${!notification.isRead ? 'unread' : ''}`}
-                      onClick={() => markAsRead(notification._id)}
-                    >
-                      <div className="notification-header">
-                        <h3>{notification.title}</h3>
-                        <div className="notification-status">
-                          <span className={`status-badge ${notification.status || 'pending'}`}>
-                            {notification.status || 'Pending'}
-                          </span>
-                          {notification.isUrgent && (
-                            <span className="status-badge urgent">
-                              <FontAwesomeIcon icon={faFlag} /> Urgent
-                            </span>
-                          )}
-                          <span className="notification-time">
-                            {new Date(notification.createdAt).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="notification-details">
-                        <p><strong>Student ID:</strong> {notification.userId}</p>
-                        <p><strong>Dorm Number:</strong> {notification.dormNumber}</p>
-                        <p><strong>Description:</strong> {notification.description}</p>
-                        {notification.file && (
-                          <div className="complaint-photo-container">
-                            <div className="complaint-photo">
-                              <img
-                                src={`http://localhost:5000/${notification.file}`}
-                                alt="Complaint evidence"
-                                className="complaint-image"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleExpandImage(`http://localhost:5000/${notification.file}`);
-                                }}
-                              />
-                              <button
-                                className="expand-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleExpandImage(`http://localhost:5000/${notification.file}`);
-                                }}
-                              >
-                                <FontAwesomeIcon icon={faExpand} />
-                              </button>
+                  <div className="proctor-complaints-container">
+                    <div className="proctor-complaints-grid">
+                      {filteredComplaints.map((complaint) => (
+                        <div
+                          key={complaint._id}
+                          className={`proctor-complaint-card ${complaint.isUrgent ? 'urgent' : ''} ${complaint.isNew ? 'unread' : ''}`}
+                          nClick={() => {
+                            handleViewComplaint(complaint);
+                            // Immediately mark as read when clicked
+                            if (complaint.isNew) {
+                              const updated = notifications.map(n =>
+                                n._id === complaint._id ? { ...n, isNew: false } : n
+                              );
+                              setNotifications(updated);
+                              updateUnreadCount(updated);
+                            }
+                          }}
+                        >
+
+                          <div className="complaint-header">
+                            <div className="complaint-meta">
+                              <span className={`status-badge ${complaint.status}`}>
+                                {complaint.status}
+                              </span>
+                              {complaint.isUrgent && (
+                                <span className="urgent-badge">
+                                  <FontAwesomeIcon icon={faFlag} /> Urgent
+                                </span>
+                              )}
+                              {complaint.isNew && (
+                                <div className="unread-indicator">
+                                  <span className="notification-badge">New</span>
+                                </div>
+                              )}
                             </div>
+                            <span className="complaint-date">
+                              {new Date(complaint.createdAt).toLocaleDateString()}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                      <div className="notification-actions">
-                        <button
-                          className={`btn verify-btn ${notification.status === 'verified' ? 'verified' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleVerify(notification._id);
-                          }}
-                          disabled={notification.status === 'verified'}
-                        >
-                          {notification.status === 'verified' ? 'Verified' : 'Verify'}
-                        </button>
-                        <button
-                          className={`btn dismiss-btn ${notification.status === 'dismissed' ? 'dismissed' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDismiss(notification._id);
-                          }}
-                          disabled={notification.status === 'dismissed'}
-                        >
-                          {notification.status === 'dismissed' ? 'Dismissed' : 'Dismiss'}
-                        </button>
-                        <button
-                          className={`btn flag-btn ${notification.isUrgent ? 'flagged' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleFlagUrgent(notification._id, notification.isUrgent);
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faFlag} /> {notification.isUrgent ? 'Unflag' : 'Flag Urgent'}
-                        </button>
-                        <button
-                          className="btn view-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewComplaint(notification);
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faCommentDots} /> View Complaint
-                        </button>
-                      </div>
+
+                          <div className="complaint-body">
+                            <h3 className="complaint-title">{complaint.complaintType}: {complaint.specificInfo}</h3>
+                            <p className="complaint-description">{complaint.description}</p>
+
+                            <div className="complaint-details">
+                              <p><strong>Student ID:</strong> {complaint.userId}</p>
+                              <p><strong>Dorm Number:</strong> {complaint.dormNumber}</p>
+                            </div>
+
+                            {complaint.file && (
+                              <div className="complaint-image-container">
+                                <img
+                                  src={`http://localhost:5000/${complaint.file}`}
+                                  alt="Complaint evidence"
+                                  className="complaint-image"
+                                  onClick={() => handleExpandImage(`http://localhost:5000/${complaint.file}`)}
+                                />
+                                <button
+                                  className="expand-image-btn"
+                                  onClick={() => handleExpandImage(`http://localhost:5000/${complaint.file}`)}
+                                >
+                                  <FontAwesomeIcon icon={faExpand} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="complaint-actions">
+                            <button
+                              className={`action-btn verify ${complaint.status === 'verified' ? 'verified' : ''}`}
+                              onClick={() => handleComplaintAction('verify', complaint._id)}
+                              disabled={complaint.status === 'verified'}
+                            >
+                              {complaint.status === 'verified' ? 'Verified' : 'Verify'}
+                            </button>
+                            <button
+                              className={`action-btn dismiss ${complaint.status === 'dismissed' ? 'dismissed' : ''}`}
+                              onClick={() => handleComplaintAction('dismiss', complaint._id)}
+                              disabled={complaint.status === 'dismissed'}
+                            >
+                              {complaint.status === 'dismissed' ? 'Dismissed' : 'Dismiss'}
+                            </button>
+                            <button
+                              className={`action-btn flag ${complaint.isUrgent ? 'flagged' : ''}`}
+                              onClick={() => handleComplaintAction('flag', complaint._id, complaint.isUrgent)}
+                            >
+                              <FontAwesomeIcon icon={faFlag} /> {complaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
+                            </button>
+                            <button
+                              className="action-btn view"
+                              onClick={() => handleViewComplaint(complaint)}
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))
+                  </div>
                 )}
               </div>
             </div>
           )}
 
-          {activeSection === 'profile' && (
-            <div className="profile-panel">
-              <h2>Proctor Profile</h2>
-              {loading ? (
-                <p>Loading profile data...</p>
-              ) : error ? (
-                <p className="error-message">{error}</p>
-              ) : proctorData ? (
-                <div className="profile-container">
-                  <div className="profile-header">
-                    <div className="photo-upload">
-                      <div className="profile-preview">
-                        {proctorData.profilePhoto ? (
-                          <img
-                            src={proctorData.profilePhoto}
-                            alt="Profile"
-                            onError={(e) => {
-                              console.log('Error loading profile photo');
-                              e.target.style.display = 'none';
-                              const placeholder = e.target.parentElement.querySelector('.upload-placeholder');
-                              if (placeholder) {
-                                placeholder.style.display = 'flex';
-                              }
-                            }}
-                          />
-                        ) : null}
-                        <div className="upload-placeholder" style={{ display: proctorData.profilePhoto ? 'none' : 'flex' }}>
-                          <span>+</span>
-                          <p>No Photo</p>
-                        </div>
-                      </div>
+          {/* Profile Section */}
+          {activeSection === 'profile' && proctorData && (
+            <div className="profile-section">
+              <h2>My Profile</h2>
+              <div className="profile-card">
+                <div className="profile-header">
+                  <div className="avatar">
+                    {proctorData.name.charAt(0)}
+                  </div>
+                  <div className="profile-info">
+                    <h3>{proctorData.name}</h3>
+                    <p className="role">{proctorData.role}</p>
+                    <p className="staff-id">ID: {proctorData.staffId}</p>
+                  </div>
+                </div>
+
+                <div className="profile-details">
+                  <div className="detail-group">
+                    <h4>Contact Information</h4>
+                    <div className="detail-item">
+                      <span className="detail-label">Email:</span>
+                      <span className="detail-value">{proctorData.email}</span>
                     </div>
-                    <div className="profile-info">
-                      <h3 className="full-name">{proctorData.name}</h3>
-                      <p className="user-id">ID: {proctorData.staffId}</p>
-                      <p className="role">{proctorData.role}</p>
+                    <div className="detail-item">
+                      <span className="detail-label">Phone:</span>
+                      <span className="detail-value">{proctorData.phone}</span>
                     </div>
                   </div>
 
-                  <div className="profile-details">
-                    <div className="detail-section">
-                      <h4>Contact Information</h4>
-                      <div className="detail-item">
-                        <span className="detail-label">Email:</span>
-                        <span className="detail-value">{proctorData.email}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Phone Number:</span>
-                        <span className="detail-value">{proctorData.phone}</span>
-                      </div>
+                  <div className="detail-group">
+                    <h4>Assignment</h4>
+                    <div className="detail-item">
+                      <span className="detail-label">Block:</span>
+                      <span className="detail-value">{proctorData.block}</span>
                     </div>
+                  </div>
 
-                    <div className="detail-section">
-                      <h4>Assignment Information</h4>
-                      <div className="detail-item">
-                        <span className="detail-label">Block:</span>
-                        <span className="detail-value">{proctorData.block}</span>
-                      </div>
-                    </div>
-
-                    <div className="detail-section">
-                      <h4>Account Information</h4>
-                      <div className="detail-item">
-                        <span className="detail-label">Account Created:</span>
-                        <span className="detail-value">
-                          {new Date(proctorData.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                  <div className="detail-group">
+                    <h4>Account</h4>
+                    <div className="detail-item">
+                      <span className="detail-label">Member Since:</span>
+                      <span className="detail-value">
+                        {new Date(proctorData.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <p>No profile data available</p>
-              )}
+              </div>
             </div>
           )}
 
+          {/* Write Report Section */}
           {activeSection === 'report' && (
-            <div className="report-panel">
-              <h2>Write Report</h2>
-              <textarea className='txt' value={report} onChange={(e) => setReport(e.target.value)} placeholder="Write your report here..." />
-              <button onClick={handleWriteReport}>Submit Report</button>
+            <div className="report-section">
+              <h2>Write Incident Report</h2>
+              <div className="report-form">
+                <textarea
+                  value={report}
+                  onChange={(e) => setReport(e.target.value)}
+                  placeholder="Describe the incident in detail..."
+                  className="report-textarea"
+                />
+                <div className="form-actions">
+                  <button className="submit-btn" onClick={() => handleWriteReport()}>
+                    Submit Report
+                  </button>
+                  <button className="cancel-btn" onClick={() => setReport('')}>
+                    Clear
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
+          {/* Summary Report Section */}
           {activeSection === 'summary-report' && (
-            <div className="summary-report-panel">
+            <div className="summary-report-section">
               <h2>Block {proctorData?.block} Summary Report</h2>
-              <div className="stats-container">
-                <div className="stat-card total">
-                  <FontAwesomeIcon icon={faFlag} className="stat-icon" />
-                  <div className="stat-content">
-                    <h3>Total Complaints</h3>
-                    <p>{notifications.length}</p>
-                    <div className="stat-trend">↑ 12% from last month</div>
-                  </div>
-                </div>
 
-                <div className="stat-card verified">
-                  <FontAwesomeIcon icon={faCheckCircle} className="stat-icon" />
-                  <div className="stat-content">
-                    <h3>Verified</h3>
-                    <p>{notifications.filter(n => n.status === 'verified').length}</p>
-                    <div className="stat-subtext">({((notifications.filter(n => n.status === 'verified').length / notifications.length) * 100 || 0).toFixed(1)}%)</div>
-                  </div>
-                </div>
+              <div className="report-period">
+                <h3>Report Period: {new Date().toLocaleDateString()}</h3>
+              </div>
 
-                <div className="stat-card pending">
-                  <FontAwesomeIcon icon={faClock} className="stat-icon" />
-                  <div className="stat-content">
-                    <h3>Pending</h3>
-                    <p>{notifications.filter(n => n.status === 'pending').length}</p>
-                    <div className="stat-subtext">Avg. resolution time: 2.3 days</div>
-                  </div>
+              <div className="summary-stats">
+                <div className="stat-card">
+                  <h4>Total Complaints</h4>
+                  <p className="stat-value">{summaryStats.totalComplaints}</p>
                 </div>
+                <div className="stat-card">
+                  <h4>Pending Resolution</h4>
+                  <p className="stat-value">{summaryStats.pending}</p>
+                </div>
+                <div className="stat-card">
+                  <h4>Verified Issues</h4>
+                  <p className="stat-value">{summaryStats.verified}</p>
+                </div>
+                <div className="stat-card">
+                  <h4>Urgent Matters</h4>
+                  <p className="stat-value">{summaryStats.urgent}</p>
+                </div>
+              </div>
 
-                <div className="stat-card urgent">
-                  <FontAwesomeIcon icon={faExclamationTriangle} className="stat-icon" />
-                  <div className="stat-content">
-                    <h3>Urgent</h3>
-                    <p>{notifications.filter(n => n.isUrgent).length}</p>
-                    <div className="stat-subtext">Active priority cases</div>
+              <div className="complaints-breakdown">
+                <h3>Complaints Breakdown</h3>
+                <div className="breakdown-chart">
+                  {/* This would be replaced with an actual chart component */}
+                  <div className="chart-placeholder">
+                    <p>Visual chart would display here</p>
+                    <div className="chart-bars">
+                      <div className="bar pending" style={{ height: `${(summaryStats.pending / summaryStats.totalComplaints) * 100}%` }}></div>
+                      <div className="bar verified" style={{ height: `${(summaryStats.verified / summaryStats.totalComplaints) * 100}%` }}></div>
+                      <div className="bar urgent" style={{ height: `${(summaryStats.urgent / summaryStats.totalComplaints) * 100}%` }}></div>
+                    </div>
+                    <div className="chart-labels">
+                      <span>Pending</span>
+                      <span>Verified</span>
+                      <span>Urgent</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="report-chart">
-                <h3>Complaint Trends</h3>
-                <div className="chart-placeholder">
-                  {/* Add your chart implementation here */}
-                  <p>Chart showing weekly complaint trends</p>
-                </div>
+              <div className="notable-issues">
+                <h3>Notable Issues</h3>
+                {notifications.filter(c => c.isUrgent || c.status === 'verified').length > 0 ? (
+                  <ul className="issues-list">
+                    {notifications
+                      .filter(c => c.isUrgent || c.status === 'verified')
+                      .map(complaint => (
+                        <li key={complaint._id} className="issue-item">
+                          <span className="issue-type">{complaint.complaintType}</span>
+                          <span className="issue-desc">{complaint.specificInfo}</span>
+                          <span className={`issue-status ${complaint.isUrgent ? 'urgent' : ''}`}>
+                            {complaint.isUrgent ? 'Urgent' : 'Verified'}
+                          </span>
+                        </li>
+                      ))
+                    }
+                  </ul>
+                ) : (
+                  <p className="no-issues">No notable issues to report</p>
+                )}
               </div>
-            </div>
-          )}
 
-
-          {activeSection === 'dashboard' && (
-            <div className="dashboard-panel">
-              <div className="dashboard-content">
-                <h2>Welcome to Proctor Dashboard</h2>
-                <p>
-                  This is your central hub for managing and monitoring student complaints. Here, you can effectively handle notifications,
-                  maintain your profile, generate detailed reports, and access summary data to ensure a smooth resolution process.
-                </p>
-                <div className="quick-stats">
-                  <div className="stat-item">
-                    <h3>Active Complaints</h3>
-                    <p>{notifications.length}</p>
-                  </div>
-                  <div className="stat-item">
-                    <h3>Your Block</h3>
-                    <p>{proctorData?.block || 'Not assigned'}</p>
-                  </div>
-                </div>
+              <div className="report-actions">
+                <button className="print-btn" onClick={handlePrintReport}>Print Report</button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Complaint Detail Modal */}
+      {selectedComplaint && (
+        <div className="complaint-modal">
+          <div className="modal-content">
+            <button className="close-modal" onClick={() => setSelectedComplaint(null)}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+
+            <h2>Complaint Details</h2>
+
+            <div className="complaint-meta">
+              <span className={`status-badge ${selectedComplaint.status}`}>
+                {selectedComplaint.status}
+              </span>
+              {selectedComplaint.isUrgent && (
+                <span className="urgent-badge">
+                  <FontAwesomeIcon icon={faFlag} /> Urgent
+                </span>
+              )}
+              <span className="complaint-date">
+                {new Date(selectedComplaint.createdAt).toLocaleString()}
+              </span>
+            </div>
+
+            <h3 className="complaint-title">{selectedComplaint.complaintType}: {selectedComplaint.specificInfo}</h3>
+
+            <div className="complaint-detail-item">
+              <h4>Student Information</h4>
+              <p><strong>Student ID:</strong> {selectedComplaint.userId}</p>
+              <p><strong>Dorm Number:</strong> {selectedComplaint.dormNumber}</p>
+            </div>
+
+            <div className="complaint-detail-item">
+              <h4>Description</h4>
+              <p>{selectedComplaint.description}</p>
+            </div>
+
+            {selectedComplaint.file && (
+              <div className="complaint-detail-item">
+                <h4>Evidence</h4>
+                <div className="complaint-image-container">
+                  <img
+                    src={`http://localhost:5000/${selectedComplaint.file}`}
+                    alt="Complaint evidence"
+                    className="complaint-image"
+                    onClick={() => handleExpandImage(`http://localhost:5000/${selectedComplaint.file}`)}
+                  />
+                  <button
+                    className="expand-image-btn"
+                    onClick={() => handleExpandImage(`http://localhost:5000/${selectedComplaint.file}`)}
+                  >
+                    <FontAwesomeIcon icon={faExpand} /> Expand
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button
+                className={`action-btn verify ${selectedComplaint.status === 'verified' ? 'verified' : ''}`}
+                onClick={() => {
+                  handleComplaintAction('verify', selectedComplaint._id);
+                  setSelectedComplaint(null);
+                }}
+                disabled={selectedComplaint.status === 'verified'}
+              >
+                {selectedComplaint.status === 'verified' ? 'Verified' : 'Verify'}
+              </button>
+              <button
+                className={`action-btn dismiss ${selectedComplaint.status === 'dismissed' ? 'dismissed' : ''}`}
+                onClick={() => {
+                  handleComplaintAction('dismiss', selectedComplaint._id);
+                  setSelectedComplaint(null);
+                }}
+                disabled={selectedComplaint.status === 'dismissed'}
+              >
+                {selectedComplaint.status === 'dismissed' ? 'Dismissed' : 'Dismiss'}
+              </button>
+              <button
+                className={`action-btn flag ${selectedComplaint.isUrgent ? 'flagged' : ''}`}
+                onClick={() => {
+                  handleComplaintAction('flag', selectedComplaint._id, selectedComplaint.isUrgent);
+                  setSelectedComplaint(null);
+                }}
+              >
+                <FontAwesomeIcon icon={faFlag} /> {selectedComplaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Expanded Image Modal */}
       {expandedImage && (
         <div className="image-modal" onClick={() => setExpandedImage(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setExpandedImage(null)}>
+            <button className="close-modal" onClick={() => setExpandedImage(null)}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
-            <img src={expandedImage} alt="Expanded view" />
-          </div>
-        </div>
-      )}
-
-      {/* Complaint Details Modal */}
-      {selectedComplaint && (
-        <div className="complaint-modal" onClick={() => setSelectedComplaint(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setSelectedComplaint(null)}>
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
-            <h2>Complaint Details</h2>
-            <h3>{selectedComplaint.title}</h3>
-            <div className="detail-grid">
-              <div className="detail-item">
-                <strong>Student ID:</strong> {selectedComplaint.userId}
-              </div>
-              <div className="detail-item">
-                <strong>Dorm Number:</strong> {selectedComplaint.dormNumber}
-              </div>
-              <div className="detail-item">
-                <strong>Status:</strong>
-                <span className={`status-badge ${selectedComplaint.status || 'pending'}`}>
-                  {selectedComplaint.status || 'Pending'}
-                </span>
-              </div>
-              <div className="detail-item">
-                <strong>Date:</strong> {new Date(selectedComplaint.createdAt).toLocaleString()}
-              </div>
-            </div>
-            <div className="description-section">
-              <h4>Description:</h4>
-              <p>{selectedComplaint.description}</p>
-            </div>
-            {selectedComplaint.feedback && (
-              <div className="feedback-section">
-                <h4>Feedback:</h4>
-                <p>{selectedComplaint.feedback}</p>
-              </div>
-            )}
-            {selectedComplaint.file && (
-              <div className="image-section">
-                <h4>Attached Image:</h4>
-                <img
-                  src={`http://localhost:5000/${selectedComplaint.file}`}
-                  alt="Complaint evidence"
-                  style={{ maxWidth: '300px', cursor: 'zoom-in' }}
-                  onClick={() => handleExpandImage(`http://localhost:5000/${selectedComplaint.file}`)}
-                />
-              </div>
-            )}
+            <img src={expandedImage} alt="Expanded view" className="expanded-image" />
           </div>
         </div>
       )}
