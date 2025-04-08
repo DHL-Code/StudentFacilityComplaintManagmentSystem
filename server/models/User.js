@@ -22,8 +22,9 @@ const userSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true },
   password: { type: String, required: true },
   gender: { type: String, enum: ['male', 'female'], required: true },
-  college:{type:mongoose.Schema.Types.ObjectId,  ref: 'Department', required: true},
-  department: { type: mongoose.Schema.Types.ObjectId,ref: 'College', required: true },
+  college: { type: String, required: true }, // Changed to String
+  department: { type: String, required: true }, // Changed to String
+  blockNumber: { type: String, required: true },
 
   // OTP Management
   resetPasswordOTP: String,

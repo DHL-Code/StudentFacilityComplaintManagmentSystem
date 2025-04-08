@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 const departmentSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     college: {
         type: mongoose.Schema.Types.ObjectId,
