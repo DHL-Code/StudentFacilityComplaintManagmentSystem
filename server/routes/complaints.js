@@ -36,11 +36,39 @@ const upload = multer({
 });
 
 // Get complaints with view status
-router.get('/', authMiddleware, complaintController.getComplaints);
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const complaints = await Complaint.getComplaintsWithViewStatus(
+      req.query.blockNumber, 
+      req.query.proctorId
+    );
+    res.status(200).json(complaints);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Mark complaint as viewed
-router.post('/:complaintId/view', authMiddleware, complaintController.markComplaintAsViewed);
-
+router.post('/:complaintId/view', authMiddleware, async (req, res) => {
+  try {
+    const { complaintId } = req.params;
+    const { proctorId } = req.body;
+    
+    if (!proctorId) {
+      return res.status(400).json({ message: 'Proctor ID is required' });
+    }
+    
+    const updatedComplaint = await Complaint.markAsViewed(complaintId, proctorId);
+    
+    if (!updatedComplaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+    
+    res.status(200).json(updatedComplaint);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Create a new complaint
 router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
@@ -296,42 +324,6 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error deleting complaint:', error);
     res.status(500).json({ message: 'Error deleting complaint' });
-  }
-});
-// Add this new route
-router.post('/:complaintId/view', authMiddleware, async (req, res) => {
-  try {
-    const { complaintId } = req.params;
-    const { proctorId } = req.body;
-
-    // Simple validation
-    if (!proctorId || typeof proctorId !== 'string') {
-      return res.status(400).json({ error: 'Valid proctorId (string) is required' });
-    }
-
-    const complaint = await Complaint.findByIdAndUpdate(
-      complaintId,
-      { $addToSet: { viewedBy: proctorId } },  // Now stores string directly
-      { new: true }
-    );
-
-    if (!complaint) {
-      return res.status(404).json({ error: 'Complaint not found' });
-    }
-
-    res.status(200).json({
-      success: true,
-      complaint: {
-        ...complaint._doc,
-        viewedByProctor: true
-      }
-    });
-  } catch (error) {
-    console.error('Error marking as viewed:', error);
-    res.status(500).json({ 
-      error: 'Failed to mark complaint as viewed',
-      details: error.message 
-    });
   }
 });
 
