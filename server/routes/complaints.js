@@ -2,6 +2,7 @@
 const express = require('express');
 const multer = require('multer');
 const Complaint = require('../models/Complaint');
+const EscalatedComplaint = require('../models/EscalatedComplaint');
 const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 const path = require('path');
@@ -87,6 +88,26 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+// Get verified complaints
+router.get('/verified', authMiddleware, async (req, res) => {
+  try {
+    console.log('Fetching verified complaints...');
+    const complaints = await Complaint.find({ status: 'verified' });
+    console.log('Found complaints:', complaints);
+    res.json({
+      success: true,
+      data: complaints
+    });
+  } catch (error) {
+    console.error('Error retrieving verified complaints:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve verified complaints',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // Update complaint status to verified
 router.put('/:id/verify', authMiddleware, async (req, res) => {
   try {
@@ -145,6 +166,114 @@ router.put('/:id/flag', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error flagging complaint:', error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Get escalated complaints
+router.get('/escalated', authMiddleware, async (req, res) => {
+  try {
+    const escalatedComplaints = await EscalatedComplaint.find()
+      .sort({ escalatedAt: -1 }); // Sort by escalation date, newest first
+    
+    res.json({
+      success: true,
+      data: escalatedComplaints
+    });
+  } catch (error) {
+    console.error('Error retrieving escalated complaints:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve escalated complaints',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Escalate complaint to dean
+router.put('/:id/escalate', authMiddleware, async (req, res) => {
+  try {
+    const { reason, supervisorId } = req.body;
+    
+    if (!reason) {
+      return res.status(400).json({ message: 'Escalation reason is required' });
+    }
+
+    if (!supervisorId) {
+      return res.status(400).json({ message: 'Supervisor ID is required' });
+    }
+
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    // Update the original complaint
+    complaint.status = 'escalated';
+    complaint.escalationReason = reason;
+    complaint.escalatedAt = new Date();
+    complaint.supervisorId = supervisorId;
+    await complaint.save();
+
+    // Create a new escalated complaint
+    const escalatedComplaint = new EscalatedComplaint({
+      originalComplaintId: complaint._id,
+      complaintType: complaint.complaintType,
+      specificInfo: complaint.specificInfo,
+      description: complaint.description,
+      blockNumber: complaint.blockNumber,
+      dormNumber: complaint.dormNumber,
+      userId: complaint.userId,
+      supervisorId: supervisorId,
+      escalationReason: reason,
+      isUrgent: complaint.isUrgent,
+      status: 'Escalated to dean',
+      escalatedAt: new Date()
+    });
+
+    await escalatedComplaint.save();
+
+    res.json({
+      success: true,
+      message: 'Complaint escalated successfully',
+      complaint: escalatedComplaint
+    });
+  } catch (error) {
+    console.error('Error escalating complaint:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Resolve escalated complaint
+router.put('/escalated/:id/resolve', authMiddleware, async (req, res) => {
+  try {
+    const escalatedComplaint = await EscalatedComplaint.findById(req.params.id);
+    if (!escalatedComplaint) {
+      return res.status(404).json({ message: 'Escalated complaint not found' });
+    }
+
+    // Update escalated complaint status
+    escalatedComplaint.status = 'resolved';
+    escalatedComplaint.resolvedAt = new Date();
+    await escalatedComplaint.save();
+
+    // Update original complaint status
+    await Complaint.findByIdAndUpdate(
+      escalatedComplaint.originalComplaintId,
+      { status: 'resolved', resolvedAt: new Date() }
+    );
+
+    res.json({
+      success: true,
+      message: 'Complaint resolved successfully',
+      data: escalatedComplaint
+    });
+  } catch (error) {
+    console.error('Error resolving escalated complaint:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to resolve complaint',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

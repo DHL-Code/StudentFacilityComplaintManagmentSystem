@@ -11,10 +11,12 @@ const complaintSchema = new mongoose.Schema({
   dormNumber: { type: String, required: true }, // Added dorm number field
   status: { 
     type: String, 
-    enum: ['pending', 'verified', 'dismissed'],
+    enum: ['pending', 'verified', 'dismissed', 'escalated', 'resolved'],
     default: 'pending'
   },
-  isUrgent: { type: Boolean, default: false }
+  isUrgent: { type: Boolean, default: false },
+  escalationReason: { type: String },
+  escalatedAt: { type: Date }
 }, { timestamps: true });
 
 const Complaint = mongoose.model('Complaint', complaintSchema);

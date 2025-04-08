@@ -20,8 +20,15 @@ const app = express();
 // Connect to database
 connectDB();
 
+// CORS configuration
+app.use(cors({
+  origin: 'http://localhost:5173', // Your React app's URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -55,8 +62,41 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something broke!' });
+  console.error('Error:', err);
+  
+  // Set default error status and message
+  let status = 500;
+  let message = 'Internal server error';
+  
+  // Handle specific error types
+  if (err.name === 'ValidationError') {
+    status = 400;
+    message = err.message;
+  } else if (err.name === 'UnauthorizedError') {
+    status = 401;
+    message = 'Unauthorized';
+  } else if (err.name === 'JsonWebTokenError') {
+    status = 401;
+    message = 'Invalid token';
+  } else if (err.name === 'TokenExpiredError') {
+    status = 401;
+    message = 'Token expired';
+  }
+  
+  // Send JSON response
+  res.status(status).json({
+    success: false,
+    message: message,
+    error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
 });
 
 const PORT = process.env.PORT || 5000;

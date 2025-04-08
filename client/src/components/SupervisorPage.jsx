@@ -10,12 +10,10 @@ const SupervisorPage = () => {
         fullName: '',
         email: '',
         phoneNumber: '',
-        department: '',
         gender: '',
         currentPassword: '',
         newPassword: '',
-        confirmNewPassword: '',
-        college: '' // Added college to formData
+        confirmNewPassword: ''
     });
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
     const [newProfilePhoto, setNewProfilePhoto] = useState(null);
@@ -23,35 +21,41 @@ const SupervisorPage = () => {
     const [fileError, setFileError] = useState('');
     const [activeSection, setActiveSection] = useState('viewProfile');
 
-    const [complaints, setComplaints] = useState([
-        { id: 1, title: "Broken AC", category: "Maintenance", 
-          status: "Pending", description: "AC not working in Room 101", 
-          proctor: "John Smith", escalated: false },
-        { id: 2, title: "Leaking Roof", category: "Infrastructure", 
-          status: "Under Review", description: "Water leakage in the library", 
-          proctor: "Lisa Brown", escalated: false }
-    ]);
+    const [complaints, setComplaints] = useState([]);
     const [selectedComplaint, setSelectedComplaint] = useState(null);
-    const [escalationReason, setEscalationReason] = useState("");
-    const [reports] = useState([
-        { id: 1, date: "2024-03-20", escalatedCount: 2, resolvedCount: 1 },
-        { id: 2, date: "2024-03-21", escalatedCount: 1, resolvedCount: 0 }
-    ]);
+    const [escalationReason, setEscalationReason] = useState('');
+    const [showEscalationModal, setShowEscalationModal] = useState(false);
+    const [loadingComplaints, setLoadingComplaints] = useState(false);
+    const [complaintError, setComplaintError] = useState(null);
+    const [escalatedComplaints, setEscalatedComplaints] = useState([]);
+    const [loadingReports, setLoadingReports] = useState(false);
+    const [reportsError, setReportsError] = useState(null);
 
     useEffect(() => {
-        fetchProfile(); // Ensure profile is fetched on component mount
+        fetchProfile();
     }, []);
+
+    useEffect(() => {
+        if (activeSection === 'complaints') {
+            fetchVerifiedComplaints();
+        } else if (activeSection === 'reports') {
+            fetchEscalatedComplaints();
+        }
+    }, [activeSection]);
 
     const fetchProfile = async () => {
         setLoading(true);
         setError(null);
         try {
             const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('No authentication token found');
+            const userData = JSON.parse(localStorage.getItem('user'));
+            
+            if (!token || !userData || !userData.userId) {
+                throw new Error('No authentication token or user data found');
             }
 
-            const response = await fetch('http://localhost:5000/api/auth/profile', {
+            console.log('Fetching profile for staff ID:', userData.userId);
+            const response = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -64,17 +68,37 @@ const SupervisorPage = () => {
             }
 
             const data = await response.json();
+            console.log('Fetched staff data:', data);
+            
+            // Handle profile photo URL
+            if (data.profilePhoto) {
+                // Check if the URL already starts with http://localhost:5000/
+                if (data.profilePhoto.startsWith('http://localhost:5000/')) {
             setCurrentProfilePhoto(data.profilePhoto);
-            setProfile(data);
+                } else {
+                    // Extract just the filename from the full path, handling both forward and backward slashes
+                    const photoPath = data.profilePhoto.split(/[\\/]/).pop();
+                    setCurrentProfilePhoto(`http://localhost:5000/uploads/staff-photos/${photoPath}`);
+                }
+            }
+            
+            // Map the data to match our profile state structure
+            const profileData = {
+                fullName: data.name || '',
+                email: data.email || '',
+                phoneNumber: data.phone || '',
+                gender: data.gender || '',
+                userId: data.staffId || '',
+                createdAt: data.createdAt || new Date().toISOString()
+            };
 
-            // Populate formData if we have profile data
+            setProfile(profileData);
+
             setFormData({
-                fullName: data.fullName,
-                email: data.email,
-                phoneNumber: data.phoneNumber,
-                department: data.department,
-                gender: data.gender,
-                college: data.college, // Added college here
+                fullName: profileData.fullName,
+                email: profileData.email,
+                phoneNumber: profileData.phoneNumber,
+                gender: profileData.gender,
                 currentPassword: '',
                 newPassword: '',
                 confirmNewPassword: ''
@@ -88,10 +112,100 @@ const SupervisorPage = () => {
         }
     };
 
+    const fetchVerifiedComplaints = async () => {
+        setLoadingComplaints(true);
+        setComplaintError(null);
+        try {
+            const token = localStorage.getItem('token');
+            const userData = JSON.parse(localStorage.getItem('user'));
+            
+            if (!token || !userData) {
+                throw new Error('No authentication token found');
+            }
+
+            console.log('Fetching verified complaints...');
+            const response = await fetch('http://localhost:5000/api/complaints/verified', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            // Log the response status and headers for debugging
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+            const data = await response.json();
+            console.log('Response data:', data);
+
+            if (!response.ok) {
+                throw new Error(data.message || `Failed to fetch complaints: ${response.status}`);
+            }
+
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to fetch complaints');
+            }
+            
+            if (!Array.isArray(data.data)) {
+                console.error('Received non-array data:', data.data);
+                throw new Error('Invalid response format: expected an array of complaints');
+            }
+
+            if (data.data.length === 0) {
+                console.log('No verified complaints found');
+                setComplaintError('No verified complaints found');
+            }
+
+            setComplaints(data.data);
+        } catch (error) {
+            console.error('Error fetching verified complaints:', error);
+            setComplaintError(error.message);
+        } finally {
+            setLoadingComplaints(false);
+        }
+    };
+
+    const fetchEscalatedComplaints = async () => {
+        setLoadingReports(true);
+        setReportsError(null);
+        try {
+            const token = localStorage.getItem('token');
+            const userData = JSON.parse(localStorage.getItem('user'));
+            
+            if (!token || !userData) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await fetch('http://localhost:5000/api/complaints/escalated', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || `Failed to fetch escalated complaints: ${response.status}`);
+            }
+
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to fetch escalated complaints');
+            }
+
+            setEscalatedComplaints(data.data);
+        } catch (error) {
+            console.error('Error fetching escalated complaints:', error);
+            setReportsError(error.message);
+        } finally {
+            setLoadingReports(false);
+        }
+    };
+
     const handleNavigation = (section) => {
         setActiveSection(section);
         if (section === 'viewProfile' && !profile) {
-            fetchProfile(); // Fetch profile if navigating to viewProfile
+            fetchProfile();
         }
     };
 
@@ -118,18 +232,31 @@ const SupervisorPage = () => {
         setLoading(true);
         setError(null);
 
-        const formPayload = new FormData();
-        formPayload.append('fullName', formData.fullName);
-        formPayload.append('email', formData.email);
-        formPayload.append('phoneNumber', formData.phoneNumber);
-        formPayload.append('department', formData.department);
-        formPayload.append('gender', formData.gender);
-        formPayload.append('college', formData.college); // Added college to form data
-        if (newProfilePhoto) formPayload.append('profilePhoto', newProfilePhoto);
-
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/auth/profile', {
+            const userData = JSON.parse(localStorage.getItem('user'));
+            
+            if (!token || !userData || !userData.userId) {
+                throw new Error('No authentication token or user data found');
+            }
+
+            const formPayload = new FormData();
+            formPayload.append('name', formData.fullName);
+            formPayload.append('email', formData.email);
+            formPayload.append('phone', formData.phoneNumber);
+            formPayload.append('gender', formData.gender);
+            
+            if (formData.currentPassword && formData.newPassword) {
+                formPayload.append('currentPassword', formData.currentPassword);
+                formPayload.append('newPassword', formData.newPassword);
+            }
+            
+            if (newProfilePhoto) {
+                formPayload.append('profilePhoto', newProfilePhoto);
+            }
+
+            console.log('Updating profile for staff ID:', userData.userId);
+            const response = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -144,8 +271,11 @@ const SupervisorPage = () => {
             }
 
             const data = await response.json();
-            setProfile(data); // Update the profile with new data
+            console.log('Profile update successful:', data);
+            setProfile(data);
             alert('Profile updated successfully');
+            
+            await fetchProfile();
         } catch (err) {
             console.error('Error updating profile:', err);
             setError(err.message);
@@ -154,30 +284,76 @@ const SupervisorPage = () => {
         }
     };
 
-    const escalateToDean = (complaintId) => {
-        if (escalationReason.trim()) {
-            setComplaints(complaints.map(comp =>
-                comp.id === complaintId ? { 
-                    ...comp, 
-                    escalated: true,
-                    status: "Escalated",
-                    escalationReason: escalationReason
-                } : comp
-            ));
-            setEscalationReason("");
-            setSelectedComplaint(null);
+    const handleResolveComplaint = async (complaintId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}/resolve`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to resolve complaint');
+            }
+
+            // Refresh complaints list
+            await fetchVerifiedComplaints();
+            alert('Complaint resolved successfully');
+        } catch (error) {
+            console.error('Error resolving complaint:', error);
+            setComplaintError(error.message);
         }
     };
 
-    const resolveComplaint = (complaintId) => {
-        setComplaints(complaints.map(comp =>
-            comp.id === complaintId ? { 
-                ...comp, 
-                status: "Resolved",
-                escalated: false
-            } : comp
-        ));
-        setSelectedComplaint(null);
+    const handleEscalateComplaint = async (complaintId) => {
+        if (!escalationReason.trim()) {
+            setComplaintError('Please provide a reason for escalation');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const userData = JSON.parse(localStorage.getItem('user'));
+            
+            if (!userData || !userData.userId) {
+                throw new Error('Supervisor ID not found');
+            }
+
+            const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}/escalate`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    reason: escalationReason,
+                    supervisorId: userData.userId
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to escalate complaint');
+            }
+
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to escalate complaint');
+            }
+
+            // Remove the escalated complaint from the list
+            setComplaints(complaints.filter(c => c._id !== complaintId));
+            setShowEscalationModal(false);
+            setEscalationReason('');
+            alert('Complaint has been escalated to dean');
+        } catch (error) {
+            console.error('Error escalating complaint:', error);
+            setComplaintError(error.message);
+        }
     };
 
     return (
@@ -223,23 +399,33 @@ const SupervisorPage = () => {
             <div className="main-content">
                 <h1>Supervisor Dashboard</h1>
 
-                {/* Navigation Buttons */}
                 <div className="navigation-buttons">
-                    <button onClick={() => handleNavigation('viewProfile')} className={`nav-button ${activeSection === 'viewProfile' ? 'active' : ''}`}>
+                    <button 
+                        onClick={() => handleNavigation('viewProfile')} 
+                        className={`nav-button ${activeSection === 'viewProfile' ? 'active' : ''}`}
+                    >
                         View Profile
                     </button>
-                    <button onClick={() => handleNavigation('editProfile')} className={`nav-button ${activeSection === 'editProfile' ? 'active' : ''}`}>
+                    <button 
+                        onClick={() => handleNavigation('editProfile')} 
+                        className={`nav-button ${activeSection === 'editProfile' ? 'active' : ''}`}
+                    >
                         Edit Profile
                     </button>
-                    <button onClick={() => handleNavigation('complaints')} className={`nav-button ${activeSection === 'complaints' ? 'active' : ''}`}>
+                    <button 
+                        onClick={() => handleNavigation('complaints')} 
+                        className={`nav-button ${activeSection === 'complaints' ? 'active' : ''}`}
+                    >
                         Complaint Management
                     </button>
-                    <button onClick={() => handleNavigation('reports')} className={`nav-button ${activeSection === 'reports' ? 'active' : ''}`}>
+                    <button 
+                        onClick={() => handleNavigation('reports')} 
+                        className={`nav-button ${activeSection === 'reports' ? 'active' : ''}`}
+                    >
                         Escalation Reports
                     </button>
                 </div>
 
-                {/* Conditional Rendering Based on Active Section */}
                 <div className="content-area">
                     {activeSection === 'viewProfile' && (
                         <section className="view-profile">
@@ -250,7 +436,16 @@ const SupervisorPage = () => {
                                 <div className="profile-container">
                                     <div className="profile-header">
                                         {currentProfilePhoto ? (
-                                            <img src={currentProfilePhoto} alt="Profile" className="profile-photo" />
+                                            <img 
+                                                src={currentProfilePhoto} 
+                                                alt="Profile" 
+                                                className="profile-photo"
+                                                onError={(e) => {
+                                                    console.error('Failed to load profile photo:', currentProfilePhoto);
+                                                    e.target.style.display = 'none';
+                                                    setError('Failed to load profile photo');
+                                                }}
+                                            />
                                         ) : (
                                             <div className="profile-photo-placeholder">No Photo</div>
                                         )}
@@ -258,10 +453,6 @@ const SupervisorPage = () => {
                                         <p className="user-id">{profile.userId}</p>
                                     </div>
                                     <div className="profile-details">
-                                        <div className="detail-item">
-                                            <span className="detail-label">Department:</span>
-                                            <span className="detail-value">{profile.department}</span>
-                                        </div>
                                         <div className="detail-item">
                                             <span className="detail-label">Email:</span>
                                             <span className="detail-value">{profile.email}</span>
@@ -273,10 +464,6 @@ const SupervisorPage = () => {
                                         <div className="detail-item">
                                             <span className="detail-label">Gender:</span>
                                             <span className="detail-value">{profile.gender}</span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="detail-label">College:</span>
-                                            <span className="detail-value">{profile.college}</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="detail-label">Account Created:</span>
@@ -295,7 +482,7 @@ const SupervisorPage = () => {
                             <h2>Edit Profile</h2>
                             {loading && <p className="loading">Saving changes...</p>}
                             {error && <p className="error">Error: {error}</p>}
-                             <form onSubmit={handleProfileUpdate}>
+                            <form onSubmit={handleProfileUpdate} className="edit-profile-form">
                             <div className="profile-photo-edit">
                                 <div
                                     className="photo-preview"
@@ -303,8 +490,8 @@ const SupervisorPage = () => {
                                 >
                                     {newProfilePreview ? (
                                         <img src={newProfilePreview} alt="Preview" className="profile-image" />
-                                    ) : profile?.profilePhoto ? (
-                                        <img src={profile.profilePhoto} alt="Current Profile" className="profile-image" />
+                                        ) : currentProfilePhoto ? (
+                                            <img src={currentProfilePhoto} alt="Current Profile" className="profile-image" />
                                     ) : (
                                         <div className="upload-placeholder">
                                             <span className="upload-icon">+</span>
@@ -321,72 +508,49 @@ const SupervisorPage = () => {
                                 />
                                 {fileError && <p className="error">{fileError}</p>}
                             </div>
-                            <div className="form-fields">
+
+                                <div className="form-section">
+                                    <h3>Personal Information</h3>
+                                    <div className="form-group">
                                 <label>
                                     Full Name:
                                     <input
-                                        className="narrow-input"
                                         type="text"
                                         value={formData.fullName}
                                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                                placeholder="Enter your full name"
                                     />
                                 </label>
+                                    </div>
 
+                                    <div className="form-group">
                                 <label>
                                     Email:
                                     <input
-                                        className="narrow-input"
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                placeholder="Enter your email"
                                     />
                                 </label>
+                                    </div>
 
+                                    <div className="form-group">
                                 <label>
                                     Phone Number:
                                     <input
                                         type="tel"
                                         value={formData.phoneNumber}
                                         onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                                placeholder="Enter your phone number"
                                     />
                                 </label>
+                                    </div>
 
-                                <label>
-                                    College:
-                                    <select
-                                        value={formData.college}
-                                        onChange={(e) => {
-                                            const selectedCollegeName = e.target.value;
-                                            setFormData({ ...formData, college: selectedCollegeName, department: '' });
-                                        }}
-                                    >
-                                        <option value="">Select College</option>
-                                        {colleges.map((col) => (
-                                            <option key={col.name} value={col.name}>
-                                                {col.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-
-                                <label>
-                                    Department:
-                                    <select
-                                        value={formData.department}
-                                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                    >
-                                        <option value="">Select Department</option>
-                                        {availableDepartments.map((dept) => (
-                                            <option key={dept} value={dept}>
-                                                {dept}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-
-                                <div className="gender-selection">
-                                    <span className='gender'>Gender:</span>
-                                    <label>
+                                    <div className="form-group">
+                                        <span className="gender-label">Gender:</span>
+                                        <div className="gender-options">
+                                            <label className="gender-option">
                                         <input
                                             type="radio"
                                             value="male"
@@ -395,7 +559,7 @@ const SupervisorPage = () => {
                                         />
                                         Male
                                     </label>
-                                    <label>
+                                            <label className="gender-option">
                                         <input
                                             type="radio"
                                             value="female"
@@ -404,11 +568,13 @@ const SupervisorPage = () => {
                                         />
                                         Female
                                     </label>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="password-change-section">
+                                <div className="form-section">
                                     <h3>Change Password</h3>
-
+                                    <div className="form-group">
                                     <label>
                                         Current Password:
                                         <input
@@ -418,17 +584,21 @@ const SupervisorPage = () => {
                                             placeholder="Enter current password"
                                         />
                                     </label>
+                                    </div>
 
+                                    <div className="form-group">
                                     <label>
                                         New Password:
                                         <input
                                             type="password"
                                             value={formData.newPassword}
                                             onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                                            placeholder="Enter new password (min 6 characters)"
+                                                placeholder="Enter new password"
                                         />
                                     </label>
+                                    </div>
 
+                                    <div className="form-group">
                                     <label>
                                         Confirm New Password:
                                         <input
@@ -441,105 +611,159 @@ const SupervisorPage = () => {
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={loading}>
+                                <div className="form-actions">
+                                    <button type="submit" className="save-button" disabled={loading}>
                                 {loading ? 'Saving...' : 'Save Changes'}
                             </button>
+                                </div>
                         </form>
                         </section>
                     )}
 
                     {activeSection === 'complaints' && (
-                        <div className="section">
+                        <div className="complaints-section">
                             <h2>Complaint Management</h2>
+                            {loadingComplaints && <p className="loading">Loading complaints...</p>}
+                            {complaintError && <p className="error">Error: {complaintError}</p>}
+                            
                             <div className="complaints-grid">
                                 {complaints.map(complaint => (
-                                    <div key={complaint.id} className="complaint-card">
+                                    <div key={complaint._id} className="complaint-card">
                                         <div className="complaint-header">
-                                            <h3>{complaint.title}</h3>
-                                            <span className={`status ${complaint.status.toLowerCase().replace(' ', '-')}`}>
+                                            <h3>{complaint.complaintType}</h3>
+                                            <span className={`status ${complaint.status.toLowerCase()}`}>
                                                 {complaint.status}
                                             </span>
                                         </div>
-                                        <p>Category: {complaint.category}</p>
-                                        <p>Proctor: {complaint.proctor}</p>
-                                        <p>Description: {complaint.description}</p>
-                                        <div className="action-buttons">
-                                            <button onClick={() => setSelectedComplaint(complaint)}>
-                                                Manage
+                                        <div className="complaint-details">
+                                            <p><strong>Specific Issue:</strong> {complaint.specificInfo}</p>
+                                            <p><strong>Description:</strong> {complaint.description}</p>
+                                            <p><strong>Block:</strong> {complaint.blockNumber}</p>
+                                            <p><strong>Dorm:</strong> {complaint.dormNumber}</p>
+                                            <p><strong>Date:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
+                                            {complaint.isUrgent && <p className="urgent-tag">URGENT</p>}
+                                        </div>
+                                        <div className="complaint-actions">
+                                            <button 
+                                                className="resolve-btn"
+                                                onClick={() => handleResolveComplaint(complaint._id)}
+                                            >
+                                                Mark as Resolved
+                                            </button>
+                                            <button 
+                                                className="escalate-btn"
+                                                onClick={() => {
+                                                    setSelectedComplaint(complaint);
+                                                    setShowEscalationModal(true);
+                                                }}
+                                            >
+                                                Escalate to Dean
                                             </button>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    )}
 
-                    {activeSection === 'reports' && (
-                        <div className="section">
-                            <h2>Escalation Reports</h2>
-                            <div className="reports-list">
-                                {reports.map(report => (
-                                    <div key={report.id} className="report-card">
-                                        <h3>Report #{report.id}</h3>
-                                        <p>Date: {report.date}</p>
-                                        <p>Escalated Issues: {report.escalatedCount}</p>
-                                        <p>Resolved Complaints: {report.resolvedCount}</p>
-                                        <button onClick={() => console.log(report)}>
-                                            View Full Details
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {selectedComplaint && (
-                        <div className="modal-overlay">
-                            <div className="modal-content">
-                                <h3>{selectedComplaint.title} Management</h3>
-                                <p>Submitted by: {selectedComplaint.proctor}</p>
-                                
-                                {selectedComplaint.status === "Escalated" ? (
-                                    <div className="modal-section">
-                                        <p><strong>Escalation Reason:</strong> {selectedComplaint.escalationReason}</p>
-                                        <button 
-                                            className="resolve-btn"
-                                            onClick={() => resolveComplaint(selectedComplaint.id)}
-                                        >
-                                            Mark as Resolved
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="modal-section">
+                            {/* Escalation Modal */}
+                            {showEscalationModal && (
+                                <div className="modal-overlay">
+                                    <div className="modal-content">
+                                        <h3>Escalate Complaint to Dean</h3>
+                                        <p>Please provide a reason for escalating this complaint:</p>
                                         <textarea
-                                            placeholder="Reason for escalation..."
                                             value={escalationReason}
                                             onChange={(e) => setEscalationReason(e.target.value)}
+                                            placeholder="Enter reason for escalation..."
                                             rows="4"
                                         />
                                         <div className="modal-actions">
                                             <button 
                                                 className="confirm-btn"
-                                                onClick={() => escalateToDean(selectedComplaint.id)}
+                                                onClick={() => handleEscalateComplaint(selectedComplaint._id)}
                                             >
                                                 Confirm Escalation
                                             </button>
                                             <button 
-                                                className="resolve-btn"
-                                                onClick={() => resolveComplaint(selectedComplaint.id)}
-                                            >
-                                                Mark as Resolved
-                                            </button>
-                                            <button 
                                                 className="cancel-btn"
-                                                onClick={() => setSelectedComplaint(null)}
+                                                onClick={() => {
+                                                    setShowEscalationModal(false);
+                                                    setEscalationReason('');
+                                                    setSelectedComplaint(null);
+                                                }}
                                             >
                                                 Cancel
                                             </button>
                                         </div>
                                     </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeSection === 'reports' && (
+                        <div className="section reports-section">
+                            <h2>Escalation Reports</h2>
+                            {loadingReports && <p className="loading">Loading reports...</p>}
+                            {reportsError && <p className="error">Error: {reportsError}</p>}
+                            
+                            <div className="reports-list">
+                                {escalatedComplaints.length === 0 ? (
+                                    <p>No escalated complaints found.</p>
+                                ) : (
+                                    escalatedComplaints.map(complaint => (
+                                        <div key={complaint._id} className="report-card">
+                                            <h3>{complaint.complaintType}</h3>
+                                            <div className="report-details">
+                                                <p><strong>Escalated On:</strong> {new Date(complaint.escalatedAt).toLocaleDateString()}</p>
+                                                <p><strong>Status:</strong> {complaint.status}</p>
+                                                <p><strong>Block:</strong> {complaint.blockNumber}</p>
+                                                <p><strong>Dorm:</strong> {complaint.dormNumber}</p>
+                                                <p><strong>Escalation Reason:</strong> {complaint.escalationReason}</p>
+                                                {complaint.resolvedAt && (
+                                                    <p><strong>Resolved On:</strong> {new Date(complaint.resolvedAt).toLocaleDateString()}</p>
+                                                )}
+                                            </div>
+                                            <div className="report-actions">
+                                                <button 
+                                                    className="view-details-btn"
+                                                    onClick={() => setSelectedComplaint(complaint)}
+                                                >
+                                                    View Full Details
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
                                 )}
                             </div>
+
+                            {selectedComplaint && (
+                                <div className="modal-overlay">
+                                    <div className="modal-content">
+                                        <h3>Complaint Details</h3>
+                                        <div className="complaint-full-details">
+                                            <p><strong>Type:</strong> {selectedComplaint.complaintType}</p>
+                                            <p><strong>Specific Issue:</strong> {selectedComplaint.specificInfo}</p>
+                                            <p><strong>Description:</strong> {selectedComplaint.description}</p>
+                                            <p><strong>Block:</strong> {selectedComplaint.blockNumber}</p>
+                                            <p><strong>Dorm:</strong> {selectedComplaint.dormNumber}</p>
+                                            <p><strong>Escalation Reason:</strong> {selectedComplaint.escalationReason}</p>
+                                            <p><strong>Escalated On:</strong> {new Date(selectedComplaint.escalatedAt).toLocaleString()}</p>
+                                            <p><strong>Status:</strong> {selectedComplaint.status}</p>
+                                            {selectedComplaint.resolvedAt && (
+                                                <p><strong>Resolved On:</strong> {new Date(selectedComplaint.resolvedAt).toLocaleString()}</p>
+                                            )}
+                                        </div>
+                                        <div className="modal-actions">
+                                            <button 
+                                                className="close-btn"
+                                                onClick={() => setSelectedComplaint(null)}
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

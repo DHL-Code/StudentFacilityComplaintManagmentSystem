@@ -19,12 +19,9 @@ const DeanPage = () => {
     newPassword: '',
     confirmNewPassword: ''
   });
-  const [complaints, setComplaints] = useState([
-    { id: 1, title: "Broken AC", category: "Maintenance", 
-      status: "Pending", description: "AC not working in Room 101" },
-    { id: 2, title: "Leaking Roof", category: "Infrastructure", 
-      status: "Verified", description: "Water leakage in the library" }
-  ]);
+  const [complaints, setComplaints] = useState([]);
+  const [loadingComplaints, setLoadingComplaints] = useState(false);
+  const [complaintError, setComplaintError] = useState(null);
 
   // Function to fetch dean data - extracted to be reusable
   const fetchDeanData = async () => {
@@ -102,6 +99,42 @@ const DeanPage = () => {
   useEffect(() => {
     fetchDeanData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'complaints') {
+      fetchEscalatedComplaints();
+    }
+  }, [activeTab]);
+
+  const fetchEscalatedComplaints = async () => {
+    setLoadingComplaints(true);
+    setComplaintError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/complaints/escalated', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch escalated complaints');
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch complaints');
+      }
+      
+      setComplaints(data.data);
+    } catch (error) {
+      console.error('Error fetching escalated complaints:', error);
+      setComplaintError(error.message);
+    } finally {
+      setLoadingComplaints(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -245,26 +278,33 @@ const DeanPage = () => {
     }
   };
 
-  // Complaint Functions
-  const verifyComplaint = (complaintId) => {
-    setComplaints(complaints.map(comp =>
-      comp.id === complaintId ? { ...comp, status: "Verified" } : comp
-    ));
-  };
+  const handleResolveComplaint = async (complaintId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/complaints/escalated/${complaintId}/resolve`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-  const resolveComplaint = (complaintId) => {
-    setComplaints(complaints.map(comp =>
-      comp.id === complaintId ? { ...comp, status: "Resolved" } : comp
-    ));
-  };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to resolve complaint');
+      }
 
-  const removeComplaint = (complaintId) => {
-    setComplaints(complaints.filter(comp => comp.id !== complaintId));
-  };
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to resolve complaint');
+      }
 
-  const removeAllComplaints = () => {
-    if (window.confirm('Are you sure you want to remove all complaints?')) {
-      setComplaints([]);
+      // Refresh complaints list
+      await fetchEscalatedComplaints();
+      alert('Complaint resolved successfully');
+    } catch (error) {
+      console.error('Error resolving complaint:', error);
+      setComplaintError(error.message);
     }
   };
 
@@ -300,47 +340,36 @@ const DeanPage = () => {
 
       {activeTab === 'complaints' && (
         <div className="section">
-          <h2>Complaints Management</h2>
-          <button 
-            className="remove-all-btn"
-            onClick={removeAllComplaints}
-            disabled={complaints.length === 0}
-          >
-            Remove All Complaints ({complaints.length})
-          </button>
-          <div className="complaints-list">
+          <h2>Escalated Complaints</h2>
+          {loadingComplaints && <p className="loading">Loading complaints...</p>}
+          {complaintError && <p className="error">Error: {complaintError}</p>}
+          
+          <div className="complaints-grid">
             {complaints.map(complaint => (
-              <div key={complaint.id} className="complaint-card">
+              <div key={complaint._id} className="complaint-card">
                 <div className="complaint-header">
-                  <h3>{complaint.title}</h3>
+                  <h3>{complaint.complaintType}</h3>
                   <span className={`status ${complaint.status.toLowerCase()}`}>
                     {complaint.status}
                   </span>
                 </div>
-                <p>{complaint.description}</p>
-                <div className="action-buttons">
+                <div className="complaint-details">
+                  <p><strong>Specific Issue:</strong> {complaint.specificInfo}</p>
+                  <p><strong>Description:</strong> {complaint.description}</p>
+                  <p><strong>Block:</strong> {complaint.blockNumber}</p>
+                  <p><strong>Dorm:</strong> {complaint.dormNumber}</p>
+                  <p><strong>Date:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
+                  <p><strong>Escalation Reason:</strong> {complaint.escalationReason}</p>
+                  <p><strong>Escalated At:</strong> {new Date(complaint.escalatedAt).toLocaleDateString()}</p>
+                  {complaint.isUrgent && <p className="urgent-tag">URGENT</p>}
+                </div>
+                <div className="complaint-actions">
                   <button 
-                    className="remove-btn"
-                    onClick={() => removeComplaint(complaint.id)}
+                    className="resolve-btn"
+                    onClick={() => handleResolveComplaint(complaint._id)}
                   >
-                    Remove
+                    Mark as Resolved
                   </button>
-                  {complaint.status === "Pending" && (
-                    <button
-                      className="verify-btn"
-                      onClick={() => verifyComplaint(complaint.id)}
-                    >
-                      Verify
-                    </button>
-                  )}
-                  {complaint.status === "Verified" && (
-                    <button
-                      className="resolve-btn"
-                      onClick={() => resolveComplaint(complaint.id)}
-                    >
-                      Resolve
-                    </button>
-                  )}
                 </div>
               </div>
             ))}
