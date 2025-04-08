@@ -1,6 +1,7 @@
 // SupervisorPage.jsx
 import React, { useState, useEffect } from 'react';
 import '../styles/SupervisorStyles.css';
+import { FaSun, FaMoon } from 'react-icons/fa';
 
 const SupervisorPage = () => {
     const [profile, setProfile] = useState(null);
@@ -30,6 +31,20 @@ const SupervisorPage = () => {
     const [escalatedComplaints, setEscalatedComplaints] = useState([]);
     const [loadingReports, setLoadingReports] = useState(false);
     const [reportsError, setReportsError] = useState(null);
+
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem('theme');
+        return savedTheme === 'dark';
+    });
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
+
+    const toggleTheme = () => {
+        setIsDarkMode(!isDarkMode);
+    };
 
     useEffect(() => {
         fetchProfile();
@@ -335,12 +350,12 @@ const SupervisorPage = () => {
                 })
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to escalate complaint');
+                throw new Error(data.message || 'Failed to escalate complaint');
             }
 
-            const data = await response.json();
             if (!data.success) {
                 throw new Error(data.message || 'Failed to escalate complaint');
             }
@@ -349,11 +364,23 @@ const SupervisorPage = () => {
             setComplaints(complaints.filter(c => c._id !== complaintId));
             setShowEscalationModal(false);
             setEscalationReason('');
-            alert('Complaint has been escalated to dean');
+            
+            // Refresh the escalated complaints list
+            await fetchEscalatedComplaints();
+            
+            // Show success message
+            alert('Complaint has been successfully escalated to the dean');
         } catch (error) {
             console.error('Error escalating complaint:', error);
             setComplaintError(error.message);
+            alert('Failed to escalate complaint: ' + error.message);
         }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
     };
 
     return (
@@ -397,7 +424,17 @@ const SupervisorPage = () => {
             </div>
 
             <div className="main-content">
-                <h1>Supervisor Dashboard</h1>
+                <div className="header">
+                    <h1>Supervisor Dashboard</h1>
+                    <div className="header-actions">
+                        <button className="theme-toggle" onClick={toggleTheme}>
+                            {isDarkMode ? <FaSun className="theme-icon" /> : <FaMoon className="theme-icon" />}
+                        </button>
+                        <button className="logout-btn" onClick={handleLogout}>
+                            Logout
+                        </button>
+                    </div>
+                </div>
 
                 <div className="navigation-buttons">
                     <button 

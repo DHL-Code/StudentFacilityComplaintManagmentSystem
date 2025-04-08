@@ -20,13 +20,7 @@ const complaintSchema = new mongoose.Schema({
   viewedBy: {
     type: [String],
     ref: 'Staff',
-    default: [],
-    validate: {
-      validator: function(v) {
-        return v.every(id => mongoose.Types.ObjectId.isValid(id));
-      },
-      message: props => `${props.value} contains invalid ObjectId`
-    }
+    default: []
   }
 }, { timestamps: true });
 

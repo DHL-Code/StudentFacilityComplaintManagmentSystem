@@ -5,18 +5,18 @@ import '../styles/DeanStyles.css';
 const DeanPage = () => { 
   const [activeTab, setActiveTab] = useState('complaints');
   const [deanData, setDeanData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
   const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
   const [newProfilePhoto, setNewProfilePhoto] = useState(null);
   const [newProfilePreview, setNewProfilePreview] = useState(null);
   const [fileError, setFileError] = useState('');
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    currentPassword: '',
-    newPassword: '',
+    const [formData, setFormData] = useState({
+        fullName: '',
+        email: '',
+        phoneNumber: '',
+        currentPassword: '',
+        newPassword: '',
     confirmNewPassword: ''
   });
   const [complaints, setComplaints] = useState([]);
@@ -25,11 +25,11 @@ const DeanPage = () => {
 
   // Function to fetch dean data - extracted to be reusable
   const fetchDeanData = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const userData = JSON.parse(localStorage.getItem('user'));
-
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const userData = JSON.parse(localStorage.getItem('user'));
+            
       if (!token || !userData) {
         throw new Error('Authentication required');
       }
@@ -46,23 +46,23 @@ const DeanPage = () => {
       console.log('Using staff ID:', staffId);
 
       const response = await fetch(`http://localhost:5000/api/admin/staff/${staffId}`, {
-        headers: {
+                headers: {
           'Authorization': `Bearer ${token}`,
-        },
-      });
+                },
+            });
 
-      if (!response.ok) {
+if (!response.ok) {
         throw new Error('Failed to fetch dean data');
-      }
+            }
 
-      const data = await response.json();
+            const data = await response.json();
       console.log('Fetched dean data:', data);
       
       // Set the profile photo URL if available
       if (data.profilePhoto) {
         // Check if the URL already starts with http://localhost:5000/
         if (data.profilePhoto.startsWith('http://localhost:5000/')) {
-          setCurrentProfilePhoto(data.profilePhoto);
+            setCurrentProfilePhoto(data.profilePhoto);
         } else {
           setCurrentProfilePhoto(`http://localhost:5000/${data.profilePhoto}`);
         }
@@ -80,21 +80,21 @@ const DeanPage = () => {
       setDeanData(processedData);
       
       // Initialize form data with current values
-      setFormData({
+            setFormData({
         fullName: processedData.name,
         email: processedData.email,
         phoneNumber: processedData.phone,
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: ''
-      });
-    } catch (err) {
+                currentPassword: '',
+                newPassword: '',
+                confirmNewPassword: ''
+            });
+        } catch (err) {
       console.error('Error fetching dean data:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
   useEffect(() => {
     fetchDeanData();
@@ -142,28 +142,28 @@ const DeanPage = () => {
     window.location.href = '/login';
   };
 
-  const handlePhotoChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      const isValidType = ['image/jpeg', 'image/png'].includes(selectedFile.type);
-      const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
+    const handlePhotoChange = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            const isValidType = ['image/jpeg', 'image/png'].includes(selectedFile.type);
+            const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
 
-      if (isValidType && isValidSize) {
-        setNewProfilePhoto(selectedFile);
-        const reader = new FileReader();
-        reader.onloadend = () => setNewProfilePreview(reader.result);
-        reader.readAsDataURL(selectedFile);
-        setFileError('');
-      } else {
-        setFileError('File must be JPG/PNG and less than 5MB');
-      }
-    }
-  };
+            if (isValidType && isValidSize) {
+                setNewProfilePhoto(selectedFile);
+                const reader = new FileReader();
+                reader.onloadend = () => setNewProfilePreview(reader.result);
+                reader.readAsDataURL(selectedFile);
+                setFileError('');
+            } else {
+                setFileError('File must be JPG/PNG and less than 5MB');
+            }
+        }
+    };
 
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+    const handleProfileUpdate = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
 
     if (formData.newPassword !== formData.confirmNewPassword) {
       setError("New passwords don't match");
@@ -175,19 +175,19 @@ const DeanPage = () => {
       setError("Password must be at least 6 characters");
       setLoading(false);
       return;
-    }
+            }
 
-    const formPayload = new FormData();
+            const formPayload = new FormData();
     formPayload.append('name', formData.fullName);
-    formPayload.append('email', formData.email);
+            formPayload.append('email', formData.email);
     formPayload.append('phone', formData.phoneNumber);
     if (formData.currentPassword) {
-      formPayload.append('currentPassword', formData.currentPassword);
-      formPayload.append('newPassword', formData.newPassword);
-    }
-    if (newProfilePhoto) {
-      formPayload.append('profilePhoto', newProfilePhoto);
-    }
+                formPayload.append('currentPassword', formData.currentPassword);
+                formPayload.append('newPassword', formData.newPassword);
+            }
+            if (newProfilePhoto) {
+                formPayload.append('profilePhoto', newProfilePhoto);
+            }
 
     try {
       const token = localStorage.getItem('token');
@@ -209,16 +209,16 @@ const DeanPage = () => {
       console.log('API URL:', apiUrl);
       
       const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formPayload,
-      });
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formPayload,
+            });
 
       console.log('Response status:', response.status);
-      
-      if (!response.ok) {
+
+            if (!response.ok) {
         const errorText = await response.text();
         console.error('Error response text:', errorText);
         
@@ -230,8 +230,8 @@ const DeanPage = () => {
         }
       }
 
-      const data = await response.json();
-      console.log('Profile update successful:', data);
+const data = await response.json();
+            console.log('Profile update successful:', data);
       
       // Update currentProfilePhoto if a new one was uploaded
       if (data.profilePhoto) {
@@ -269,14 +269,14 @@ const DeanPage = () => {
       // Switch to profile view to show the updated profile
       setActiveTab('profile');
       
-      alert('Profile updated successfully');
-    } catch (err) {
+            alert('Profile updated successfully');
+        } catch (err) {
       console.error('Profile update error:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
   const handleResolveComplaint = async (complaintId) => {
     try {
@@ -306,19 +306,19 @@ const DeanPage = () => {
       console.error('Error resolving complaint:', error);
       setComplaintError(error.message);
     }
-  };
+    };
 
-  return (
+    return (
     <div className="dean-container">
       <h1>Dean's Dashboard</h1>
       <nav className="dean-nav">
-        <button 
+                        <button 
           className={`nav-btn ${activeTab === 'complaints' ? 'active' : ''}`}
           onClick={() => setActiveTab('complaints')}
-        >
+                        >
           Manage Complaints
-        </button>
-        <button 
+                        </button>
+                        <button 
           className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`}
           onClick={() => {
             setActiveTab('profile');
@@ -326,16 +326,16 @@ const DeanPage = () => {
           }}
         >
           Profile
-        </button>
-        <button 
+                        </button>
+                        <button 
           className={`nav-btn ${activeTab === 'editProfile' ? 'active' : ''}`}
           onClick={() => setActiveTab('editProfile')}
         >
-          Edit Profile
-        </button>
+                        Edit Profile
+                    </button>
         <button className="logout-btn" onClick={handleLogout}>
           Logout
-        </button>
+                    </button>
       </nav>
 
       {activeTab === 'complaints' && (
@@ -369,7 +369,7 @@ const DeanPage = () => {
                     onClick={() => handleResolveComplaint(complaint._id)}
                   >
                     Mark as Resolved
-                  </button>
+                    </button>
                 </div>
               </div>
             ))}
@@ -387,7 +387,7 @@ const DeanPage = () => {
             {deanData && (
               <>
                 <div className="student-profile-header">
-                  {currentProfilePhoto ? (
+                                        {currentProfilePhoto ? (
                     <img 
                       src={currentProfilePhoto} 
                       alt="Profile" 
@@ -403,47 +403,47 @@ const DeanPage = () => {
                   )}
                   <h3 className="full-name">{deanData.name}</h3>
                   <p className="user-id">{deanData.staffId}</p>
-                </div>
+                                    </div>
                 <div className="student-profile-details">
                   <div className="student-detail-item">
                     <span className="student-detail-label">Email:</span>
                     <span className="student-detail-value">{deanData.email}</span>
-                  </div>
+                                        </div>
                   <div className="student-detail-item">
                     <span className="student-detail-label">Phone:</span>
                     <span className="student-detail-value">{deanData.phone}</span>
-                  </div>
+                                        </div>
                   <div className="student-detail-item">
                     <span className="student-detail-label">Role:</span>
                     <span className="student-detail-value">{deanData.role}</span>
-                  </div>
+                                        </div>
                   <div className="student-detail-item">
                     <span className="student-detail-label">Member Since:</span>
                     <span className="student-detail-value">
                       {new Date(deanData.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
+                                            </span>
+                                        </div>
                 </div>
               </>
             )}
-          </div>
-        </div>
-      )}
+                                    </div>
+                                </div>
+                    )}
 
       {activeTab === 'editProfile' && (
         <div className="section">
-          <h2>Edit Profile</h2>
+                            <h2>Edit Profile</h2>
           {loading && <p className="student-loading">Updating profile...</p>}
           {error && <p className="student-error">Error: {error}</p>}
           
           <div className="student-profile-container">
-            <form onSubmit={handleProfileUpdate}>
+                             <form onSubmit={handleProfileUpdate}>
               <div className="student-profile-photo-edit">
-                <div
+                                <div
                   className="student-photo-preview"
-                onClick={() => document.getElementById('profilePhotoInput').click()}
-              >
-                {newProfilePreview ? (
+                                    onClick={() => document.getElementById('profilePhotoInput').click()}
+                                >
+                                    {newProfilePreview ? (
                     <img src={newProfilePreview} alt="Preview" className="student-profile-image" />
                   ) : currentProfilePhoto ? (
                     <img src={currentProfilePhoto} alt="Current Profile" className="student-profile-image" />
@@ -451,91 +451,91 @@ const DeanPage = () => {
                     <div className="student-upload-placeholder">
                       <span className="student-upload-icon">+</span>
                       <span className="student-upload-text">Upload Photo</span>
-                  </div>
-                )}
-              </div>
-              <input
-                type="file"
-                id="profilePhotoInput"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                  style={{ display: 'none' }}
-              />
+                                        </div>
+                                    )}
+                                </div>
+                                <input
+                                    type="file"
+                                    id="profilePhotoInput"
+                                    accept="image/*"
+                                    onChange={handlePhotoChange}
+                                    style={{ display: 'none' }}
+                                />
                 {fileError && <p className="student-error">{fileError}</p>}
-            </div>
+                            </div>
 
               <div className="form-group">
                 <label>Full Name</label>
-                  <input
-                    type="text"
-                    value={formData.fullName}
+                                    <input
+                                        type="text"
+                                        value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                     required
-                  />
+                                    />
               </div>
 
               <div className="form-group">
                 <label>Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
+                                    <input
+                                        type="email"
+                                        value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                     required
-                  />
+                                    />
               </div>
 
               <div className="form-group">
                 <label>Phone Number</label>
-                  <input
-                    type="tel"
-                    value={formData.phoneNumber}
+                                    <input
+                                        type="tel"
+                                        value={formData.phoneNumber}
                   onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                   required
                 />
-              </div>
+                                </div>
 
               <div className="form-group">
                 <label>Current Password</label>
-                <input
-                  type="password"
-                  value={formData.currentPassword}
+                                        <input
+                                            type="password"
+                                            value={formData.currentPassword}
                   onChange={(e) => setFormData({...formData, currentPassword: e.target.value})}
                   placeholder="Leave blank to keep current password"
-                />
+                                        />
               </div>
 
               <div className="form-group">
                 <label>New Password</label>
-                <input
-                  type="password"
-                  value={formData.newPassword}
+                                        <input
+                                            type="password"
+                                            value={formData.newPassword}
                   onChange={(e) => setFormData({...formData, newPassword: e.target.value})}
                   placeholder="Leave blank to keep current password"
-                />
+                                        />
               </div>
 
               <div className="form-group">
                 <label>Confirm New Password</label>
-                <input
-                  type="password"
-                  value={formData.confirmNewPassword}
+                                        <input
+                                            type="password"
+                                            value={formData.confirmNewPassword}
                   onChange={(e) => setFormData({...formData, confirmNewPassword: e.target.value})}
                   placeholder="Leave blank to keep current password"
-                />
-              </div>
+                                        />
+                            </div>
 
               <div className="form-actions">
                 <button type="submit" className="submit-btn">Update Profile</button>
                 <button type="button" className="cancel-btn" onClick={() => setActiveTab('profile')}>
-                  Cancel
-              </button>
-              </div>
+                                                Cancel
+                                            </button>
+                                        </div>
             </form>
-          </div>
+                            </div>
+                        </div>
+                    )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default DeanPage;
