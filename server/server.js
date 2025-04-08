@@ -32,6 +32,23 @@ if (!fs.existsSync(staffPhotosDir)) {
   fs.mkdirSync(staffPhotosDir, { recursive: true });
 }
 
+// Add this before your routes
+app.use((req, res, next) => {
+  console.log(`Incoming ${req.method} ${req.url}`);
+  next();
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method
+  });
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());

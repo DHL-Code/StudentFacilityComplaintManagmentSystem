@@ -239,13 +239,13 @@ const Signup = () => {
         formData.append("fullName", fullName);
         formData.append("email", email);
         formData.append("userId", userId);
-        formData.append("college", college);
-        formData.append("department", department);
-        formData.append("phoneNumber", phoneNumber);
+        formData.append("college", college); // Already a string
+        formData.append("department", department); // Already a string
         formData.append("password", password);
         formData.append("gender", gender);
         formData.append("blockNumber", blockNumber);
         formData.append("dormNumber", dormNumber);
+        formData.append("phoneNumber", phoneNumber);
         if (profilePhoto) {
             formData.append("profilePhoto", profilePhoto);
         }

@@ -2,6 +2,8 @@
 const express = require('express');
 const multer = require('multer');
 const Complaint = require('../models/Complaint');
+// In routes/complaintRoutes.js
+const complaintController = require('../controllers/complaintController.js');
 const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 const path = require('path');
@@ -35,6 +37,13 @@ const upload = multer({
   }
 });
 
+// Get complaints with view status
+router.get('/', authMiddleware, complaintController.getComplaints);
+
+// Mark complaint as viewed
+router.post('/:complaintId/view', authMiddleware, complaintController.markComplaintAsViewed);
+
+
 // Create a new complaint
 router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
   const { complaintType, specificInfo, description, blockNumber, dormNumber, userId } = req.body;
@@ -65,25 +74,13 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 // Get all complaints (for admin or user)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { userId, blockNumber } = req.query;
-    
-    let query = {};
-    
-    // If userId is provided, filter complaints for that user
-    if (userId) {
-      query.userId = userId;
-    }
-    
-    // If blockNumber is provided, filter complaints for that block
-    if (blockNumber) {
-      query.blockNumber = blockNumber;
-    }
-    
-    const complaints = await Complaint.find(query);
-    res.json(complaints);
+    const complaints = await Complaint.getComplaintsWithViewStatus(
+      req.query.blockNumber, 
+      req.query.proctorId
+    );
+    res.status(200).json(complaints);
   } catch (error) {
-    console.error('Error retrieving complaints:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -172,6 +169,42 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error deleting complaint:', error);
     res.status(500).json({ message: 'Error deleting complaint' });
+  }
+});
+// Add this new route
+router.post('/:complaintId/view', authMiddleware, async (req, res) => {
+  try {
+    const { complaintId } = req.params;
+    const { proctorId } = req.body;
+
+    // Simple validation
+    if (!proctorId || typeof proctorId !== 'string') {
+      return res.status(400).json({ error: 'Valid proctorId (string) is required' });
+    }
+
+    const complaint = await Complaint.findByIdAndUpdate(
+      complaintId,
+      { $addToSet: { viewedBy: proctorId } },  // Now stores string directly
+      { new: true }
+    );
+
+    if (!complaint) {
+      return res.status(404).json({ error: 'Complaint not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      complaint: {
+        ...complaint._doc,
+        viewedByProctor: true
+      }
+    });
+  } catch (error) {
+    console.error('Error marking as viewed:', error);
+    res.status(500).json({ 
+      error: 'Failed to mark complaint as viewed',
+      details: error.message 
+    });
   }
 });
 

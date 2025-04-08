@@ -24,6 +24,51 @@ function ProctorDashboard() {
     urgent: 0
   });
 
+  const markComplaintAsViewed = async (complaintId, proctorId) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      // Validate IDs before sending
+      if (!complaintId || !proctorId) {
+        throw new Error('Missing complaintId or proctorId');
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/api/complaints/${complaintId}/view`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            proctorId: proctorId.toString() // Ensure string format
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Backend response error:', {
+          status: response.status,
+          data
+        });
+        throw new Error(data.error || 'Failed to mark complaint as viewed');
+      }
+
+      return data.complaint;
+    } catch (error) {
+      console.error('Network error details:', {
+        error: error.message,
+        complaintId,
+        proctorId,
+        time: new Date().toISOString()
+      });
+      throw error;
+    }
+  };
+
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -48,9 +93,7 @@ function ProctorDashboard() {
 
         // Fetch proctor data
         const proctorResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Authorization': `Bearer ${token}` },
         });
 
         if (!proctorResponse.ok) throw new Error('Failed to fetch proctor data');
@@ -69,20 +112,24 @@ function ProctorDashboard() {
 
         setProctorData(processedData);
 
-        // Fetch complaints
-        const complaintsResponse = await fetch(`http://localhost:5000/api/complaints?blockNumber=${processedData.block}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        // Fetch complaints with both parameters
+        const complaintsResponse = await fetch(
+          `http://localhost:5000/api/complaints?blockNumber=${processedData.block}&proctorId=${processedData.staffId}`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` },
+          }
+        );
 
-        if (!complaintsResponse.ok) throw new Error('Failed to fetch complaints');
+        if (!complaintsResponse.ok) {
+          const errorData = await complaintsResponse.json();
+          throw new Error(errorData.error || 'Failed to fetch complaints');
+        }
+
         const complaintsData = await complaintsResponse.json();
 
-        // Process complaints
         const transformedComplaints = complaintsData.map(complaint => ({
           ...complaint,
-          isNew: true // Mark all fetched complaints as new initially
+          isNew: !complaint.viewedByProctor
         }));
 
         setNotifications(transformedComplaints);
@@ -106,7 +153,7 @@ function ProctorDashboard() {
     setUnreadCount(newCount);
   };
 
-  // Update summary statistics
+  //summary statistics
   const updateSummaryStats = (complaints) => {
     setSummaryStats({
       totalComplaints: complaints.length,
@@ -117,23 +164,45 @@ function ProctorDashboard() {
   };
 
   // Handle viewing a complaint (marks it as read)
-  // Update handleViewComplaint
-  const handleViewComplaint = (complaint) => {
+  const handleViewComplaint = async (complaint) => {
     setSelectedComplaint(complaint);
 
-    // Mark as read and store in viewed complaints
-    if (complaint.isNew) {
-      const updatedNotifications = notifications.map(n =>
-        n._id === complaint._id ? { ...n, isNew: false } : n
-      );
-      setNotifications(updatedNotifications);
-      updateUnreadCount(updatedNotifications);
-      setViewedComplaints(prev => [...prev, complaint._id]);
-      localStorage.setItem(`viewed_${proctorData?.staffId}`, JSON.stringify([...viewedComplaints, complaint._id]));
+    if (complaint.isNew && proctorData?.staffId) {
+      try {
+        console.log('Attempting to mark complaint as viewed:', {
+          complaintId: complaint._id,
+          proctorId: proctorData.staffId,
+          time: new Date().toISOString()
+        });
+
+        const updatedComplaint = await markComplaintAsViewed(
+          complaint._id,
+          proctorData.staffId
+        );
+
+        const updatedNotifications = notifications.map(n =>
+          n._id === complaint._id
+            ? { ...n, isNew: false, viewedBy: updatedComplaint.viewedBy }
+            : n
+        );
+
+        setNotifications(updatedNotifications);
+        updateUnreadCount(updatedNotifications);
+
+        console.log('Successfully marked complaint as viewed:', updatedComplaint);
+      } catch (error) {
+        console.error('Full error details:', {
+          error: error.message,
+          complaint: complaint._id,
+          proctor: proctorData?.staffId,
+          notificationsCount: notifications.length,
+          time: new Date().toISOString()
+        });
+        setError(`Failed to update status: ${error.message}`);
+      }
     }
   };
-
-  // Update useEffect to load viewed complaints
+  // useEffect to load viewed complaints
   useEffect(() => {
     if (proctorData?.staffId) {
       const viewed = JSON.parse(localStorage.getItem(`viewed_${proctorData.staffId}`)) || [];
