@@ -4,6 +4,21 @@ import '../styles/DeanStyles.css';
 
 const DeanPage = () => { 
   const [activeTab, setActiveTab] = useState('complaints');
+  const [deanData, setDeanData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
+  const [newProfilePhoto, setNewProfilePhoto] = useState(null);
+  const [newProfilePreview, setNewProfilePreview] = useState(null);
+  const [fileError, setFileError] = useState('');
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: ''
+  });
   const [complaints, setComplaints] = useState([
     { id: 1, title: "Broken AC", category: "Maintenance", 
       status: "Pending", description: "AC not working in Room 101" },
@@ -11,39 +26,224 @@ const DeanPage = () => {
       status: "Verified", description: "Water leakage in the library" }
   ]);
 
-  // Profile State
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    department: '',
-    gender: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: '',
-    college: ''
-  });
-  const [newProfilePhoto, setNewProfilePhoto] = useState(null);
-  const [newProfilePreview, setNewProfilePreview] = useState(null);
-  const [fileError, setFileError] = useState('');
-  const [colleges] = useState([
-    {
-      name: "Computing and Informatics",
-      departments: ["Computer Science", "Software Engineering", "Information Technology", "Information Systems"],
-    },
-    {
-      name: "Engineering",
-      departments: ["Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"],
-    },
-    {
-      name: "Business",
-      departments: ["Business Administration", "Accounting", "Marketing", "Finance"],
-    },
-  ]);
-  const [availableDepartments, setAvailableDepartments] = useState([]);
+  // Function to fetch dean data - extracted to be reusable
+  const fetchDeanData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const userData = JSON.parse(localStorage.getItem('user'));
+
+      if (!token || !userData) {
+        throw new Error('Authentication required');
+      }
+
+      console.log('User data from localStorage:', userData);
+      
+      // Check for different ID properties
+      const staffId = userData?.staffId || userData?.userId || userData?.id;
+      
+      if (!staffId) {
+        throw new Error('Staff ID not found in user data');
+      }
+
+      console.log('Using staff ID:', staffId);
+
+      const response = await fetch(`http://localhost:5000/api/admin/staff/${staffId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch dean data');
+      }
+
+      const data = await response.json();
+      console.log('Fetched dean data:', data);
+      
+      // Set the profile photo URL if available
+      if (data.profilePhoto) {
+        // Check if the URL already starts with http://localhost:5000/
+        if (data.profilePhoto.startsWith('http://localhost:5000/')) {
+          setCurrentProfilePhoto(data.profilePhoto);
+        } else {
+          setCurrentProfilePhoto(`http://localhost:5000/${data.profilePhoto}`);
+        }
+      }
+      
+      const processedData = {
+        name: data.name || 'Not available',
+        staffId: data.staffId || staffId || 'Not available',
+        email: data.email || 'Not available',
+        role: data.role || 'Not available',
+        phone: data.phone || 'Not available',
+        createdAt: data.createdAt || new Date().toISOString()
+      };
+
+      setDeanData(processedData);
+      
+      // Initialize form data with current values
+      setFormData({
+        fullName: processedData.name,
+        email: processedData.email,
+        phoneNumber: processedData.phone,
+        currentPassword: '',
+        newPassword: '',
+        confirmNewPassword: ''
+      });
+    } catch (err) {
+      console.error('Error fetching dean data:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeanData();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
+  const handlePhotoChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      const isValidType = ['image/jpeg', 'image/png'].includes(selectedFile.type);
+      const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
+
+      if (isValidType && isValidSize) {
+        setNewProfilePhoto(selectedFile);
+        const reader = new FileReader();
+        reader.onloadend = () => setNewProfilePreview(reader.result);
+        reader.readAsDataURL(selectedFile);
+        setFileError('');
+      } else {
+        setFileError('File must be JPG/PNG and less than 5MB');
+      }
+    }
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    if (formData.newPassword !== formData.confirmNewPassword) {
+      setError("New passwords don't match");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.newPassword && formData.newPassword.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
+
+    const formPayload = new FormData();
+    formPayload.append('name', formData.fullName);
+    formPayload.append('email', formData.email);
+    formPayload.append('phone', formData.phoneNumber);
+    if (formData.currentPassword) {
+      formPayload.append('currentPassword', formData.currentPassword);
+      formPayload.append('newPassword', formData.newPassword);
+    }
+    if (newProfilePhoto) {
+      formPayload.append('profilePhoto', newProfilePhoto);
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const userData = JSON.parse(localStorage.getItem('user'));
+      
+      console.log('User data from localStorage:', userData);
+      
+      // Check for different ID properties
+      const staffId = userData?.staffId || userData?.userId || userData?.id;
+      
+      if (!staffId) {
+        throw new Error('Staff ID not found in user data');
+      }
+
+      console.log('Using staff ID:', staffId);
+      
+      // Use the found ID
+      const apiUrl = `http://localhost:5000/api/admin/staff/${staffId}`;
+      console.log('API URL:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formPayload,
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response text:', errorText);
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || errorData.message || 'Update failed');
+        } catch (parseError) {
+          throw new Error(`Update failed: ${response.status} ${response.statusText}`);
+        }
+      }
+
+      const data = await response.json();
+      console.log('Profile update successful:', data);
+      
+      // Update currentProfilePhoto if a new one was uploaded
+      if (data.profilePhoto) {
+        // Check if the URL already starts with http://localhost:5000/
+        if (data.profilePhoto.startsWith('http://localhost:5000/')) {
+          setCurrentProfilePhoto(data.profilePhoto);
+        } else {
+          setCurrentProfilePhoto(`http://localhost:5000/${data.profilePhoto}`);
+        }
+      }
+      
+      // Update deanData with new values
+      setDeanData({
+        ...deanData,
+        name: data.name,
+        email: data.email,
+        phone: data.phone
+      });
+      
+      // Reset form data
+      setFormData({
+        ...formData,
+        currentPassword: '',
+        newPassword: '',
+        confirmNewPassword: ''
+      });
+      
+      // Reset profile photo states
+      setNewProfilePhoto(null);
+      setNewProfilePreview(null);
+      
+      // Refresh the profile data to ensure we have the latest data
+      await fetchDeanData();
+      
+      // Switch to profile view to show the updated profile
+      setActiveTab('profile');
+      
+      alert('Profile updated successfully');
+    } catch (err) {
+      console.error('Profile update error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Complaint Functions
   const verifyComplaint = (complaintId) => {
@@ -68,131 +268,6 @@ const DeanPage = () => {
     }
   };
 
-  // Profile Functions
-  useEffect(() => {
-    if (formData.college) {
-      const selectedCollege = colleges.find(col => col.name === formData.college);
-      setAvailableDepartments(selectedCollege?.departments || []);
-    }
-  }, [formData.college, colleges]);
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const token = localStorage.getItem('token');
-      
-      if (!token) throw new Error('No authentication token found');
-      
-      const response = await fetch('http://localhost:5000/api/auth/profile', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch profile');
-      }
-
-      const data = await response.json();
-      const userData = data.user || data;
-      
-      setProfile(userData);
-      setFormData({
-        fullName: userData.fullName || '',
-        email: userData.email || '',
-        phoneNumber: userData.phoneNumber || '',
-        department: userData.department || '',
-        gender: userData.gender || '',
-        college: userData.college || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: ''
-      });
-      
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (formData.newPassword !== formData.confirmNewPassword) {
-        throw new Error("New passwords do not match");
-      }
-
-      const formPayload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value) formPayload.append(key, value);
-      });
-      
-      if (newProfilePhoto) {
-        formPayload.append('profilePhoto', newProfilePhoto);
-      }
-
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Authentication required');
-
-      const response = await fetch('http://localhost:5000/api/auth/profile', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formPayload,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Profile update failed');
-      }
-
-      const data = await response.json();
-      setProfile(data.user || data);
-      alert('Profile updated successfully');
-      
-      // Reset password fields
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: ''
-      }));
-
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      setFileError('File size must be less than 5MB');
-      return;
-    }
-
-    if (!['image/jpeg', 'image/png'].includes(file.type)) {
-      setFileError('Only JPG/PNG files are allowed');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => setNewProfilePreview(reader.result);
-    reader.readAsDataURL(file);
-    setNewProfilePhoto(file);
-    setFileError('');
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
   return (
     <div className="dean-container">
       <h1>Dean's Dashboard</h1>
@@ -205,9 +280,21 @@ const DeanPage = () => {
         </button>
         <button 
           className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
+          onClick={() => {
+            setActiveTab('profile');
+            fetchDeanData(); // Refresh profile data when switching to profile tab
+          }}
         >
           Profile
+        </button>
+        <button 
+          className={`nav-btn ${activeTab === 'editProfile' ? 'active' : ''}`}
+          onClick={() => setActiveTab('editProfile')}
+        >
+          Edit Profile
+        </button>
+        <button className="logout-btn" onClick={handleLogout}>
+          Logout
         </button>
       </nav>
 
@@ -263,24 +350,78 @@ const DeanPage = () => {
 
       {activeTab === 'profile' && (
         <div className="section">
-          <h2>Profile Management</h2>
-          {loading && <div className="loading-spinner"></div>}
-          {error && <div className="error-message">{error}</div>}
+          <h2>View Profile</h2>
+          {loading && <p className="student-loading">Loading profile...</p>}
+          {error && <p className="student-error">Error: {error}</p>}
+          
+          <div className="student-profile-container">
+            {deanData && (
+              <>
+                <div className="student-profile-header">
+                  {currentProfilePhoto ? (
+                    <img 
+                      src={currentProfilePhoto} 
+                      alt="Profile" 
+                      className="student-profile-photo"
+                      onError={(e) => {
+                        console.error('Failed to load profile photo:', currentProfilePhoto);
+                        e.target.style.display = 'none';
+                        setError('Failed to load profile photo');
+                      }}
+                    />
+                  ) : (
+                    <div className="student-profile-photo-placeholder">No Photo</div>
+                  )}
+                  <h3 className="full-name">{deanData.name}</h3>
+                  <p className="user-id">{deanData.staffId}</p>
+                </div>
+                <div className="student-profile-details">
+                  <div className="student-detail-item">
+                    <span className="student-detail-label">Email:</span>
+                    <span className="student-detail-value">{deanData.email}</span>
+                  </div>
+                  <div className="student-detail-item">
+                    <span className="student-detail-label">Phone:</span>
+                    <span className="student-detail-value">{deanData.phone}</span>
+                  </div>
+                  <div className="student-detail-item">
+                    <span className="student-detail-label">Role:</span>
+                    <span className="student-detail-value">{deanData.role}</span>
+                  </div>
+                  <div className="student-detail-item">
+                    <span className="student-detail-label">Member Since:</span>
+                    <span className="student-detail-value">
+                      {new Date(deanData.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
-          <div className="profile-section">
-            <div className="profile-photo-edit">
-              <div 
-                className="photo-preview"
+      {activeTab === 'editProfile' && (
+        <div className="section">
+          <h2>Edit Profile</h2>
+          {loading && <p className="student-loading">Updating profile...</p>}
+          {error && <p className="student-error">Error: {error}</p>}
+          
+          <div className="student-profile-container">
+            <form onSubmit={handleProfileUpdate}>
+              <div className="student-profile-photo-edit">
+                <div
+                  className="student-photo-preview"
                 onClick={() => document.getElementById('profilePhotoInput').click()}
               >
                 {newProfilePreview ? (
-                  <img src={newProfilePreview} alt="Profile preview" />
-                ) : profile?.profilePhoto ? (
-                  <img src={profile.profilePhoto} alt="Profile" />
-                ) : (
-                  <div className="upload-placeholder">
-                    <span className="upload-icon">+</span>
-                    <span>Upload Photo</span>
+                    <img src={newProfilePreview} alt="Preview" className="student-profile-image" />
+                  ) : currentProfilePhoto ? (
+                    <img src={currentProfilePhoto} alt="Current Profile" className="student-profile-image" />
+                  ) : (
+                    <div className="student-upload-placeholder">
+                      <span className="student-upload-icon">+</span>
+                      <span className="student-upload-text">Upload Photo</span>
                   </div>
                 )}
               </div>
@@ -289,55 +430,77 @@ const DeanPage = () => {
                 id="profilePhotoInput"
                 accept="image/*"
                 onChange={handlePhotoChange}
-                hidden
+                  style={{ display: 'none' }}
               />
-              {fileError && <div className="file-error">{fileError}</div>}
+                {fileError && <p className="student-error">{fileError}</p>}
             </div>
 
-            <form onSubmit={handleProfileUpdate}>
-              <div className="form-grid">
-                <label>
-                  Full Name:
+              <div className="form-group">
+                <label>Full Name</label>
                   <input
                     type="text"
                     value={formData.fullName}
-                    onChange={e => setFormData({...formData, fullName: e.target.value})}
+                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                     required
                   />
-                </label>
+              </div>
 
-                <label>
-                  Email:
+              <div className="form-group">
+                <label>Email</label>
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
                     required
                   />
-                </label>
+              </div>
 
-                <label>
-                  Phone Number:
+              <div className="form-group">
+                <label>Phone Number</label>
                   <input
                     type="tel"
                     value={formData.phoneNumber}
-                    onChange={e => setFormData({...formData, phoneNumber: e.target.value})}
-                  />
-                </label>
-
-               
-
-
-                
+                  onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                  required
+                />
               </div>
 
-              <button 
-                type="submit" 
-                className="save-btn"
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
+              <div className="form-group">
+                <label>Current Password</label>
+                <input
+                  type="password"
+                  value={formData.currentPassword}
+                  onChange={(e) => setFormData({...formData, currentPassword: e.target.value})}
+                  placeholder="Leave blank to keep current password"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>New Password</label>
+                <input
+                  type="password"
+                  value={formData.newPassword}
+                  onChange={(e) => setFormData({...formData, newPassword: e.target.value})}
+                  placeholder="Leave blank to keep current password"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Confirm New Password</label>
+                <input
+                  type="password"
+                  value={formData.confirmNewPassword}
+                  onChange={(e) => setFormData({...formData, confirmNewPassword: e.target.value})}
+                  placeholder="Leave blank to keep current password"
+                />
+              </div>
+
+              <div className="form-actions">
+                <button type="submit" className="submit-btn">Update Profile</button>
+                <button type="button" className="cancel-btn" onClick={() => setActiveTab('profile')}>
+                  Cancel
               </button>
+              </div>
             </form>
           </div>
         </div>

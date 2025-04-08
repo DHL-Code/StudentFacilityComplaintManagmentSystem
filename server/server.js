@@ -20,34 +20,27 @@ const app = express();
 // Connect to database
 connectDB();
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
+const profilePhotosDir = path.join(uploadsDir, 'profile_photos');
 const staffPhotosDir = path.join(uploadsDir, 'staff-photos');
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+if (!fs.existsSync(profilePhotosDir)) {
+  fs.mkdirSync(profilePhotosDir, { recursive: true });
+}
+
 if (!fs.existsSync(staffPhotosDir)) {
   fs.mkdirSync(staffPhotosDir, { recursive: true });
 }
-
-// Add this before your routes
-app.use((req, res, next) => {
-  console.log(`Incoming ${req.method} ${req.url}`);
-  next();
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', {
-    message: err.message,
-    stack: err.stack,
-    url: req.url,
-    method: req.method
-  });
-  res.status(500).json({ error: 'Internal server error' });
-});
 
 // Middleware
 app.use(cors());

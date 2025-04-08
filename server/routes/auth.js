@@ -246,9 +246,9 @@ router.post('/forgot-password', async (req, res) => {
       const otp = otpGenerator.generate(6, {
           digits: true,
           upperCaseAlphabets: true,
-          lowerCaseAlphabets: false, // We'll convert to uppercase anyway
+          lowerCaseAlphabets: false,
           specialChars: false
-      }).toUpperCase(); // Ensure uppercase for consistency
+      }).toUpperCase();
 
       const otpExpiry = Date.now() + 60000; // OTP expires in 1 minute
       
@@ -266,17 +266,29 @@ router.post('/forgot-password', async (req, res) => {
       });
 
       const mailOptions = {
+          from: process.env.EMAIL_USER,
           to: email,
           subject: 'Password Reset OTP',
           text: `Your OTP for password reset is: ${otp}\n\nThis OTP will expire in 10 minutes.`,
       };
 
-      await transporter.sendMail(mailOptions);
-
-      res.json({ message: 'OTP sent successfully. Please verify.' });
+      try {
+          await transporter.sendMail(mailOptions);
+          console.log('Email sent successfully');
+          res.json({ message: 'OTP sent successfully. Please verify.' });
+      } catch (emailError) {
+          console.error('Email sending error:', emailError);
+          res.status(500).json({ 
+              message: 'Failed to send OTP email',
+              error: emailError.message 
+          });
+      }
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'An error occurred.' });
+      console.error('Forgot password error:', error);
+      res.status(500).json({ 
+          message: 'An error occurred during password reset',
+          error: error.message 
+      });
   }
 });
 

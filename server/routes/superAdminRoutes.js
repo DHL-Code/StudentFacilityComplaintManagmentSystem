@@ -409,4 +409,71 @@ router.get('/staff/:staffId', async (req, res) => {
   }
 });
 
+// Update Staff Profile
+router.put('/staff/:staffId', upload.single('profilePhoto'), async (req, res) => {
+  try {
+    const { staffId } = req.params;
+    const { name, email, phone, currentPassword, newPassword } = req.body;
+
+    // Normalize the staffId to uppercase
+    const normalizedStaffId = staffId.toUpperCase();
+
+    // Check all collections for the staff member
+    const proctor = await Proctor.findOne({ staffId: normalizedStaffId });
+    const supervisor = await Supervisor.findOne({ staffId: normalizedStaffId });
+    const dean = await Dean.findOne({ staffId: normalizedStaffId });
+    
+    const staff = proctor || supervisor || dean;
+
+    if (!staff) {
+      return res.status(404).json({ 
+        error: 'Staff member not found',
+        details: `No staff member found with ID: ${normalizedStaffId}`
+      });
+    }
+
+    // Verify current password if trying to change password
+    if (currentPassword && newPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, staff.password);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'Current password is incorrect' });
+      }
+      staff.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    // Update profile fields
+    if (name) staff.name = name;
+    if (email) staff.email = email;
+    if (phone) staff.phone = phone;
+    
+    // Handle profile photo upload
+    if (req.file) {
+      // Store the relative path for the profile photo
+      staff.profilePhoto = req.file.path;
+    }
+
+    await staff.save();
+
+    // Return updated staff data without sensitive information
+    const staffData = {
+      staffId: staff.staffId,
+      name: staff.name,
+      email: staff.email,
+      phone: staff.phone,
+      role: staff.role,
+      profilePhoto: staff.profilePhoto,
+      block: staff.block,
+      createdAt: staff.createdAt
+    };
+
+    res.json(staffData);
+  } catch (error) {
+    console.error('Error updating staff:', error);
+    res.status(500).json({ 
+      error: 'Failed to update staff profile',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
 module.exports = router;
