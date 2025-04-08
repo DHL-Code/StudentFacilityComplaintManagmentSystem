@@ -20,22 +20,27 @@ const app = express();
 // Connect to database
 connectDB();
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
+const profilePhotosDir = path.join(uploadsDir, 'profile_photos');
 const staffPhotosDir = path.join(uploadsDir, 'staff-photos');
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+if (!fs.existsSync(profilePhotosDir)) {
+  fs.mkdirSync(profilePhotosDir, { recursive: true });
+}
+
 if (!fs.existsSync(staffPhotosDir)) {
   fs.mkdirSync(staffPhotosDir, { recursive: true });
 }
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 //Routes
 app.use('/api/auth', authRoutes);
