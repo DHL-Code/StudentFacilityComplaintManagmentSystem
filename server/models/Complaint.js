@@ -15,7 +15,7 @@ const complaintSchema = new mongoose.Schema({
   isUrgent: { type: Boolean, default: false },
 
   escalationReason: { type: String },
-  escalatedAt: { type: Date }
+  escalatedAt: { type: Date },
   file: { type: String },
   viewedBy: {
     type: [String],
@@ -28,7 +28,6 @@ const complaintSchema = new mongoose.Schema({
       message: props => `${props.value} contains invalid ObjectId`
     }
   }
-origin/main
 }, { timestamps: true });
 
 // Add these static methods
