@@ -155,7 +155,7 @@
 
   .complaint-details p {
   	margin: 5px 0;
-  	color: #666;
+  	color: #0c0c0c;
   }
 
   .urgent-tag {
@@ -185,7 +185,7 @@
 
   .resolve-btn {
   	background-color: #4caf50;
-  	color: white;
+  	color: rgb(180, 175, 175);
   }
 
   .resolve-btn:hover {
@@ -194,7 +194,7 @@
 
   .escalate-btn {
   	background-color: #ff9800;
-  	color: white;
+  	color: rgb(148, 142, 142);
   }
 
   .escalate-btn:hover {
@@ -255,7 +255,7 @@
 
   .confirm-btn {
   	background-color: #2196f3;
-  	color: white;
+  	color: rgb(132, 127, 127);
   }
 
   .confirm-btn:hover {
@@ -264,7 +264,7 @@
 
   .cancel-btn {
   	background-color: #f44336;
-  	color: white;
+  	color: rgb(92, 89, 89);
   }
 
   .cancel-btn:hover {
@@ -335,7 +335,7 @@
 
   .view-details-btn {
     background-color: #3498db;
-    color: white;
+    color: rgb(136, 131, 131);
     border: none;
     padding: 8px 16px;
     border-radius: 4px;
@@ -371,7 +371,7 @@
 
   .close-btn {
     background-color: #95a5a6;
-    color: white;
+    color: rgb(137, 135, 135);
     border: none;
     padding: 8px 16px;
     border-radius: 4px;
