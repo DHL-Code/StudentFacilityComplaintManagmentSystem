@@ -60,12 +60,9 @@ if (!response.ok) {
       
       // Set the profile photo URL if available
       if (data.profilePhoto) {
-        // Check if the URL already starts with http://localhost:5000/
-        if (data.profilePhoto.startsWith('http://localhost:5000/')) {
-            setCurrentProfilePhoto(data.profilePhoto);
-        } else {
-          setCurrentProfilePhoto(`http://localhost:5000/${data.profilePhoto}`);
-        }
+        // Remove leading slash if it exists to avoid double slashes
+        const photoPath = data.profilePhoto.startsWith('/') ? data.profilePhoto.substring(1) : data.profilePhoto;
+        setCurrentProfilePhoto(`http://localhost:5000/${photoPath}`);
       }
       
       const processedData = {
@@ -235,12 +232,9 @@ const data = await response.json();
       
       // Update currentProfilePhoto if a new one was uploaded
       if (data.profilePhoto) {
-        // Check if the URL already starts with http://localhost:5000/
-        if (data.profilePhoto.startsWith('http://localhost:5000/')) {
-          setCurrentProfilePhoto(data.profilePhoto);
-        } else {
-          setCurrentProfilePhoto(`http://localhost:5000/${data.profilePhoto}`);
-        }
+        // Remove leading slash if it exists to avoid double slashes
+        const photoPath = data.profilePhoto.startsWith('/') ? data.profilePhoto.substring(1) : data.profilePhoto;
+        setCurrentProfilePhoto(`http://localhost:5000/${photoPath}`);
       }
       
       // Update deanData with new values
