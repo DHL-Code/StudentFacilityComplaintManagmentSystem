@@ -399,40 +399,23 @@ const Dashboard = () => {
     };
 
     // Add new function to fetch complaints
+    // In fetchComplaints function, remove userId from query
     const fetchComplaints = async () => {
         try {
             setLoadingComplaints(true);
             const token = localStorage.getItem('token');
-            const userId = profile?.userId;
 
-            if (!userId) {
-                throw new Error('User ID not available');
-            }
-
-            const response = await fetch(`http://localhost:5000/api/complaints?userId=${userId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
+            const response = await fetch(`http://localhost:5000/api/complaints`, {
+                headers: { 'Authorization': `Bearer ${token}` },
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to fetch complaints');
-            }
+            if (!response.ok) throw new Error('Failed to fetch complaints');
 
             const data = await response.json();
             setComplaints(data);
-
-            // Check for status changes and show notifications
-            data.forEach(complaint => {
-                if (complaint.status === 'verified' || complaint.status === 'dismissed' || complaint.isUrgent) {
-                    handleStatusNotification(complaint);
-                }
-            });
+            // ... rest of the function
         } catch (error) {
-            console.error('Error fetching complaints:', error);
-            setError('Failed to load complaints');
-        } finally {
-            setLoadingComplaints(false);
+            // Handle error
         }
     };
 

@@ -72,12 +72,20 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 });
 
 // Get all complaints (for admin or user)
+// Modify the GET /api/complaints route
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const complaints = await Complaint.getComplaintsWithViewStatus(
-      req.query.blockNumber, 
-      req.query.proctorId
-    );
+    let complaints;
+    if (req.user.role === 'student') {
+      // Return only the student's complaints
+      complaints = await Complaint.find({ userId: req.user.userId });
+    } else {
+      // Handle proctor view with block filter and view status
+      complaints = await Complaint.getComplaintsWithViewStatus(
+        req.query.blockNumber, 
+        req.user.userId // Proctor ID from token
+      );
+    }
     res.status(200).json(complaints);
   } catch (error) {
     res.status(500).json({ error: error.message });
