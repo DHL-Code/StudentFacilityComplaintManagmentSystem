@@ -1,7 +1,7 @@
 // SupervisorPage.jsx
 import React, { useState, useEffect } from 'react';
 import '../styles/SupervisorStyles.css';
-import { FaSun, FaMoon } from 'react-icons/fa';
+import { FaSun, FaMoon, FaBars, FaTimes } from 'react-icons/fa';
 
 const SupervisorPage = () => {
     const [profile, setProfile] = useState(null);
@@ -37,6 +37,8 @@ const SupervisorPage = () => {
         return savedTheme === 'dark';
     });
 
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
@@ -44,6 +46,10 @@ const SupervisorPage = () => {
 
     const toggleTheme = () => {
         setIsDarkMode(!isDarkMode);
+    };
+
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
     };
 
     useEffect(() => {
@@ -219,6 +225,7 @@ const SupervisorPage = () => {
 
     const handleNavigation = (section) => {
         setActiveSection(section);
+        setIsMobileMenuOpen(false);
         if (section === 'viewProfile' && !profile) {
             fetchProfile();
         }
@@ -385,46 +392,80 @@ const SupervisorPage = () => {
 
     return (
         <div className="supervisor-page">
+            <div className="mobile-header">
+                <button className="hamburger-btn" onClick={toggleMobileMenu}>
+                    {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+                </button>
+                <h1>Supervisor Dashboard</h1>
+                <div className="header-actions">
+                    <button className="theme-toggle" onClick={toggleTheme}>
+                        {isDarkMode ? <FaSun className="theme-icon" /> : <FaMoon className="theme-icon" />}
+                    </button>
+                    <button className="logout-btn" onClick={handleLogout}>
+                        Logout
+                    </button>
+                </div>
+            </div>
+
+            <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+                <button 
+                    onClick={() => handleNavigation('viewProfile')}
+                    className={activeSection === 'viewProfile' ? 'active' : ''}
+                >
+                    View Profile
+                </button>
+                <button 
+                    onClick={() => handleNavigation('editProfile')}
+                    className={activeSection === 'editProfile' ? 'active' : ''}
+                >
+                    Edit Profile
+                </button>
+                <button 
+                    onClick={() => handleNavigation('complaints')}
+                    className={activeSection === 'complaints' ? 'active' : ''}
+                >
+                    Complaint Management
+                </button>
+                <button 
+                    onClick={() => handleNavigation('reports')}
+                    className={activeSection === 'reports' ? 'active' : ''}
+                >
+                    Escalation Reports
+                </button>
+            </div>
+
             <div className="sidebar">
                 <h2>Navigation</h2>
-                <ul>
-                    <li>
-                        <button 
-                            onClick={() => handleNavigation('viewProfile')}
-                            className={activeSection === 'viewProfile' ? 'active' : ''}
-                        >
-                            View Profile
-                        </button>
-                    </li>
-                    <li>
-                        <button 
-                            onClick={() => handleNavigation('editProfile')}
-                            className={activeSection === 'editProfile' ? 'active' : ''}
-                        >
-                            Edit Profile
-                        </button>
-                    </li>
-                    <li>
-                        <button 
-                            onClick={() => handleNavigation('complaints')}
-                            className={activeSection === 'complaints' ? 'active' : ''}
-                        >
-                            Complaint Management
-                        </button>
-                    </li>
-                    <li>
-                        <button 
-                            onClick={() => handleNavigation('reports')}
-                            className={activeSection === 'reports' ? 'active' : ''}
-                        >
-                            Escalation Reports
-                        </button>
-                    </li>
-                </ul>
+                <div className="sidebar-nav">
+                    <button 
+                        onClick={() => handleNavigation('viewProfile')}
+                        className={activeSection === 'viewProfile' ? 'active' : ''}
+                    >
+                        View Profile
+                    </button>
+                    <button 
+                        onClick={() => handleNavigation('editProfile')}
+                        className={activeSection === 'editProfile' ? 'active' : ''}
+                    >
+                        Edit Profile
+                    </button>
+                    <button 
+                        onClick={() => handleNavigation('complaints')}
+                        className={activeSection === 'complaints' ? 'active' : ''}
+                    >
+                        Complaint Management
+                    </button>
+                    <button 
+                        onClick={() => handleNavigation('reports')}
+                        className={activeSection === 'reports' ? 'active' : ''}
+                    >
+                        Escalation Reports
+                    </button>
+                </div>
             </div>
 
             <div className="main-content">
-                <div className="header">
+                <div className="desktop-header">
                     <h1>Supervisor Dashboard</h1>
                     <div className="header-actions">
                         <button className="theme-toggle" onClick={toggleTheme}>
@@ -434,33 +475,6 @@ const SupervisorPage = () => {
                             Logout
                         </button>
                     </div>
-                </div>
-
-                <div className="navigation-buttons">
-                    <button 
-                        onClick={() => handleNavigation('viewProfile')} 
-                        className={`nav-button ${activeSection === 'viewProfile' ? 'active' : ''}`}
-                    >
-                        View Profile
-                    </button>
-                    <button 
-                        onClick={() => handleNavigation('editProfile')} 
-                        className={`nav-button ${activeSection === 'editProfile' ? 'active' : ''}`}
-                    >
-                        Edit Profile
-                    </button>
-                    <button 
-                        onClick={() => handleNavigation('complaints')} 
-                        className={`nav-button ${activeSection === 'complaints' ? 'active' : ''}`}
-                    >
-                        Complaint Management
-                    </button>
-                    <button 
-                        onClick={() => handleNavigation('reports')} 
-                        className={`nav-button ${activeSection === 'reports' ? 'active' : ''}`}
-                    >
-                        Escalation Reports
-                    </button>
                 </div>
 
                 <div className="content-area">
