@@ -21,7 +21,8 @@ const complaintSchema = new mongoose.Schema({
     type: [String],
     ref: 'Staff',
     default: []
-  }
+  },
+  createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 // Add these static methods

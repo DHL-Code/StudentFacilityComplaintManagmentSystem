@@ -27,14 +27,16 @@ router.get('/', async (req, res) => {
 router.get('/:collegeName/departments', async (req, res) => {
     const { collegeName } = req.params;
     try {
+        // This should find by name, not ID
         const college = await College.findOne({ name: collegeName });
         if (!college) {
-            return sendErrorResponse(res, 404, 'College not found');
+            return res.status(404).json({ message: 'College not found' });
         }
+        
         const departments = await Department.find({ college: college._id });
         res.json(departments);
     } catch (err) {
-        sendErrorResponse(res, 500, 'Failed to fetch departments', err);
+        res.status(500).json({ message: err.message });
     }
 });
 

@@ -36,19 +36,6 @@ const upload = multer({
   }
 });
 
-// Get complaints with view status
-router.get('/', authMiddleware, async (req, res) => {
-  try {
-    const complaints = await Complaint.getComplaintsWithViewStatus(
-      req.query.blockNumber, 
-      req.query.proctorId
-    );
-    res.status(200).json(complaints);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Mark complaint as viewed
 router.post('/:complaintId/view', authMiddleware, async (req, res) => {
   try {
@@ -99,26 +86,28 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 });
 
 // Get all complaints (for admin or user)
-// Modify the GET /api/complaints route
+// In your complaints route (backend)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    let complaints;
-    if (req.user.role === 'student') {
-      // Return only the student's complaints
-      complaints = await Complaint.find({ userId: req.user.userId });
-    } else {
-      // Handle proctor view with block filter and view status
-      complaints = await Complaint.getComplaintsWithViewStatus(
-        req.query.blockNumber, 
-        req.user.userId // Proctor ID from token
-      );
-    }
-    res.status(200).json(complaints);
+      // Create query object
+      const query = {};
+      
+      // If userId query parameter is provided, filter by that user
+      if (req.query.userId) {
+          query.userId = req.query.userId;
+      }
+      
+      // If the user is a proctor/admin, you might want to add additional filters
+      const complaints = await Complaint.find(query).sort({ createdAt: -1 });
+      res.status(200).json(complaints);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+      console.error('Error fetching complaints:', error);
+      res.status(500).json({ 
+          error: error.message,
+          message: 'Failed to fetch complaints' 
+      });
   }
 });
-
 // Get verified complaints
 router.get('/verified', authMiddleware, async (req, res) => {
   try {

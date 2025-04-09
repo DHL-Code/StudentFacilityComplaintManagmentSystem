@@ -216,38 +216,48 @@ const Dashboard = () => {
 
     // Update departments when college changes
     useEffect(() => {
-        const fetchDepartments = async (collegeId) => {
+
+        const fetchDepartments = async (collegeName) => {
             try {
-                if (!collegeId) {
+                setLoadingDepartments(true);
+                setError(null);
+
+                if (!collegeName) {
                     setAvailableDepartments([]);
                     return;
                 }
 
                 const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:5000/api/colleges/${collegeId}/departments`, {
+                const response = await fetch(`http://localhost:5000/api/colleges/${collegeName}/departments`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
                 });
 
-                if (!response.ok) throw new Error('Failed to fetch departments');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch departments');
+                }
 
                 const data = await response.json();
                 setAvailableDepartments(data);
             } catch (error) {
                 console.error('Error fetching departments:', error);
-                setError('Failed to load departments');
+                setError('Failed to load departments. Please try again later.');
+                setAvailableDepartments([]);
+            } finally {
+                setLoadingDepartments(false);
             }
         };
 
+
         if (formData.college) {
             // Find the college ID from the selected college name
-            const selectedCollege = allColleges.find(c => c.name === formData.college);
-            if (selectedCollege) {
-                fetchDepartments(selectedCollege._id);
+            if (formData.college) {
+                fetchDepartments(formData.college); // This should be the college name
             }
         }
-    }, [formData.college, allColleges]);
+    }, [formData.college]);
 
     useEffect(() => {
         fetchProfile();
@@ -255,7 +265,6 @@ const Dashboard = () => {
 
     useEffect(() => {
         if (profile && activeSection === 'editProfile') {
-            console.log("Profile data:", profile); // Add this line
             setFormData({
                 fullName: profile.fullName,
                 email: profile.email,
@@ -267,11 +276,10 @@ const Dashboard = () => {
                 confirmNewPassword: '',
                 college: profile.college
             });
-            if (profile.college) {
-                // Pass the college name directly to fetchDepartments
-                fetchDepartments(profile.college).then(() => {
-                    // Departments are now loaded and formData.department is set
-                });
+
+            // Only fetch departments if we don't already have them
+            if (profile.college && !availableDepartments.some(dept => dept.name === profile.department)) {
+                fetchDepartments(profile.college);
             }
         }
     }, [profile, activeSection]);
@@ -399,26 +407,34 @@ const Dashboard = () => {
     };
 
     // Add new function to fetch complaints
-    // In fetchComplaints function, remove userId from query
     const fetchComplaints = async () => {
         try {
             setLoadingComplaints(true);
             const token = localStorage.getItem('token');
+            const userId = profile?.userId; // Get the current user's ID
 
-            const response = await fetch(`http://localhost:5000/api/complaints`, {
-                headers: { 'Authorization': `Bearer ${token}` },
+            if (!userId) {
+                throw new Error('User ID not available');
+            }
+
+            // Add userId as a query parameter
+            const response = await fetch(`http://localhost:5000/api/complaints?userId=${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
             });
 
             if (!response.ok) throw new Error('Failed to fetch complaints');
 
             const data = await response.json();
             setComplaints(data);
-            // ... rest of the function
         } catch (error) {
-            // Handle error
+            console.error('Error fetching complaints:', error);
+            setError(error.message);
+        } finally {
+            setLoadingComplaints(false);
         }
     };
-
     // Add useEffect to fetch complaints when the component mounts and when activeSection changes
     useEffect(() => {
         if (activeSection === 'complaintStatus') {
@@ -529,39 +545,27 @@ const Dashboard = () => {
         }
     };
 
-    const fetchDepartments = async (collegeName) => {
+    const fetchDepartments = async (collegeId) => {
         try {
-            setLoadingDepartments(true);
-            setError(null); // Clear any previous errors
-            if (!collegeName) {
+            if (!collegeId) {
                 setAvailableDepartments([]);
-                return Promise.resolve();
+                return;
             }
 
             const token = localStorage.getItem('token');
-            const response = await fetch(
-                `http://localhost:5000/api/colleges/${encodeURIComponent(collegeName)}/departments`,
-                {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                }
-            );
+            const response = await fetch(`http://localhost:5000/api/colleges/${collegeId}/departments`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
 
-            if (!response.ok) {
-                throw new Error('Failed to fetch departments');
-            }
+            if (!response.ok) throw new Error('Failed to fetch departments');
 
             const data = await response.json();
-            setAvailableDepartments(data || []);
-            return Promise.resolve();
+            setAvailableDepartments(data);
         } catch (error) {
             console.error('Error fetching departments:', error);
-            // Only set error if departments array is empty
-            if (!availableDepartments.length) {
-                setError('Failed to load departments');
-            }
-            return Promise.reject(error);
-        } finally {
-            setLoadingDepartments(false);
+            setError('Failed to load departments');
         }
     };
     return (
@@ -849,7 +853,7 @@ const Dashboard = () => {
                                                 : !formData.college
                                                     ? 'Select a college first'
                                                     : availableDepartments?.length === 0
-                                                        ? error ? 'Error loading departments' : 'No departments available'
+                                                        ? 'No departments available'
                                                         : 'Select Department'}
                                         </option>
                                         {availableDepartments?.length > 0 &&
@@ -1014,6 +1018,8 @@ const Dashboard = () => {
                         <h2>Complaint Status</h2>
                         {loadingComplaints ? (
                             <p>Loading complaints...</p>
+                        ) : error ? (
+                            <p className="student-error">Error: {error}</p>
                         ) : complaints.length === 0 ? (
                             <p>No complaints submitted yet.</p>
                         ) : (
