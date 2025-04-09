@@ -392,16 +392,16 @@ const SupervisorPage = () => {
 
     return (
         <div className="supervisor-page">
-            <div className="mobile-header">
-                <button className="hamburger-btn" onClick={toggleMobileMenu}>
+            <div className="Supervisor-mobile-header">
+                <button className="Supervisor-hamburger-btn" onClick={toggleMobileMenu}>
                     {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
                 </button>
                 <h1>Supervisor Dashboard</h1>
-                <div className="header-actions">
-                    <button className="theme-toggle" onClick={toggleTheme}>
-                        {isDarkMode ? <FaSun className="theme-icon" /> : <FaMoon className="theme-icon" />}
+                <div className="Supervisor-header-actions">
+                    <button className="Supervisor-theme-toggle" onClick={toggleTheme}>
+                        {isDarkMode ? <FaSun className="Supervisor-theme-icon" /> : <FaMoon className="Supervisor-theme-icon" />}
                     </button>
-                    <button className="logout-btn" onClick={handleLogout}>
+                    <button className="Supervisor-logout-btn" onClick={handleLogout}>
                         Logout
                     </button>
                 </div>
@@ -434,9 +434,9 @@ const SupervisorPage = () => {
                 </button>
             </div>
 
-            <div className="sidebar">
+            <div className="Supervisor-sidebar">
                 <h2>Navigation</h2>
-                <div className="sidebar-nav">
+                <div className="Supervisor-sidebar-nav">
                     <button 
                         onClick={() => handleNavigation('viewProfile')}
                         className={activeSection === 'viewProfile' ? 'active' : ''}
@@ -464,20 +464,20 @@ const SupervisorPage = () => {
                 </div>
             </div>
 
-            <div className="main-content">
-                <div className="desktop-header">
+            <div className="Supervisor-main-content">
+                <div className="Supervisor-desktop-header">
                     <h1>Supervisor Dashboard</h1>
-                    <div className="header-actions">
-                        <button className="theme-toggle" onClick={toggleTheme}>
-                            {isDarkMode ? <FaSun className="theme-icon" /> : <FaMoon className="theme-icon" />}
+                    <div className="Supervisor-header-actions">
+                        <button className="Supervisor-theme-toggle" onClick={toggleTheme}>
+                            {isDarkMode ? <FaSun className="Supervisor-theme-icon" /> : <FaMoon className="Supervisor-theme-icon" />}
                         </button>
-                        <button className="logout-btn" onClick={handleLogout}>
+                        <button className="Supervisor-logout-btn" onClick={handleLogout}>
                             Logout
                         </button>
                     </div>
                 </div>
 
-                <div className="content-area">
+                <div className="Supervisor-content-area">
                     {activeSection === 'viewProfile' && (
                         <section className="view-profile">
                             <h2>View Profile</h2>
@@ -677,7 +677,7 @@ const SupervisorPage = () => {
                             {loadingComplaints && <p className="loading">Loading complaints...</p>}
                             {complaintError && <p className="error">Error: {complaintError}</p>}
                             
-                            <div className="complaints-grid">
+                            <div className="Supervisor-complaints-grid">
                                 {complaints.map(complaint => (
                                     <div key={complaint._id} className="complaint-card">
                                         <div className="complaint-header">
