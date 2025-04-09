@@ -57,7 +57,9 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify({
           userId,
           role: data.userType,
-          name: data.name
+          name: data.name,
+          email: data.email || '',
+          phone: data.phone || ''
         }));
 
         // Use role from response instead of guessing from ID

@@ -159,7 +159,8 @@ router.post('/login', async (req, res) => {
         userType,
         userId: user.id || user.userId || user.staffId,
         name: user.name || user.fullName,
-        email: user.email
+        email: user.email,
+        phone: user.phone || user.phoneNumber || ''
       });
   
     } catch (error) {

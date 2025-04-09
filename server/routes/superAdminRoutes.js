@@ -266,6 +266,11 @@ router.post('/create-admin', upload.single('profilePhoto'), async (req, res) => 
     const adminData = admin.toObject();
     delete adminData.password;
 
+    // Format profile photo path
+    if (adminData.profilePhoto) {
+      adminData.profilePhoto = adminData.profilePhoto.replace(/\\/g, '/');
+    }
+
     return res.status(201).json({ 
       message: 'Admin account created successfully',
       admin: adminData,
@@ -471,6 +476,81 @@ router.put('/staff/:staffId', upload.single('profilePhoto'), async (req, res) =>
     console.error('Error updating staff:', error);
     res.status(500).json({ 
       error: 'Failed to update staff profile',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
+// Get admin profile by ID
+router.get('/profile/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Find admin by ID
+    const admin = await Admin.findOne({ id: userId });
+    
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+    
+    // Return admin data without sensitive information
+    const adminData = admin.toObject();
+    delete adminData.password;
+    
+    // Format profile photo path
+    if (adminData.profilePhoto) {
+      adminData.profilePhoto = adminData.profilePhoto.replace(/\\/g, '/');
+    }
+    
+    return res.status(200).json(adminData);
+  } catch (error) {
+    console.error('Error fetching admin profile:', error);
+    return res.status(500).json({ 
+      error: 'Failed to fetch admin profile',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
+// Get Admin by ID
+router.get('/admin/:adminId', async (req, res) => {
+  try {
+    const { adminId } = req.params;
+    console.log('Fetching admin with ID:', adminId);
+
+    // Normalize the adminId to uppercase
+    const normalizedAdminId = adminId.toUpperCase();
+    console.log('Normalized admin ID:', normalizedAdminId);
+
+    // Find admin by ID
+    const admin = await Admin.findOne({ id: normalizedAdminId });
+    console.log('Admin found:', admin ? 'Yes' : 'No');
+
+    if (!admin) {
+      console.log('No admin found with ID:', normalizedAdminId);
+      return res.status(404).json({ 
+        error: 'Admin not found',
+        details: `No admin found with ID: ${normalizedAdminId}`
+      });
+    }
+
+    // Return admin data without sensitive information
+    const adminData = {
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      phone: admin.phone,
+      role: 'Admin',
+      profilePhoto: admin.profilePhoto ? admin.profilePhoto.replace(/\\/g, '/') : null,
+      createdAt: admin.createdAt
+    };
+
+    console.log('Found admin data:', adminData);
+    res.json(adminData);
+  } catch (error) {
+    console.error('Error fetching admin:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch admin data',
       details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
