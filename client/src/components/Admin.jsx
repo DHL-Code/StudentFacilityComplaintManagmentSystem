@@ -49,6 +49,13 @@ const AdminPage = () => {
     password: ''
   });
 
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState('');
+
+  const [adminData, setAdminData] = useState(null);
+  const [error, setError] = useState(null);
+  const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
+
   // Fetch colleges on component mount, added error state
   useEffect(() => {
     const fetchColleges = async () => {
@@ -69,6 +76,31 @@ const AdminPage = () => {
     };
     fetchColleges();
   }, []);
+
+  // Fetch feedback data
+  useEffect(() => {
+    if (activeTab === 'feedback') {
+      fetchFeedback();
+    }
+  }, [activeTab]);
+
+  const fetchFeedback = async () => {
+    setFeedbackLoading(true);
+    setFeedbackError('');
+    try {
+      const response = await fetch('http://localhost:5000/api/feedback');
+      if (!response.ok) {
+        throw new Error('Failed to fetch feedback');
+      }
+      const data = await response.json();
+      setFeedback(data);
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      setFeedbackError('Failed to load feedback data. Please try again later.');
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
 
   // Function to handle college creation
   const handleCreateCollege = async (e) => {
@@ -301,6 +333,80 @@ const AdminPage = () => {
     setErrorMessage('');
   };
 
+  // Fetch admin data on component mount
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      setLoading(true);
+      try {
+        // Get user data from localStorage
+        const userData = localStorage.getItem('user');
+        if (!userData) {
+          throw new Error('No user data found');
+        }
+        
+        const parsedData = JSON.parse(userData);
+        const userId = parsedData.userId;
+        
+        // Try to fetch complete admin data from the server
+        try {
+          // Use the new admin endpoint
+          const response = await fetch(`http://localhost:5000/api/admin/admin/${userId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const serverData = await response.json();
+            console.log('Admin data from server:', serverData);
+            
+            // Format profile photo path if it exists
+            if (serverData.profilePhoto) {
+              // Extract just the filename from the full path, handling both forward and backward slashes
+              const photoPath = serverData.profilePhoto.split(/[\\/]/).pop();
+              // Construct the correct URL path
+              setCurrentProfilePhoto(`http://localhost:5000/uploads/staff-photos/${photoPath}`);
+            }
+            
+            setAdminData({
+              name: serverData.name || parsedData.name || 'Not available',
+              adminId: serverData.id || userId || 'Not available',
+              email: serverData.email || 'Not available',
+              role: 'Admin',
+              phone: serverData.phone || 'Not available',
+              createdAt: serverData.createdAt || new Date().toISOString()
+            });
+            return; // Exit early if we got server data
+          } else {
+            console.error('Failed to fetch admin data:', await response.text());
+          }
+        } catch (serverError) {
+          console.error('Error fetching admin data from server:', serverError);
+          // Continue to localStorage fallback
+        }
+        
+        // Fallback to localStorage data if server fetch fails
+        const adminData = {
+          name: parsedData.name || 'Not available',
+          adminId: userId || 'Not available',
+          email: parsedData.email || 'Not available',
+          role: 'Admin',
+          phone: parsedData.phone || 'Not available',
+          createdAt: new Date().toISOString(), // Default to current date
+        };
+        
+        setAdminData(adminData);
+      } catch (error) {
+        console.error('Error setting admin data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdminData();
+  }, []);
+
   return (
     <div className="admin-container">
       <h1 style={{ color: 'white' }}>System Administration Dashboard</h1>
@@ -348,44 +454,143 @@ const AdminPage = () => {
       {/* Profile Section */}
       {activeTab === 'profile' && (
         <div className="section">
-          <h2 style={{ color: 'white' }}>Admin Profile Settings</h2>
-          <form onSubmit={handlePasswordChange} className="profile-form">
-            <div className="form-group">
-              <label style={{ color: 'white' }}>Current Password</label>
-              <input
-                type="password"
-                value={passwordForm.currentPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                required
-              />
+          <h2 style={{ color: 'white' }}>Admin Profile</h2>
+          
+          {loading ? (
+            <p style={{ color: 'white' }}>Loading profile data...</p>
+          ) : adminData ? (
+            <div className="profile-card" style={{ 
+              backgroundColor: '#2a2a2a', 
+              borderRadius: '8px', 
+              padding: '20px',
+              marginBottom: '20px',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '20px' 
+              }}>
+                {currentProfilePhoto ? (
+                  <img 
+                    src={currentProfilePhoto} 
+                    alt="Profile" 
+                    style={{ 
+                      width: '80px', 
+                      height: '80px', 
+                      borderRadius: '50%', 
+                      objectFit: 'cover',
+                      marginRight: '20px'
+                    }} 
+                    onError={(e) => {
+                      console.error('Failed to load profile photo:', currentProfilePhoto);
+                      e.target.style.display = 'none';
+                      e.target.parentNode.innerHTML = `
+                        <div style="
+                          width: 80px; 
+                          height: 80px; 
+                          border-radius: 50%; 
+                          background-color: #4a4a4a; 
+                          display: flex; 
+                          justify-content: center; 
+                          align-items: center;
+                          margin-right: 20px;
+                          font-size: 32px;
+                          color: white;
+                        ">
+                          ${adminData.name.charAt(0)}
+                        </div>
+                      `;
+                    }}
+                  />
+                ) : (
+                  <div style={{ 
+                    width: '80px', 
+                    height: '80px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#4a4a4a', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    marginRight: '20px',
+                    fontSize: '32px',
+                    color: 'white'
+                  }}>
+                    {adminData.name.charAt(0)}
+                  </div>
+                )}
+                <div>
+                  <h3 style={{ color: 'white', margin: '0 0 5px 0' }}>{adminData.name}</h3>
+                  <p style={{ color: '#aaa', margin: '0 0 5px 0' }}>{adminData.role}</p>
+                  <p style={{ color: '#aaa', margin: '0' }}>ID: {adminData.adminId}</p>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '20px' }}>
+                <h4 style={{ color: 'white', marginBottom: '10px' }}>Account Information</h4>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  marginBottom: '10px',
+                  paddingBottom: '10px',
+                  borderBottom: '1px solid #444'
+                }}>
+                  <span style={{ color: '#aaa' }}>Email:</span>
+                  <span style={{ color: 'white' }}>
+                    {adminData.email && adminData.email !== 'Not available' ? 
+                      adminData.email : 
+                      <span style={{ color: '#aaa', fontStyle: 'italic' }}>Not available</span>
+                    }
+                  </span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  marginBottom: '10px',
+                  paddingBottom: '10px',
+                  borderBottom: '1px solid #444'
+                }}>
+                  <span style={{ color: '#aaa' }}>Phone:</span>
+                  <span style={{ color: 'white' }}>
+                    {adminData.phone && adminData.phone !== 'Not available' ? 
+                      adminData.phone : 
+                      <span style={{ color: '#aaa', fontStyle: 'italic' }}>Not available</span>
+                    }
+                  </span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  marginBottom: '10px',
+                  paddingBottom: '10px',
+                  borderBottom: '1px solid #444'
+                }}>
+                  <span style={{ color: '#aaa' }}>Account Created:</span>
+                  <span style={{ color: 'white' }}>
+                    {new Date(adminData.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              
+              {(adminData.email === 'Not available' || adminData.phone === 'Not available') && (
+                <div style={{ 
+                  marginTop: '20px', 
+                  padding: '15px', 
+                  backgroundColor: '#3a3a3a', 
+                  borderRadius: '5px',
+                  fontSize: '14px',
+                  color: '#aaa'
+                }}>
+                  <p style={{ margin: '0 0 10px 0' }}>
+                    <strong>Note:</strong> Some profile information is not available. 
+                    This information will be updated when you log in again or when the system administrator updates your profile.
+                  </p>
+                </div>
+              )}
             </div>
-
-            <div className="form-group">
-              <label style={{ color: 'white' }}>New Password</label>
-              <input
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label style={{ color: 'white' }}>Confirm New Password</label>
-              <input
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                required
-              />
-            </div>
-
-            {profileError && <p style={{ color: 'red' }}>{profileError}</p>}
-
-            <button type="submit" style={{ background: 'blue', color: 'white' }}>
-              Change Password
-            </button>
-          </form>
+          ) : (
+            <p style={{ color: 'white' }}>Failed to load profile data.</p>
+          )}
         </div>
       )}
 
@@ -570,6 +775,7 @@ const AdminPage = () => {
                 // Update admin accounts list
                 setAdminAccounts([...adminAccounts, { id: data.adminId, ...newAdmin }]);
               } else {
+                console.error('Server error response:', data);
                 setErrorMessage(data.error || 'Failed to create admin account');
               }
             } catch (error) {
@@ -768,6 +974,49 @@ const AdminPage = () => {
               )}
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Feedback Section */}
+      {activeTab === 'feedback' && (
+        <div className="section">
+          <h2 style={{ color: 'white' }}>Student Feedback</h2>
+          
+          {feedbackLoading ? (
+            <p style={{ color: 'white' }}>Loading feedback data...</p>
+          ) : feedbackError ? (
+            <p style={{ color: 'red' }}>{feedbackError}</p>
+          ) : feedback.length === 0 ? (
+            <p style={{ color: 'white' }}>No feedback available.</p>
+          ) : (
+            <div className="feedback-container">
+              {feedback.map((item) => (
+                <div key={item._id} className="feedback-card">
+                  <div className="feedback-header">
+                    <div className="rating">
+                      {[...Array(5)].map((_, index) => (
+                        <span 
+                          key={index} 
+                          className={`star ${index < item.rating ? 'filled' : 'empty'}`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                    <div className="feedback-date">
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="feedback-content">
+                    <p>{item.comment}</p>
+                  </div>
+                  <div className="feedback-footer">
+                    <span>User ID: {item.userId}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

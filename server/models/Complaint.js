@@ -9,21 +9,18 @@ const complaintSchema = new mongoose.Schema({
   dormNumber: { type: String, required: true },
   status: { 
     type: String, 
-    enum: ['pending', 'verified', 'dismissed'],
+    enum: ['pending', 'verified', 'dismissed', 'escalated', 'resolved'],
     default: 'pending'
   },
   isUrgent: { type: Boolean, default: false },
+
+  escalationReason: { type: String },
+  escalatedAt: { type: Date },
   file: { type: String },
   viewedBy: {
     type: [String],
     ref: 'Staff',
-    default: [],
-    validate: {
-      validator: function(v) {
-        return v.every(id => mongoose.Types.ObjectId.isValid(id));
-      },
-      message: props => `${props.value} contains invalid ObjectId`
-    }
+    default: []
   }
 }, { timestamps: true });
 

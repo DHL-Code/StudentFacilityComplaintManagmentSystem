@@ -464,7 +464,7 @@ function ProctorDashboard() {
                         <div
                           key={complaint._id}
                           className={`proctor-complaint-card ${complaint.isUrgent ? 'urgent' : ''} ${complaint.isNew ? 'unread' : ''}`}
-                          nClick={() => {
+                          onClick={() => {
                             handleViewComplaint(complaint);
                             // Immediately mark as read when clicked
                             if (complaint.isNew) {
