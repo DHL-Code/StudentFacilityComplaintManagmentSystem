@@ -26,11 +26,14 @@ function ProctorDashboard() {
 
   const markComplaintAsViewed = async (complaintId, proctorId) => {
     try {
-      const token = localStorage.getItem('token');
-
-      // Validate IDs before sending
+      // Validate IDs
       if (!complaintId || !proctorId) {
-        throw new Error('Missing complaintId or proctorId');
+        throw new Error('Invalid complaintId or proctorId');
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token missing');
       }
 
       const response = await fetch(
@@ -42,24 +45,19 @@ function ProctorDashboard() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            proctorId: proctorId.toString() // Ensure string format
+            proctorId: proctorId.toString()
           })
         }
       );
 
-      const data = await response.json();
-
       if (!response.ok) {
-        console.error('Backend response error:', {
-          status: response.status,
-          data
-        });
-        throw new Error(data.error || 'Failed to mark complaint as viewed');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to mark complaint as viewed');
       }
 
-      return data.complaint;
+      return await response.json();
     } catch (error) {
-      console.error('Network error details:', {
+      console.error('Error in markComplaintAsViewed:', {
         error: error.message,
         complaintId,
         proctorId,
@@ -90,6 +88,10 @@ function ProctorDashboard() {
       try {
         const token = localStorage.getItem('token');
         const userData = JSON.parse(localStorage.getItem('user'));
+
+        if (!userData?.userId) {
+          throw new Error('User data not found');
+        }
 
         // Fetch proctor data
         const proctorResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
@@ -167,12 +169,20 @@ function ProctorDashboard() {
   const handleViewComplaint = async (complaint) => {
     setSelectedComplaint(complaint);
 
-    if (complaint.isNew && proctorData?.staffId) {
+    // Check if we have all required data before proceeding
+    if (!complaint?._id || !proctorData?.staffId) {
+      console.error('Missing required data:', {
+        complaintId: complaint?._id,
+        proctorId: proctorData?.staffId
+      });
+      return;
+    }
+
+    if (complaint.isNew) {
       try {
-        console.log('Attempting to mark complaint as viewed:', {
+        console.log('Marking complaint as viewed:', {
           complaintId: complaint._id,
-          proctorId: proctorData.staffId,
-          time: new Date().toISOString()
+          proctorId: proctorData.staffId
         });
 
         const updatedComplaint = await markComplaintAsViewed(
@@ -180,23 +190,27 @@ function ProctorDashboard() {
           proctorData.staffId
         );
 
+        // Update local state only if the API call succeeded
         const updatedNotifications = notifications.map(n =>
           n._id === complaint._id
-            ? { ...n, isNew: false, viewedBy: updatedComplaint.viewedBy }
+            ? {
+              ...n,
+              isNew: false,
+              viewedByProctor: true,
+              viewedBy: updatedComplaint.viewedBy
+            }
             : n
         );
 
         setNotifications(updatedNotifications);
         updateUnreadCount(updatedNotifications);
 
-        console.log('Successfully marked complaint as viewed:', updatedComplaint);
       } catch (error) {
-        console.error('Full error details:', {
+        console.error('Error marking complaint as viewed:', {
           error: error.message,
           complaint: complaint._id,
           proctor: proctorData?.staffId,
-          notificationsCount: notifications.length,
-          time: new Date().toISOString()
+          stack: error.stack
         });
         setError(`Failed to update status: ${error.message}`);
       }
