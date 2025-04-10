@@ -8,8 +8,6 @@ function ProctorDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
-  // Update your state and functions
-  const [viewedComplaints, setViewedComplaints] = useState([]);
   const [report, setReport] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,71 +15,16 @@ function ProctorDashboard() {
   const [darkMode, setDarkMode] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [expandedImage, setExpandedImage] = useState(null);
+  const [unreadComplaints, setUnreadComplaints] = useState([]);
   const [summaryStats, setSummaryStats] = useState({
     totalComplaints: 0,
     pending: 0,
     verified: 0,
     urgent: 0
   });
-
-  const markComplaintAsViewed = async (complaintId, proctorId) => {
-    try {
-      // Validate IDs
-      if (!complaintId || !proctorId) {
-        throw new Error('Invalid complaintId or proctorId');
-      }
-
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token missing');
-      }
-
-      const response = await fetch(
-        `http://localhost:5000/api/complaints/${complaintId}/view`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            proctorId: proctorId.toString()
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to mark complaint as viewed');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error in markComplaintAsViewed:', {
-        error: error.message,
-        complaintId,
-        proctorId,
-        time: new Date().toISOString()
-      });
-      throw error;
-    }
-  };
-
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.body.classList.toggle('dark-mode');
-  };
 
-  // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
-  };
-
-  // Fetch proctor data and complaints
+  // Consolidated data fetching
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -93,15 +36,15 @@ function ProctorDashboard() {
           throw new Error('User data not found');
         }
 
-        // Fetch proctor data
-        const proctorResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        // Fetch proctor data first
+        const proctorResponse = await fetch(
+          `http://localhost:5000/api/admin/staff/${userData.userId}`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
 
         if (!proctorResponse.ok) throw new Error('Failed to fetch proctor data');
-        const proctorData = await proctorResponse.json();
 
-        // Process proctor data
+        const proctorData = await proctorResponse.json();
         const processedData = {
           name: proctorData.name || 'Not available',
           staffId: proctorData.staffId || 'Not available',
@@ -114,30 +57,27 @@ function ProctorDashboard() {
 
         setProctorData(processedData);
 
-        // Fetch complaints with both parameters
-        const complaintsResponse = await fetch(
-          `http://localhost:5000/api/complaints?blockNumber=${processedData.block}&proctorId=${processedData.staffId}`,
-          {
-            headers: { 'Authorization': `Bearer ${token}` },
+        // Only fetch complaints if block is assigned
+        if (processedData.block) {
+          const complaintsResponse = await fetch(
+            `http://localhost:5000/api/complaints?blockNumber=${processedData.block}&proctorId=${processedData.staffId}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+
+          if (!complaintsResponse.ok) {
+            throw new Error(complaintsResponse.error || 'Failed to fetch complaints');
           }
-        );
 
-        if (!complaintsResponse.ok) {
-          const errorData = await complaintsResponse.json();
-          throw new Error(errorData.error || 'Failed to fetch complaints');
+          const complaintsData = await complaintsResponse.json();
+          const transformedComplaints = complaintsData.map(complaint => ({
+            ...complaint,
+            isNew: !complaint.viewedByProctor
+          }));
+
+          setNotifications(transformedComplaints);
+          updateUnreadCount(transformedComplaints);
+          updateSummaryStats(transformedComplaints);
         }
-
-        const complaintsData = await complaintsResponse.json();
-
-        const transformedComplaints = complaintsData.map(complaint => ({
-          ...complaint,
-          isNew: !complaint.viewedByProctor
-        }));
-
-        setNotifications(transformedComplaints);
-        updateUnreadCount(transformedComplaints);
-        updateSummaryStats(transformedComplaints);
-
       } catch (error) {
         console.error('Error:', error);
         setError(error.message);
@@ -149,13 +89,60 @@ function ProctorDashboard() {
     fetchData();
   }, []);
 
-  /* Update unread count function */
+  // Fetch unread complaints
+  useEffect(() => {
+    const fetchUnreadComplaints = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/complaints/unread', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadComplaints(data);
+        }
+      } catch (error) {
+        console.error('Error fetching unread complaints:', error);
+      }
+    };
+
+    if (activeSection === 'notifications') {
+      fetchUnreadComplaints();
+    }
+  }, [activeSection]);
+
+
+  // Refresh complaints when switching to notifications tab
+  useEffect(() => {
+    if (activeSection === 'notifications' && proctorData?.block) {
+      const fetchComplaints = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(
+            `http://localhost:5000/api/complaints?blockNumber=${proctorData.block}&proctorId=${proctorData.staffId}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            setNotifications(data);
+            updateUnreadCount(data);
+          }
+        } catch (error) {
+          console.error('Error fetching complaints:', error);
+          setError('Failed to refresh complaints');
+        }
+      };
+
+      fetchComplaints();
+    }
+  }, [activeSection, proctorData?.block, proctorData?.staffId]);
+
   const updateUnreadCount = (complaints) => {
     const newCount = complaints.filter(c => c.isNew).length;
     setUnreadCount(newCount);
   };
 
-  //summary statistics
   const updateSummaryStats = (complaints) => {
     setSummaryStats({
       totalComplaints: complaints.length,
@@ -165,74 +152,42 @@ function ProctorDashboard() {
     });
   };
 
-  // Handle viewing a complaint (marks it as read)
+  const markComplaintAsViewed = async (complaintId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:5000/api/complaints/${complaintId}/view-proctor`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      setUnreadComplaints(prev =>
+        prev.filter(complaint => complaint._id !== complaintId)
+      );
+    } catch (error) {
+      console.error('Error marking complaint as viewed:', error);
+    }
+  };
   const handleViewComplaint = async (complaint) => {
     setSelectedComplaint(complaint);
 
-    // Check if we have all required data before proceeding
-    if (!complaint?._id || !proctorData?.staffId) {
-      console.error('Missing required data:', {
-        complaintId: complaint?._id,
-        proctorId: proctorData?.staffId
-      });
-      return;
-    }
-
-    if (complaint.isNew) {
+    if (!complaint.viewedByProctor) {
       try {
-        console.log('Marking complaint as viewed:', {
-          complaintId: complaint._id,
-          proctorId: proctorData.staffId
-        });
+        await markComplaintAsViewed(complaint._id, proctorData.staffId);
 
-        const updatedComplaint = await markComplaintAsViewed(
-          complaint._id,
-          proctorData.staffId
+        setNotifications(prev =>
+          prev.map(n =>
+            n._id === complaint._id
+              ? { ...n, viewedByProctor: true, isNew: false }
+              : n
+          )
         );
-
-        // Update local state only if the API call succeeded
-        const updatedNotifications = notifications.map(n =>
-          n._id === complaint._id
-            ? {
-              ...n,
-              isNew: false,
-              viewedByProctor: true,
-              viewedBy: updatedComplaint.viewedBy
-            }
-            : n
-        );
-
-        setNotifications(updatedNotifications);
-        updateUnreadCount(updatedNotifications);
-
+        setUnreadCount(prev => prev - 1);
       } catch (error) {
-        console.error('Error marking complaint as viewed:', {
-          error: error.message,
-          complaint: complaint._id,
-          proctor: proctorData?.staffId,
-          stack: error.stack
-        });
-        setError(`Failed to update status: ${error.message}`);
+        console.error('Error marking complaint as viewed:', error);
       }
     }
   };
-  // useEffect to load viewed complaints
-  useEffect(() => {
-    if (proctorData?.staffId) {
-      const viewed = JSON.parse(localStorage.getItem(`viewed_${proctorData.staffId}`)) || [];
-      setViewedComplaints(viewed);
 
-      // Mark complaints as viewed on load
-      const updatedNotifications = notifications.map(complaint => ({
-        ...complaint,
-        isNew: !viewed.includes(complaint._id)
-      }));
-      setNotifications(updatedNotifications);
-      updateUnreadCount(updatedNotifications);
-    }
-  }, [proctorData?.staffId]);
-
-  // Handle complaint actions (verify, dismiss, flag)
   const handleComplaintAction = async (action, id, currentValue) => {
     try {
       const token = localStorage.getItem('token');
@@ -248,7 +203,6 @@ function ProctorDashboard() {
 
       if (!response.ok) throw new Error(`Failed to ${action} complaint`);
 
-      // Update local state
       const updatedNotifications = notifications.map(notification => {
         if (notification._id === id) {
           if (action === 'verify') return { ...notification, status: 'verified' };
@@ -261,36 +215,71 @@ function ProctorDashboard() {
 
       setNotifications(updatedNotifications);
       updateSummaryStats(updatedNotifications);
-
     } catch (error) {
       console.error(`Error ${action}ing complaint:`, error);
       setError(`Failed to ${action} complaint`);
     }
   };
 
-  // Handle image expansion
+  const handleDeleteComplaint = async (complaintId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:5000/api/complaints/${complaintId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to delete complaint');
+
+      // Remove the deleted complaint from state
+      setNotifications(prev => prev.filter(c => c._id !== complaintId));
+      updateSummaryStats(notifications.filter(c => c._id !== complaintId));
+
+      // Close modal if open
+      if (selectedComplaint?._id === complaintId) {
+        setSelectedComplaint(null);
+      }
+    } catch (error) {
+      console.error('Error deleting complaint:', error);
+      setError('Failed to delete complaint');
+    }
+  };
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.body.classList.toggle('dark-mode');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
   const handleExpandImage = (imageUrl) => {
     setExpandedImage(imageUrl);
   };
 
-  // Update the complaints filtering
   const filteredComplaints = notifications.filter(complaint => {
     if (selectedFilter === 'pending') return complaint.status === 'pending';
     if (selectedFilter === 'verified') return complaint.status === 'verified';
     if (selectedFilter === 'urgent') return complaint.isUrgent;
-    return true; // all complaints
+    return true;
   });
 
-  // Print report handler
   const handlePrintReport = () => {
     window.print();
   };
 
   const handleNavigation = (section) => {
     setActiveSection(section);
-    setIsMobileNavOpen(false); // Close mobile nav when a link is clicked
+    setIsMobileNavOpen(false);
   };
-
 
   return (
     <div className={`proctor-dashboard ${darkMode ? 'dark-mode' : ''}`}>
@@ -561,11 +550,21 @@ function ProctorDashboard() {
                               <FontAwesomeIcon icon={faFlag} /> {complaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
                             </button>
                             <button
+                              className="action-btn delete"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteComplaint(complaint._id);
+                              }}
+                            >
+                              Delete
+                            </button>
+                            <button
                               className="action-btn view"
                               onClick={() => handleViewComplaint(complaint)}
                             >
                               View Details
                             </button>
+
                           </div>
                         </div>
                       ))}
@@ -815,6 +814,14 @@ function ProctorDashboard() {
               >
                 <FontAwesomeIcon icon={faFlag} /> {selectedComplaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
               </button>
+              <button
+                className="action-btn delete"
+                onClick={() => {
+                  handleDeleteComplaint(selectedComplaint._id);
+                }}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
@@ -830,7 +837,30 @@ function ProctorDashboard() {
             <img src={expandedImage} alt="Expanded view" className="expanded-image" />
           </div>
         </div>
+
+
       )}
+      {unreadComplaints.length > 0 && (
+        <div className="notification-banner">
+          <h3>New Complaints ({unreadComplaints.length})</h3>
+          {unreadComplaints.map(complaint => (
+            <div
+              key={complaint._id}
+              className="notification-item"
+              onClick={() => {
+                handleViewComplaint(complaint);
+                markComplaintAsViewed(complaint._id);
+              }}
+            >
+              <p>{complaint.complaintType}: {complaint.specificInfo}</p>
+              <span className="notification-time">
+                {new Date(complaint.createdAt).toLocaleTimeString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
     </div>
   );
 }

@@ -828,3 +828,35 @@ body:not(.dark-mode) .student-complaint-card {
   background-color: #ffffff;
   color: #333;
 }
+
+.status-notifications {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 300px;
+}
+
+.status-notification {
+  background: #fff;
+  border-left: 4px solid #4caf50;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.status-notification:hover {
+  transform: translateY(-2px);
+}
+
+.status-notification .urgent-badge {
+  background: #f44336;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin-left: 10px;
+}

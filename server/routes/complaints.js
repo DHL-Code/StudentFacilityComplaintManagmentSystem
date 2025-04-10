@@ -128,42 +128,39 @@ router.get('/verified', authMiddleware, async (req, res) => {
   }
 });
 
-// Update complaint status to verified
+// Update complaint verification to include status update
 router.put('/:id/verify', authMiddleware, async (req, res) => {
   try {
-    const complaint = await Complaint.findByIdAndUpdate(
-      req.params.id,
-      { status: 'verified' },
-      { new: true }
-    );
-    
+    const complaint = await Complaint.findById(req.params.id);
     if (!complaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
+
+    complaint.status = 'verified';
+    complaint.viewedByStudent = false; // Student needs to be notified
+    await complaint.addStatusUpdate('verified', req.user.userId);
     
     res.json(complaint);
   } catch (error) {
-    console.error('Error verifying complaint:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
+
 // Update complaint status to dismissed
 router.put('/:id/dismiss', authMiddleware, async (req, res) => {
   try {
-    const complaint = await Complaint.findByIdAndUpdate(
-      req.params.id,
-      { status: 'dismissed' },
-      { new: true }
-    );
-    
+    const complaint = await Complaint.findById(req.params.id);
     if (!complaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
+
+    complaint.status = 'dismissed';
+    complaint.viewedByStudent = false; // Student needs to be notified
+    await complaint.addStatusUpdate('dismissed', req.user.userId);
     
     res.json(complaint);
   } catch (error) {
-    console.error('Error dismissing complaint:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -171,20 +168,17 @@ router.put('/:id/dismiss', authMiddleware, async (req, res) => {
 // Flag complaint as urgent
 router.put('/:id/flag', authMiddleware, async (req, res) => {
   try {
-    const { isUrgent } = req.body;
-    const complaint = await Complaint.findByIdAndUpdate(
-      req.params.id,
-      { isUrgent },
-      { new: true }
-    );
-    
+    const complaint = await Complaint.findById(req.params.id);
     if (!complaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
+
+    complaint.status = 'flagged';
+    complaint.viewedByStudent = false; // Student needs to be notified
+    await complaint.addStatusUpdate('flagged', req.user.userId);
     
     res.json(complaint);
   } catch (error) {
-    console.error('Error flagging complaint:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -322,6 +316,129 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error deleting complaint:', error);
     res.status(500).json({ message: 'Error deleting complaint' });
+  }
+});
+
+// Get unread complaints for proctor
+router.get('/unread', authMiddleware, async (req, res) => {
+  try {
+    // Get proctor's assigned block from user data
+    const proctor = await User.findById(req.user.userId);
+    const complaints = await Complaint.find({
+      blockNumber: proctor.assignedBlock,
+      viewedByProctor: false
+    });
+    res.json(complaints);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
+// Mark complaint as viewed by proctor
+router.post('/:id/view-proctor', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { viewedByProctor: true },
+      { new: true }
+    );
+    res.json(complaint);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get unread status updates for student
+router.get('/unread-status-updates', authMiddleware, async (req, res) => {
+  try {
+    const complaints = await Complaint.find({
+      userId: req.user.userId,
+      'statusUpdates.notificationViewed': false
+    }).select('statusUpdates complaintType specificInfo');
+    
+    const updates = complaints.flatMap(complaint => 
+      complaint.statusUpdates
+        .filter(update => !update.notificationViewed)
+        .map(update => ({
+          ...update.toObject(),
+          complaintId: complaint._id,
+          complaintType: complaint.complaintType,
+          specificInfo: complaint.specificInfo
+        }))
+    );
+    
+    res.json(updates);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Mark complaint as viewed by student
+router.post('/:id/view-student', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: { viewedByStudent: true },
+        $push: {
+          viewedBy: {
+            userId: req.user.userId,
+            userType: 'student',
+            viewedAt: new Date()
+          }
+        }
+      },
+      { new: true }
+    );
+    res.json(complaint);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// Mark status update as viewed
+router.post('/:complaintId/status-updates/:updateId/view', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findOneAndUpdate(
+      {
+        _id: req.params.complaintId,
+        'statusUpdates._id': req.params.updateId
+      },
+      {
+        $set: { 'statusUpdates.$.notificationViewed': true }
+      },
+      { new: true }
+    );
+    res.json(complaint);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
+router.get('/unread-status-updates', authMiddleware, async (req, res) => {
+  try {
+    const complaints = await Complaint.find({
+      userId: req.user.userId,
+      'statusUpdates.notificationViewed': false
+    }).select('statusUpdates');
+    
+    const updates = complaints.flatMap(complaint => 
+      complaint.statusUpdates
+        .filter(update => !update.notificationViewed)
+        .map(update => ({
+          ...update.toObject(),
+          complaintId: complaint._id
+        }))
+    );
+    
+    res.json(updates);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

@@ -269,6 +269,15 @@ body.dark-mode {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.action-btn.delete {
+  background-color: #ff4444;
+  color: white;
+}
+
+.action-btn.delete:hover {
+  background-color: #cc0000;
+}
+
 /* Complaints Section */
 .complaints-section {
   margin-top: 1rem;
@@ -1252,4 +1261,23 @@ html {
     max-width: 100%;
     padding: 1rem;
   }
+}
+
+.unread-indicator {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #f44336;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.complaint-card.unread {
+  border-left: 4px solid #f44336;
 }

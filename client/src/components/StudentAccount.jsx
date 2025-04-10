@@ -23,6 +23,7 @@ const Dashboard = () => {
     const [isNavActive, setIsNavActive] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
+    const [unreadStatusUpdates, setUnreadStatusUpdates] = useState([]);
 
     const [allColleges, setAllColleges] = useState([]); // For dynamic colleges
     const [loadingColleges, setLoadingColleges] = useState(false);
@@ -38,7 +39,6 @@ const Dashboard = () => {
     // Add new state for complaints
     const [complaints, setComplaints] = useState([]);
     const [loadingComplaints, setLoadingComplaints] = useState(false);
-    const [statusNotification, setStatusNotification] = useState(null);
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -50,10 +50,6 @@ const Dashboard = () => {
         confirmNewPassword: '',
         college: ''
     });
-
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
 
     const handleNavigation = (section) => {
         setActiveSection(section);
@@ -482,25 +478,6 @@ const Dashboard = () => {
         }
     };
 
-    // Add this function to handle status notifications
-    const handleStatusNotification = (complaint) => {
-        let message = '';
-        if (complaint.status === 'verified') {
-            message = 'Your complaint has been verified by the proctor.';
-        } else if (complaint.status === 'dismissed') {
-            message = 'Your complaint has been dismissed by the proctor.';
-        }
-        if (complaint.isUrgent) {
-            message += ' This complaint has been flagged as urgent.';
-        }
-        setStatusNotification({ message, complaintId: complaint._id });
-    };
-
-    // Add this function to close the notification
-    const closeStatusNotification = () => {
-        setStatusNotification(null);
-    };
-
     // Toggle dark mode
     const toggleDarkMode = () => {
         const newDarkMode = !darkMode;
@@ -568,6 +545,49 @@ const Dashboard = () => {
             setError('Failed to load departments');
         }
     };
+
+    // Fetch unread status updates
+    useEffect(() => {
+        const fetchUnreadStatusUpdates = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(
+                    'http://localhost:5000/api/complaints/unread-status-updates',
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setUnreadStatusUpdates(data);
+                }
+            } catch (error) {
+                console.error('Error fetching unread status updates:', error);
+            }
+        };
+
+        if (activeSection === 'complaintStatus') {
+            fetchUnreadStatusUpdates();
+        }
+    }, [activeSection]);
+    // Mark status update as viewed
+    const markStatusUpdateAsRead = async (complaintId, updateId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await fetch(
+                `http://localhost:5000/api/complaints/${complaintId}/status-updates/${updateId}/view`,
+                {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }
+            );
+
+            setUnreadStatusUpdates(prev =>
+                prev.filter(update => update._id !== updateId)
+            );
+        } catch (error) {
+            console.error('Error marking status update as read:', error);
+        }
+    };
+
     return (
         <div className="student-dashboard">
             <div className="student-sidebar">
@@ -1071,10 +1091,14 @@ const Dashboard = () => {
                 )}
             </div>
 
-            {statusNotification && (
-                <div className="student-status-notification">
-                    <p>{statusNotification.message}</p>
-                    <button onClick={closeStatusNotification}>OK</button>
+            {unreadStatusUpdates.length > 0 && (
+                <div className="status-notifications">
+                    {unreadStatusUpdates.map(update => (
+                        <div key={update._id} className="status-notification" onClick={() => markStatusUpdateAsRead(update.complaintId, update._id)}>
+                            <p>Your complaint "{update.complaintType}: {update.specificInfo}" has been {update.status}</p>
+                            {update.isUrgent && <span className="urgent-badge">Urgent</span>}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
