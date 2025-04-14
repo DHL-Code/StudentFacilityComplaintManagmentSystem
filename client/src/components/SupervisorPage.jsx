@@ -1,5 +1,6 @@
 // SupervisorPage.jsx
 import React, { useState, useEffect } from 'react';
+import NotificationBell from '../components/NotificationBell';
 import '../styles/SupervisorStyles.css';
 import { FaSun, FaMoon, FaBars, FaTimes } from 'react-icons/fa';
 
@@ -70,7 +71,7 @@ const SupervisorPage = () => {
         try {
             const token = localStorage.getItem('token');
             const userData = JSON.parse(localStorage.getItem('user'));
-            
+
             if (!token || !userData || !userData.userId) {
                 throw new Error('No authentication token or user data found');
             }
@@ -90,19 +91,19 @@ const SupervisorPage = () => {
 
             const data = await response.json();
             console.log('Fetched staff data:', data);
-            
+
             // Handle profile photo URL
             if (data.profilePhoto) {
                 // Check if the URL already starts with http://localhost:5000/
                 if (data.profilePhoto.startsWith('http://localhost:5000/')) {
-            setCurrentProfilePhoto(data.profilePhoto);
+                    setCurrentProfilePhoto(data.profilePhoto);
                 } else {
                     // Extract just the filename from the full path, handling both forward and backward slashes
                     const photoPath = data.profilePhoto.split(/[\\/]/).pop();
                     setCurrentProfilePhoto(`http://localhost:5000/uploads/staff-photos/${photoPath}`);
                 }
             }
-            
+
             // Map the data to match our profile state structure
             const profileData = {
                 fullName: data.name || '',
@@ -139,7 +140,7 @@ const SupervisorPage = () => {
         try {
             const token = localStorage.getItem('token');
             const userData = JSON.parse(localStorage.getItem('user'));
-            
+
             if (!token || !userData) {
                 throw new Error('No authentication token found');
             }
@@ -166,7 +167,7 @@ const SupervisorPage = () => {
             if (!data.success) {
                 throw new Error(data.message || 'Failed to fetch complaints');
             }
-            
+
             if (!Array.isArray(data.data)) {
                 console.error('Received non-array data:', data.data);
                 throw new Error('Invalid response format: expected an array of complaints');
@@ -192,7 +193,7 @@ const SupervisorPage = () => {
         try {
             const token = localStorage.getItem('token');
             const userData = JSON.parse(localStorage.getItem('user'));
-            
+
             if (!token || !userData) {
                 throw new Error('No authentication token found');
             }
@@ -257,7 +258,7 @@ const SupervisorPage = () => {
         try {
             const token = localStorage.getItem('token');
             const userData = JSON.parse(localStorage.getItem('user'));
-            
+
             if (!token || !userData || !userData.userId) {
                 throw new Error('No authentication token or user data found');
             }
@@ -267,12 +268,12 @@ const SupervisorPage = () => {
             formPayload.append('email', formData.email);
             formPayload.append('phone', formData.phoneNumber);
             formPayload.append('gender', formData.gender);
-            
+
             if (formData.currentPassword && formData.newPassword) {
                 formPayload.append('currentPassword', formData.currentPassword);
                 formPayload.append('newPassword', formData.newPassword);
             }
-            
+
             if (newProfilePhoto) {
                 formPayload.append('profilePhoto', newProfilePhoto);
             }
@@ -296,7 +297,7 @@ const SupervisorPage = () => {
             console.log('Profile update successful:', data);
             setProfile(data);
             alert('Profile updated successfully');
-            
+
             await fetchProfile();
         } catch (err) {
             console.error('Error updating profile:', err);
@@ -340,7 +341,7 @@ const SupervisorPage = () => {
         try {
             const token = localStorage.getItem('token');
             const userData = JSON.parse(localStorage.getItem('user'));
-            
+
             if (!userData || !userData.userId) {
                 throw new Error('Supervisor ID not found');
             }
@@ -351,7 +352,7 @@ const SupervisorPage = () => {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     reason: escalationReason,
                     supervisorId: userData.userId
                 })
@@ -371,10 +372,10 @@ const SupervisorPage = () => {
             setComplaints(complaints.filter(c => c._id !== complaintId));
             setShowEscalationModal(false);
             setEscalationReason('');
-            
+
             // Refresh the escalated complaints list
             await fetchEscalatedComplaints();
-            
+
             // Show success message
             alert('Complaint has been successfully escalated to the dean');
         } catch (error) {
@@ -404,29 +405,31 @@ const SupervisorPage = () => {
                     <button className="Supervisor-logout-btn" onClick={handleLogout}>
                         Logout
                     </button>
+                    {/* Add NotificationBell */}
+                    <NotificationBell userId={profile?._id || profile?.userId} />
                 </div>
             </div>
 
             <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-                <button 
+                <button
                     onClick={() => handleNavigation('viewProfile')}
                     className={activeSection === 'viewProfile' ? 'active' : ''}
                 >
                     View Profile
                 </button>
-                <button 
+                <button
                     onClick={() => handleNavigation('editProfile')}
                     className={activeSection === 'editProfile' ? 'active' : ''}
                 >
                     Edit Profile
                 </button>
-                <button 
+                <button
                     onClick={() => handleNavigation('complaints')}
                     className={activeSection === 'complaints' ? 'active' : ''}
                 >
                     Complaint Management
                 </button>
-                <button 
+                <button
                     onClick={() => handleNavigation('reports')}
                     className={activeSection === 'reports' ? 'active' : ''}
                 >
@@ -437,25 +440,25 @@ const SupervisorPage = () => {
             <div className="Supervisor-sidebar">
                 <h2>Navigation</h2>
                 <div className="Supervisor-sidebar-nav">
-                    <button 
+                    <button
                         onClick={() => handleNavigation('viewProfile')}
                         className={activeSection === 'viewProfile' ? 'active' : ''}
                     >
                         View Profile
                     </button>
-                    <button 
+                    <button
                         onClick={() => handleNavigation('editProfile')}
                         className={activeSection === 'editProfile' ? 'active' : ''}
                     >
                         Edit Profile
                     </button>
-                    <button 
+                    <button
                         onClick={() => handleNavigation('complaints')}
                         className={activeSection === 'complaints' ? 'active' : ''}
                     >
                         Complaint Management
                     </button>
-                    <button 
+                    <button
                         onClick={() => handleNavigation('reports')}
                         className={activeSection === 'reports' ? 'active' : ''}
                     >
@@ -487,9 +490,9 @@ const SupervisorPage = () => {
                                 <div className="profile-container">
                                     <div className="profile-header">
                                         {currentProfilePhoto ? (
-                                            <img 
-                                                src={currentProfilePhoto} 
-                                                alt="Profile" 
+                                            <img
+                                                src={currentProfilePhoto}
+                                                alt="Profile"
                                                 className="profile-photo"
                                                 onError={(e) => {
                                                     console.error('Failed to load profile photo:', currentProfilePhoto);
@@ -534,91 +537,91 @@ const SupervisorPage = () => {
                             {loading && <p className="loading">Saving changes...</p>}
                             {error && <p className="error">Error: {error}</p>}
                             <form onSubmit={handleProfileUpdate} className="edit-profile-form">
-                            <div className="profile-photo-edit">
-                                <div
-                                    className="photo-preview"
-                                    onClick={() => document.getElementById('profilePhotoInput').click()}
-                                >
-                                    {newProfilePreview ? (
-                                        <img src={newProfilePreview} alt="Preview" className="profile-image" />
+                                <div className="profile-photo-edit">
+                                    <div
+                                        className="photo-preview"
+                                        onClick={() => document.getElementById('profilePhotoInput').click()}
+                                    >
+                                        {newProfilePreview ? (
+                                            <img src={newProfilePreview} alt="Preview" className="profile-image" />
                                         ) : currentProfilePhoto ? (
                                             <img src={currentProfilePhoto} alt="Current Profile" className="profile-image" />
-                                    ) : (
-                                        <div className="upload-placeholder">
-                                            <span className="upload-icon">+</span>
-                                            <span className="upload-text">Upload Photo</span>
-                                        </div>
-                                    )}
+                                        ) : (
+                                            <div className="upload-placeholder">
+                                                <span className="upload-icon">+</span>
+                                                <span className="upload-text">Upload Photo</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="file"
+                                        id="profilePhotoInput"
+                                        accept="image/*"
+                                        onChange={handlePhotoChange}
+                                        style={{ display: 'none' }}
+                                    />
+                                    {fileError && <p className="error">{fileError}</p>}
                                 </div>
-                                <input
-                                    type="file"
-                                    id="profilePhotoInput"
-                                    accept="image/*"
-                                    onChange={handlePhotoChange}
-                                    style={{ display: 'none' }}
-                                />
-                                {fileError && <p className="error">{fileError}</p>}
-                            </div>
 
                                 <div className="form-section">
                                     <h3>Personal Information</h3>
                                     <div className="form-group">
-                                <label>
-                                    Full Name:
-                                    <input
-                                        type="text"
-                                        value={formData.fullName}
-                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                        <label>
+                                            Full Name:
+                                            <input
+                                                type="text"
+                                                value={formData.fullName}
+                                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                                                 placeholder="Enter your full name"
-                                    />
-                                </label>
+                                            />
+                                        </label>
                                     </div>
 
                                     <div className="form-group">
-                                <label>
-                                    Email:
-                                    <input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        <label>
+                                            Email:
+                                            <input
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 placeholder="Enter your email"
-                                    />
-                                </label>
+                                            />
+                                        </label>
                                     </div>
 
                                     <div className="form-group">
-                                <label>
-                                    Phone Number:
-                                    <input
-                                        type="tel"
-                                        value={formData.phoneNumber}
-                                        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                        <label>
+                                            Phone Number:
+                                            <input
+                                                type="tel"
+                                                value={formData.phoneNumber}
+                                                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                                                 placeholder="Enter your phone number"
-                                    />
-                                </label>
+                                            />
+                                        </label>
                                     </div>
 
                                     <div className="form-group">
                                         <span className="gender-label">Gender:</span>
                                         <div className="gender-options">
                                             <label className="gender-option">
-                                        <input
-                                            type="radio"
-                                            value="male"
-                                            checked={formData.gender === 'male'}
-                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                        />
-                                        Male
-                                    </label>
+                                                <input
+                                                    type="radio"
+                                                    value="male"
+                                                    checked={formData.gender === 'male'}
+                                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                                />
+                                                Male
+                                            </label>
                                             <label className="gender-option">
-                                        <input
-                                            type="radio"
-                                            value="female"
-                                            checked={formData.gender === 'female'}
-                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                        />
-                                        Female
-                                    </label>
+                                                <input
+                                                    type="radio"
+                                                    value="female"
+                                                    checked={formData.gender === 'female'}
+                                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                                />
+                                                Female
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -626,67 +629,67 @@ const SupervisorPage = () => {
                                 <div className="form-section">
                                     <h3>Change Password</h3>
                                     <div className="form-group">
-                                    <label>
-                                        Current Password:
-                                        <input
-                                            type="password"
-                                            value={formData.currentPassword}
-                                            onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                                            placeholder="Enter current password"
-                                        />
-                                    </label>
+                                        <label>
+                                            Current Password:
+                                            <input
+                                                type="password"
+                                                value={formData.currentPassword}
+                                                onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                                                placeholder="Enter current password"
+                                            />
+                                        </label>
                                     </div>
 
                                     <div className="form-group">
-                                    <label>
-                                        New Password:
-                                        <input
-                                            type="password"
-                                            value={formData.newPassword}
-                                            onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                                        <label>
+                                            New Password:
+                                            <input
+                                                type="password"
+                                                value={formData.newPassword}
+                                                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                                                 placeholder="Enter new password"
-                                        />
-                                    </label>
+                                            />
+                                        </label>
                                     </div>
 
                                     <div className="form-group">
-                                    <label>
-                                        Confirm New Password:
-                                        <input
-                                            type="password"
-                                            value={formData.confirmNewPassword}
-                                            onChange={(e) => setFormData({ ...formData, confirmNewPassword: e.target.value })}
-                                            placeholder="Confirm new password"
-                                        />
-                                    </label>
+                                        <label>
+                                            Confirm New Password:
+                                            <input
+                                                type="password"
+                                                value={formData.confirmNewPassword}
+                                                onChange={(e) => setFormData({ ...formData, confirmNewPassword: e.target.value })}
+                                                placeholder="Confirm new password"
+                                            />
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
 
                                 <div className="form-actions">
                                     <button type="submit" className="save-button" disabled={loading}>
-                                {loading ? 'Saving...' : 'Save Changes'}
-                            </button>
+                                        {loading ? 'Saving...' : 'Save Changes'}
+                                    </button>
                                 </div>
-                        </form>
+                            </form>
                         </section>
                     )}
 
                     {activeSection === 'complaints' && (
-                        <div className="complaints-section">
+                        <div className="Supervisor-complaints-section">
                             <h2>Complaint Management</h2>
                             {loadingComplaints && <p className="loading">Loading complaints...</p>}
                             {complaintError && <p className="error">Error: {complaintError}</p>}
-                            
+
                             <div className="Supervisor-complaints-grid">
                                 {complaints.map(complaint => (
-                                    <div key={complaint._id} className="complaint-card">
-                                        <div className="complaint-header">
+                                    <div key={complaint._id} className="Supervisor-complaint-card">
+                                        <div className="Supervisor-complaint-header">
                                             <h3>{complaint.complaintType}</h3>
                                             <span className={`status ${complaint.status.toLowerCase()}`}>
                                                 {complaint.status}
                                             </span>
                                         </div>
-                                        <div className="complaint-details">
+                                        <div className="Supervisor-complaint-details">
                                             <p><strong>Specific Issue:</strong> {complaint.specificInfo}</p>
                                             <p><strong>Description:</strong> {complaint.description}</p>
                                             <p><strong>Block:</strong> {complaint.blockNumber}</p>
@@ -694,14 +697,14 @@ const SupervisorPage = () => {
                                             <p><strong>Date:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
                                             {complaint.isUrgent && <p className="urgent-tag">URGENT</p>}
                                         </div>
-                                        <div className="complaint-actions">
-                                            <button 
+                                        <div className="Supervisor-complaint-actions">
+                                            <button
                                                 className="resolve-btn"
                                                 onClick={() => handleResolveComplaint(complaint._id)}
                                             >
                                                 Mark as Resolved
                                             </button>
-                                            <button 
+                                            <button
                                                 className="escalate-btn"
                                                 onClick={() => {
                                                     setSelectedComplaint(complaint);
@@ -728,13 +731,13 @@ const SupervisorPage = () => {
                                             rows="4"
                                         />
                                         <div className="modal-actions">
-                                            <button 
+                                            <button
                                                 className="confirm-btn"
                                                 onClick={() => handleEscalateComplaint(selectedComplaint._id)}
                                             >
                                                 Confirm Escalation
                                             </button>
-                                            <button 
+                                            <button
                                                 className="cancel-btn"
                                                 onClick={() => {
                                                     setShowEscalationModal(false);
@@ -756,7 +759,7 @@ const SupervisorPage = () => {
                             <h2>Escalation Reports</h2>
                             {loadingReports && <p className="loading">Loading reports...</p>}
                             {reportsError && <p className="error">Error: {reportsError}</p>}
-                            
+
                             <div className="reports-list">
                                 {escalatedComplaints.length === 0 ? (
                                     <p>No escalated complaints found.</p>
@@ -775,7 +778,7 @@ const SupervisorPage = () => {
                                                 )}
                                             </div>
                                             <div className="report-actions">
-                                                <button 
+                                                <button
                                                     className="view-details-btn"
                                                     onClick={() => setSelectedComplaint(complaint)}
                                                 >
@@ -805,7 +808,7 @@ const SupervisorPage = () => {
                                             )}
                                         </div>
                                         <div className="modal-actions">
-                                            <button 
+                                            <button
                                                 className="close-btn"
                                                 onClick={() => setSelectedComplaint(null)}
                                             >

@@ -1,17 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const http = require('http');
+const socketio = require('socket.io');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const authRoutes = require('./routes/auth');
-const contactRoutes = require('./routes/contact'); // Import the contact route
-const complaintRoutes = require('./routes/complaints'); // Import complaints route
-const adminRoutes = require('./routes/superAdminRoutes'); // Import admin routes
+const contactRoutes = require('./routes/contact');
+const complaintRoutes = require('./routes/complaints');
+const adminRoutes = require('./routes/superAdminRoutes');
 const collegeRoutes = require('./routes/colleges');
+const notificationRoutes = require('./routes/notifications');
 const path = require('path');
 const dotenv = require('dotenv');
 const fs = require('fs');
 
-// Load environment variables first
+// Load environment variables
 dotenv.config();
 
 // Create Express app
@@ -20,9 +23,38 @@ const app = express();
 // Connect to database
 connectDB();
 
-// CORS configuration
+// Create HTTP server
+const server = http.createServer(app);
+
+// Set up Socket.io with proper CORS
+const io = socketio(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true // Fixed typo here
+  }
+});
+
+// Socket.io connection handler
+io.on('connection', (socket) => {
+  console.log('New client connected');
+  
+  socket.on('join', (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined their room`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
+});
+
+// Make io accessible in routes
+app.set('io', io);
+
+// CORS configuration (only once)
 app.use(cors({
-  origin: 'http://localhost:5173', // Your React app's URL
+  origin: 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -32,48 +64,36 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Create uploads directory if it doesn't exist
+
+
+// Create uploads directories if they don't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 const profilePhotosDir = path.join(uploadsDir, 'profile_photos');
 const staffPhotosDir = path.join(uploadsDir, 'staff-photos');
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+[uploadsDir, profilePhotosDir, staffPhotosDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
-if (!fs.existsSync(profilePhotosDir)) {
-  fs.mkdirSync(profilePhotosDir, { recursive: true });
-}
-
-if (!fs.existsSync(staffPhotosDir)) {
-  fs.mkdirSync(staffPhotosDir, { recursive: true });
-}
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-//Routes
+// Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/contact', contactRoutes); 
+app.use('/api/contact', contactRoutes);
 app.use('/api/feedback', feedbackRoutes);
-app.use('/api/complaints', complaintRoutes); // Use complaints route
-app.use('/api/admin', adminRoutes); // Use your routes
-// Use college routes
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/colleges', collegeRoutes);
-// Serve static files from uploads directory
+app.use('/api/notifications', notificationRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   
-  // Set default error status and message
   let status = 500;
   let message = 'Internal server error';
   
-  // Handle specific error types
   if (err.name === 'ValidationError') {
     status = 400;
     message = err.message;
@@ -88,7 +108,6 @@ app.use((err, req, res, next) => {
     message = 'Token expired';
   }
   
-  // Send JSON response
   res.status(status).json({
     success: false,
     message: message,
@@ -105,6 +124,7 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+server.listen(PORT, () => {  // Changed from app.listen() to server.listen()
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Socket.io listening on port ${PORT}`);
 });

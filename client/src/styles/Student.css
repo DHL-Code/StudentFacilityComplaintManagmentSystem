@@ -68,7 +68,7 @@ body {
   font-size: 24px;
   margin-left: 90%;
   cursor: pointer;
-  color: #fba53b;
+  color: #0b0b0b;
   /* Orange color */
   display: block;
   /* Always show on mobile */
@@ -116,7 +116,7 @@ body {
 .student-nav-items span {
   cursor: pointer;
   /* Change cursor to pointer */
-  color: #e261d5;
+  color: #fbf6fa;
   /* Orange color */
 }
 
@@ -668,7 +668,6 @@ button:hover {
 
 /* Add to existing dashboard-nav styles */
 .student-dashboard-nav button {
-  /* ... existing styles ... */
   margin-right: 10px;
 }
 
@@ -811,6 +810,9 @@ body.dark-mode .student-gender-selection .gender {
 
 body.dark-mode .student-edit-profile form .gender-selection label {
   color: #ffffff !important;
+}
+body.dark-mode .student-hamburger {
+  color: whitesmoke;
 }
 
 /* Light mode styles (ensure good contrast) */

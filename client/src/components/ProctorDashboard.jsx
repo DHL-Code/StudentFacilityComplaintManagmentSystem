@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import NotificationBell from '../components/NotificationBell';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../styles/ProctorDashboard.css';
@@ -188,10 +189,19 @@ function ProctorDashboard() {
     }
   };
 
+
   const handleComplaintAction = async (action, id, currentValue) => {
     try {
       const token = localStorage.getItem('token');
-      const endpoint = `http://localhost:5000/api/complaints/${id}/${action}`;
+      let endpoint, body;
+
+      if (action === 'flag') {
+        endpoint = `http://localhost:5000/api/complaints/${id}/flag`;
+        body = JSON.stringify({ isUrgent: !currentValue });
+      } else {
+        endpoint = `http://localhost:5000/api/complaints/${id}/${action}`;
+        body = null;
+      }
 
       const response = await fetch(endpoint, {
         method: 'PUT',
@@ -199,28 +209,30 @@ function ProctorDashboard() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        body: body
       });
 
-      if (!response.ok) throw new Error(`Failed to ${action} complaint`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to ${action} complaint`);
+      }
 
-      const updatedNotifications = notifications.map(notification => {
-        if (notification._id === id) {
-          if (action === 'verify') return { ...notification, status: 'verified' };
-          if (action === 'dismiss') return { ...notification, status: 'dismissed' };
-          if (action === 'flag') return { ...notification, isUrgent: !currentValue };
-          return notification;
-        }
-        return notification;
-      });
+      const updatedComplaint = await response.json();
 
-      setNotifications(updatedNotifications);
-      updateSummaryStats(updatedNotifications);
+      // Update local state
+      setNotifications(prev => prev.map(notification =>
+        notification._id === id ? updatedComplaint : notification
+      ));
+
+      // Update selected complaint if it's the one being modified
+      if (selectedComplaint?._id === id) {
+        setSelectedComplaint(updatedComplaint);
+      }
     } catch (error) {
       console.error(`Error ${action}ing complaint:`, error);
-      setError(`Failed to ${action} complaint`);
+      setError(`Failed to ${action} complaint: ${error.message}`);
     }
   };
-
   const handleDeleteComplaint = async (complaintId) => {
     try {
       const token = localStorage.getItem('token');
@@ -300,6 +312,8 @@ function ProctorDashboard() {
           <button className="logout-btn" onClick={handleLogout}>
             <FontAwesomeIcon icon={faSignOutAlt} /> Logout
           </button>
+          {/* Add NotificationBell */}
+          <NotificationBell userId={proctorData?._id || proctorData?.staffId} />
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 // routes/feedbackRoutes.js
 const express = require('express');
 const Feedback = require('../models/Feedback');
+const { createNotification } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -13,6 +14,19 @@ router.post('/submit', async (req, res) => {
     try {
         const feedback = new Feedback({ rating, comment, userId });
         await feedback.save();
+
+        // Create notification for admin
+    const notification = await createNotification({
+        recipientId: adminId, // You'll need to determine the admin
+        recipientModel: 'Admin',
+        senderId: userId,
+        senderModel: 'User',
+        type: 'feedback_submitted'
+      });
+  
+      // Emit real-time notification
+      req.app.get('io').to(adminId).emit('new_notification', notification);
+      
         res.status(201).json({ message: 'Feedback submitted successfully', feedback });
     } catch (error) {
         console.error('Error saving feedback:', error); // Log error

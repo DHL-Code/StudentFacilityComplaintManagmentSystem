@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import NotificationBell from '../components/NotificationBell';
 import '../styles/AdminStyles.css';
 import { AlertCircle } from 'lucide-react';
 import MessagePopup from './MessagePopup';
@@ -343,10 +344,10 @@ const AdminPage = () => {
         if (!userData) {
           throw new Error('No user data found');
         }
-        
+
         const parsedData = JSON.parse(userData);
         const userId = parsedData.userId;
-        
+
         // Try to fetch complete admin data from the server
         try {
           // Use the new admin endpoint
@@ -356,11 +357,11 @@ const AdminPage = () => {
               'Content-Type': 'application/json'
             }
           });
-          
+
           if (response.ok) {
             const serverData = await response.json();
             console.log('Admin data from server:', serverData);
-            
+
             // Format profile photo path if it exists
             if (serverData.profilePhoto) {
               // Extract just the filename from the full path, handling both forward and backward slashes
@@ -368,7 +369,7 @@ const AdminPage = () => {
               // Construct the correct URL path
               setCurrentProfilePhoto(`http://localhost:5000/uploads/staff-photos/${photoPath}`);
             }
-            
+
             setAdminData({
               name: serverData.name || parsedData.name || 'Not available',
               adminId: serverData.id || userId || 'Not available',
@@ -385,7 +386,7 @@ const AdminPage = () => {
           console.error('Error fetching admin data from server:', serverError);
           // Continue to localStorage fallback
         }
-        
+
         // Fallback to localStorage data if server fetch fails
         const adminData = {
           name: parsedData.name || 'Not available',
@@ -395,7 +396,7 @@ const AdminPage = () => {
           phone: parsedData.phone || 'Not available',
           createdAt: new Date().toISOString(), // Default to current date
         };
-        
+
         setAdminData(adminData);
       } catch (error) {
         console.error('Error setting admin data:', error);
@@ -449,39 +450,41 @@ const AdminPage = () => {
         <button onClick={() => setActiveTab('colleges-departments')}>
           Colleges & Departments
         </button>
+        {/* Add NotificationBell */}
+        <NotificationBell userId={adminData?.adminId} />
       </nav>
 
       {/* Profile Section */}
       {activeTab === 'profile' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Admin Profile</h2>
-          
+
           {loading ? (
             <p style={{ color: 'white' }}>Loading profile data...</p>
           ) : adminData ? (
-            <div className="profile-card" style={{ 
-              backgroundColor: '#2a2a2a', 
-              borderRadius: '8px', 
+            <div className="profile-card" style={{
+              backgroundColor: '#2a2a2a',
+              borderRadius: '8px',
               padding: '20px',
               marginBottom: '20px',
               boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
             }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                marginBottom: '20px' 
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '20px'
               }}>
                 {currentProfilePhoto ? (
-                  <img 
-                    src={currentProfilePhoto} 
-                    alt="Profile" 
-                    style={{ 
-                      width: '80px', 
-                      height: '80px', 
-                      borderRadius: '50%', 
+                  <img
+                    src={currentProfilePhoto}
+                    alt="Profile"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
                       objectFit: 'cover',
                       marginRight: '20px'
-                    }} 
+                    }}
                     onError={(e) => {
                       console.error('Failed to load profile photo:', currentProfilePhoto);
                       e.target.style.display = 'none';
@@ -504,13 +507,13 @@ const AdminPage = () => {
                     }}
                   />
                 ) : (
-                  <div style={{ 
-                    width: '80px', 
-                    height: '80px', 
-                    borderRadius: '50%', 
-                    backgroundColor: '#4a4a4a', 
-                    display: 'flex', 
-                    justifyContent: 'center', 
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    backgroundColor: '#4a4a4a',
+                    display: 'flex',
+                    justifyContent: 'center',
                     alignItems: 'center',
                     marginRight: '20px',
                     fontSize: '32px',
@@ -528,8 +531,8 @@ const AdminPage = () => {
 
               <div style={{ marginTop: '20px' }}>
                 <h4 style={{ color: 'white', marginBottom: '10px' }}>Account Information</h4>
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   marginBottom: '10px',
                   paddingBottom: '10px',
@@ -537,14 +540,14 @@ const AdminPage = () => {
                 }}>
                   <span style={{ color: '#aaa' }}>Email:</span>
                   <span style={{ color: 'white' }}>
-                    {adminData.email && adminData.email !== 'Not available' ? 
-                      adminData.email : 
+                    {adminData.email && adminData.email !== 'Not available' ?
+                      adminData.email :
                       <span style={{ color: '#aaa', fontStyle: 'italic' }}>Not available</span>
                     }
                   </span>
                 </div>
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   marginBottom: '10px',
                   paddingBottom: '10px',
@@ -552,14 +555,14 @@ const AdminPage = () => {
                 }}>
                   <span style={{ color: '#aaa' }}>Phone:</span>
                   <span style={{ color: 'white' }}>
-                    {adminData.phone && adminData.phone !== 'Not available' ? 
-                      adminData.phone : 
+                    {adminData.phone && adminData.phone !== 'Not available' ?
+                      adminData.phone :
                       <span style={{ color: '#aaa', fontStyle: 'italic' }}>Not available</span>
                     }
                   </span>
                 </div>
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   marginBottom: '10px',
                   paddingBottom: '10px',
@@ -571,18 +574,18 @@ const AdminPage = () => {
                   </span>
                 </div>
               </div>
-              
+
               {(adminData.email === 'Not available' || adminData.phone === 'Not available') && (
-                <div style={{ 
-                  marginTop: '20px', 
-                  padding: '15px', 
-                  backgroundColor: '#3a3a3a', 
+                <div style={{
+                  marginTop: '20px',
+                  padding: '15px',
+                  backgroundColor: '#3a3a3a',
                   borderRadius: '5px',
                   fontSize: '14px',
                   color: '#aaa'
                 }}>
                   <p style={{ margin: '0 0 10px 0' }}>
-                    <strong>Note:</strong> Some profile information is not available. 
+                    <strong>Note:</strong> Some profile information is not available.
                     This information will be updated when you log in again or when the system administrator updates your profile.
                   </p>
                 </div>
@@ -981,7 +984,7 @@ const AdminPage = () => {
       {activeTab === 'feedback' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Student Feedback</h2>
-          
+
           {feedbackLoading ? (
             <p style={{ color: 'white' }}>Loading feedback data...</p>
           ) : feedbackError ? (
@@ -995,8 +998,8 @@ const AdminPage = () => {
                   <div className="feedback-header">
                     <div className="rating">
                       {[...Array(5)].map((_, index) => (
-                        <span 
-                          key={index} 
+                        <span
+                          key={index}
                           className={`star ${index < item.rating ? 'filled' : 'empty'}`}
                         >
                           ★

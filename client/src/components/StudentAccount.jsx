@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import NotificationBell from '../components/NotificationBell';
 import '../styles/Student.css';
 import { Star, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -547,32 +548,38 @@ const Dashboard = () => {
     };
 
     // Fetch unread status updates
-    useEffect(() => {
-        const fetchUnreadStatusUpdates = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(
-                    'http://localhost:5000/api/complaints/unread-status-updates',
-                    { headers: { 'Authorization': `Bearer ${token}` } }
-                );
-                if (response.ok) {
-                    const data = await response.json();
-                    setUnreadStatusUpdates(data);
-                }
-            } catch (error) {
-                console.error('Error fetching unread status updates:', error);
-            }
-        };
+    const fetchUnreadStatusUpdates = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(
+                'http://localhost:5000/api/complaints/unread-status-updates',
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
 
+            if (response.ok) {
+                const data = await response.json();
+                setUnreadStatusUpdates(data);
+            }
+        } catch (error) {
+            console.error('Error fetching unread status updates:', error);
+        }
+    };
+
+    useEffect(() => {
         if (activeSection === 'complaintStatus') {
             fetchUnreadStatusUpdates();
+
+            // Set up polling every 30 seconds
+            const interval = setInterval(fetchUnreadStatusUpdates, 30000);
+            return () => clearInterval(interval);
         }
     }, [activeSection]);
+
     // Mark status update as viewed
     const markStatusUpdateAsRead = async (complaintId, updateId) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(
+            const response = await fetch(
                 `http://localhost:5000/api/complaints/${complaintId}/status-updates/${updateId}/view`,
                 {
                     method: 'POST',
@@ -580,13 +587,16 @@ const Dashboard = () => {
                 }
             );
 
-            setUnreadStatusUpdates(prev =>
-                prev.filter(update => update._id !== updateId)
-            );
+            if (response.ok) {
+                setUnreadStatusUpdates(prev =>
+                    prev.filter(update => update._id !== updateId)
+                );
+            }
         } catch (error) {
             console.error('Error marking status update as read:', error);
         }
     };
+
 
     return (
         <div className="student-dashboard">
@@ -611,6 +621,8 @@ const Dashboard = () => {
                     <button className="logout-btn" onClick={handleLogout}>
                         <FontAwesomeIcon icon={faSignOutAlt} /> Logout
                     </button>
+                    {/* Add NotificationBell */}
+                    <NotificationBell />
                 </div>
             </div>
 
@@ -632,7 +644,10 @@ const Dashboard = () => {
                         <button className="proctor-mobile-nav-item" onClick={handleLogout}>
                             <FontAwesomeIcon icon={faSignOutAlt} /> Logout
                         </button>
+                        {/* Add NotificationBell */}
+                        <NotificationBell userId={profile?._id || profile?.userId} />
                     </div>
+
                 </div>
                 {/* Navigation Buttons for Desktop View */}
                 <div className="student-desk-nav">
@@ -1094,13 +1109,30 @@ const Dashboard = () => {
             {unreadStatusUpdates.length > 0 && (
                 <div className="status-notifications">
                     {unreadStatusUpdates.map(update => (
-                        <div key={update._id} className="status-notification" onClick={() => markStatusUpdateAsRead(update.complaintId, update._id)}>
-                            <p>Your complaint "{update.complaintType}: {update.specificInfo}" has been {update.status}</p>
-                            {update.isUrgent && <span className="urgent-badge">Urgent</span>}
+                        <div
+                            key={update._id}
+                            className="status-notification"
+                            onClick={() => markStatusUpdateAsRead(update.complaintId, update._id)}
+                        >
+                            <div className="notification-header">
+                                <span className="notification-title">
+                                    Complaint Update: {update.complaintType}
+                                </span>
+                                {update.status.includes('urgent') && (
+                                    <span className="urgent-badge">Urgent</span>
+                                )}
+                            </div>
+                            <p className="notification-message">
+                                Your complaint "{update.specificInfo}" has been {update.status}
+                            </p>
+                            <span className="notification-time">
+                                {new Date(update.changedAt).toLocaleString()}
+                            </span>
                         </div>
                     ))}
                 </div>
             )}
+
         </div>
     );
 };

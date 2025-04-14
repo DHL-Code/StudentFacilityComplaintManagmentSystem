@@ -1,4 +1,3 @@
-// routes/complaint.js
 const express = require('express');
 const multer = require('multer');
 const Complaint = require('../models/Complaint');
@@ -8,6 +7,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
+const { createNotification } = require('../services/notificationService');
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -36,6 +36,16 @@ const upload = multer({
   }
 });
 
+// Helper function to determine proctor for a block
+async function determineProctorForBlock(blockNumber) {
+  // Implement your logic to find the proctor for this block
+  const proctor = await User.findOne({ 
+    role: 'proctor', 
+    assignedBlock: blockNumber 
+  });
+  return proctor?._id;
+}
+
 // Mark complaint as viewed
 router.post('/:complaintId/view', authMiddleware, async (req, res) => {
   try {
@@ -63,8 +73,6 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
   const { complaintType, specificInfo, description, blockNumber, dormNumber, userId } = req.body;
   const file = req.file ? req.file.path : null;
 
-  console.log('Received complaint data:', { complaintType, specificInfo, description, blockNumber, dormNumber, userId, file });
-
   try {
     const newComplaint = new Complaint({
       complaintType,
@@ -77,11 +85,40 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
     });
 
     const savedComplaint = await newComplaint.save();
-    console.log('Saved complaint:', savedComplaint);
+    
+    // Only proceed with notification if complaint was saved successfully
+    try {
+      // Create notification for proctor
+      // You'll need to determine the proctor for this block - this is just an example
+      const proctorId = await determineProctorForBlock(blockNumber);
+      
+      if (proctorId) {
+        const notification = await createNotification({
+          recipientId: proctorId,
+          recipientModel: 'Proctor',
+          senderId: userId,
+          senderModel: 'User',
+          complaintId: savedComplaint._id,
+          type: 'complaint_submitted'
+        });
+
+        // Emit real-time notification if socket is available
+        if (req.app.get('io')) {
+          req.app.get('io').to(proctorId).emit('new_notification', notification);
+        }
+      }
+    } catch (notificationError) {
+      console.error('Notification error:', notificationError);
+      // Don't fail the whole request if notification fails
+    }
+
     res.status(201).json(savedComplaint);
   } catch (error) {
     console.error('Error saving complaint:', error);
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ 
+      message: error.message,
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -140,6 +177,20 @@ router.put('/:id/verify', authMiddleware, async (req, res) => {
     complaint.viewedByStudent = false; // Student needs to be notified
     await complaint.addStatusUpdate('verified', req.user.userId);
     
+
+    // Create notification for supervisor
+    const notification = await createNotification({
+      recipientId: supervisorId, // You'll need to determine the supervisor
+      recipientModel: 'Supervisor',
+      senderId: req.user.userId,
+      senderModel: 'Proctor',
+      complaintId: complaint._id,
+      type: 'complaint_verified'
+    });
+
+    // Emit real-time notification
+    req.app.get('io').to(supervisorId).emit('new_notification', notification);
+
     res.json(complaint);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -166,19 +217,32 @@ router.put('/:id/dismiss', authMiddleware, async (req, res) => {
 });
 
 // Flag complaint as urgent
+// routes/complaint.js
 router.put('/:id/flag', authMiddleware, async (req, res) => {
   try {
-    const complaint = await Complaint.findById(req.params.id);
+    const { isUrgent } = req.body;
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { 
+        isUrgent,
+        $push: {
+          statusUpdates: {
+            status: isUrgent ? 'flagged as urgent' : 'unflagged',
+            changedBy: req.user.userId,
+            notificationViewed: false
+          }
+        }
+      },
+      { new: true }
+    );
+    
     if (!complaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
-
-    complaint.status = 'flagged';
-    complaint.viewedByStudent = false; // Student needs to be notified
-    await complaint.addStatusUpdate('flagged', req.user.userId);
     
     res.json(complaint);
   } catch (error) {
+    console.error('Error flagging complaint:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -252,6 +316,9 @@ router.put('/:id/escalate', authMiddleware, async (req, res) => {
       message: 'Complaint escalated successfully',
       complaint: escalatedComplaint
     });
+
+    res.json(complaint);
+
   } catch (error) {
     console.error('Error escalating complaint:', error);
     res.status(500).json({ message: error.message });
@@ -344,6 +411,18 @@ router.post('/:id/view-proctor', authMiddleware, async (req, res) => {
       { viewedByProctor: true },
       { new: true }
     );
+ // Create notification for student
+ const notification = await createNotification({
+  recipientId: complaint.userId,
+  recipientModel: 'User',
+  senderId: req.user.userId,
+  senderModel: 'Proctor',
+  complaintId: complaint._id,
+  type: 'complaint_viewed'
+});
+
+// Emit real-time notification
+req.app.get('io').to(complaint.userId).emit('new_notification', notification);
     res.json(complaint);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -441,5 +520,7 @@ router.get('/unread-status-updates', authMiddleware, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
 
 module.exports = router;
