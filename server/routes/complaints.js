@@ -36,13 +36,9 @@ const upload = multer({
   }
 });
 
-// Helper function to determine proctor for a block
+// In complaints.js routes
 async function determineProctorForBlock(blockNumber) {
-  // Implement your logic to find the proctor for this block
-  const proctor = await User.findOne({ 
-    role: 'proctor', 
-    assignedBlock: blockNumber 
-  });
+  const proctor = await Proctor.findOne({ block: blockNumber });
   return proctor?._id;
 }
 
@@ -178,18 +174,17 @@ router.put('/:id/verify', authMiddleware, async (req, res) => {
     await complaint.addStatusUpdate('verified', req.user.userId);
     
 
-    // Create notification for supervisor
     const notification = await createNotification({
-      recipientId: supervisorId, // You'll need to determine the supervisor
-      recipientModel: 'Supervisor',
+      recipientId: complaint.userId,
+      recipientType: 'student',
       senderId: req.user.userId,
-      senderModel: 'Proctor',
-      complaintId: complaint._id,
-      type: 'complaint_verified'
+      senderType: 'proctor',
+      type: 'complaint_verified',
+      message: `Your complaint "${complaint.specificInfo}" has been verified`,
+      relatedEntityId: complaint._id
     });
 
-    // Emit real-time notification
-    req.app.get('io').to(supervisorId).emit('new_notification', notification);
+    req.app.get('io').to(complaint.userId).emit('new_notification', notification);
 
     res.json(complaint);
   } catch (error) {

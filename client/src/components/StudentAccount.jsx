@@ -353,20 +353,8 @@ const Dashboard = () => {
         setIsFeedbackSubmitting(true);
         setFeedbackSubmissionStatus(null);
 
-        // Ensure feedbackRating and feedbackComment are valid
-        if (feedbackRating === 0 && !feedbackComment.trim()) {
-            setFeedbackSubmissionStatus('error');
-            setIsFeedbackSubmitting(false);
-            return;
-        }
-
         try {
-            const token = localStorage.getItem('token'); // Ensure you have a valid token
-            const userId = localStorage.getItem('userId'); // Make sure this is set
-            if (!userId) {
-                throw new Error('User ID is not available. Please log in.');
-            }
-
+            const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:5000/api/feedback/submit', {
                 method: 'POST',
                 headers: {
@@ -376,7 +364,6 @@ const Dashboard = () => {
                 body: JSON.stringify({
                     rating: feedbackRating,
                     comment: feedbackComment,
-                    userId: userId, // Pass the userId here
                 }),
             });
 
@@ -385,8 +372,6 @@ const Dashboard = () => {
                 throw new Error(errorData.message || 'Failed to submit feedback');
             }
 
-            const data = await response.json();
-            console.log('Feedback submitted:', data);
             setFeedbackSubmissionStatus('success');
             setFeedbackRating(0);
             setFeedbackComment('');
@@ -608,6 +593,7 @@ const Dashboard = () => {
                     <li onClick={() => handleNavigation('editProfile')}>Edit Profile</li>
                     <li onClick={() => handleNavigation('complaintStatus')}>Complaint Status</li>
                     <li onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</li>
+
                 </ul>
             </div>
 
@@ -622,7 +608,7 @@ const Dashboard = () => {
                         <FontAwesomeIcon icon={faSignOutAlt} /> Logout
                     </button>
                     {/* Add NotificationBell */}
-                    <NotificationBell />
+                    <NotificationBell userId={profile?.userId} />
                 </div>
             </div>
 
@@ -645,7 +631,7 @@ const Dashboard = () => {
                             <FontAwesomeIcon icon={faSignOutAlt} /> Logout
                         </button>
                         {/* Add NotificationBell */}
-                        <NotificationBell userId={profile?._id || profile?.userId} />
+                        <NotificationBell userId={profile?.userId} />
                     </div>
 
                 </div>
@@ -656,6 +642,7 @@ const Dashboard = () => {
                     <button onClick={() => handleNavigation('editProfile')}>Edit Profile</button>
                     <button onClick={() => handleNavigation('complaintStatus')}>Complaint Status</button>
                     <button onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</button>
+                    <NotificationBell userId={profile?.userId} />
                 </div>
 
                 {activeSection === 'complaintForm' && (

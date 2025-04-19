@@ -16,33 +16,9 @@ import DeanPage from './DeanPage';
 import Admin from './Admin';
 import OTPVerification from './OTPVerification';
 import NotificationBell from './NotificationBell';
-import { io } from 'socket.io-client';
 import { NotificationProvider } from '../contexts/NotificationContext';
 
 function App() {
-  useEffect(() => {
-    const socket = io('http://localhost:5000', {
-      withCredentials: true,
-      transports: ['websocket']
-    });
-
-    // Join user's room when authenticated
-    const userId = localStorage.getItem('userId');
-    if (userId) {
-      socket.emit('join', userId);
-    }
-
-    // Listen for new notifications
-    socket.on('new_notification', (notification) => {
-      console.log('New notification:', notification);
-      // You'll want to update your notification state here
-      // This would work with the NotificationProvider context
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
 
   return (
     <ThemeProvider>

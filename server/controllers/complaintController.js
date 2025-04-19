@@ -1,45 +1,109 @@
+// controllers/complaintController.js
 const Complaint = require('../models/Complaint');
+const Proctor = require('../models/Proctor');
+const Notification = require('../models/Notification');
+const { io } = require('../server'); // Import your socket.io instance
 
-exports.getComplaints = async (req, res) => {
+// Helper function to create and send notifications
+const sendNotification = async (recipientId, message, type, relatedEntityId) => {
   try {
-    const { blockNumber, proctorId } = req.query;
-    
-    if (!proctorId) {
-      return res.status(400).json({ error: 'proctorId is required' });
-    }
-
-    const complaints = await Complaint.getComplaintsWithViewStatus(blockNumber, proctorId);
-    res.status(200).json(complaints);
-  } catch (error) {
-    console.error('Error in getComplaints:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch complaints',
-      details: error.message 
+    // Save notification to database
+    const notification = new Notification({
+      recipientId,
+      recipientType: 'proctor', // or 'student' depending on context
+      message,
+      type,
+      relatedEntityId,
     });
+
+    const savedNotification = await notification.save();
+    
+    // Emit socket event
+    io.to(recipientId).emit('new_notification', savedNotification);
+    
+  } catch (error) {
+    console.error('Error sending notification:', error);
   }
 };
 
-exports.markComplaintAsViewed = async (req, res) => {
+// Create Complaint
+exports.createComplaint = async (req, res) => {
   try {
-    const { complaintId } = req.params;
-    const { proctorId } = req.body;
+    const complaint = new Complaint(req.body);
+    const savedComplaint = await complaint.save();
 
-    if (!proctorId) {
-      return res.status(400).json({ error: 'proctorId is required' });
+    // Notify student
+    await sendNotification(
+      savedComplaint.userId,
+      'Your complaint has been submitted',
+      'complaint_submitted',
+      savedComplaint._id
+    );
+
+    // Find relevant proctor
+    const proctor = await Proctor.findOne({ block: savedComplaint.blockNumber });
+    if (proctor) {
+      // Notify proctor
+      await sendNotification(
+        proctor.staffId,
+        `New complaint in Block ${savedComplaint.blockNumber}`,
+        'new_complaint',
+        savedComplaint._id
+      );
     }
 
-    const complaint = await Complaint.markAsViewed(complaintId, proctorId);
-    
-    if (!complaint) {
-      return res.status(404).json({ error: 'Complaint not found' });
-    }
-    
-    res.status(200).json(complaint);
+    res.status(201).json(savedComplaint);
   } catch (error) {
-    console.error('Error marking complaint as viewed:', error);
-    res.status(500).json({ 
-      error: 'Failed to mark complaint as viewed',
-      details: error.message 
-    });
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Update Complaint Status
+exports.updateComplaintStatus = async (req, res) => {
+  try {
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+
+    // Notify student of status change
+    await sendNotification(
+      complaint.userId,
+      `Complaint status updated to ${req.body.status}`,
+      'status_update',
+      complaint._id
+    );
+
+    res.json(complaint);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Flag as Urgent
+exports.flagComplaint = async (req, res) => {
+  try {
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { isUrgent: req.body.isUrgent },
+      { new: true }
+    );
+
+    const message = complaint.isUrgent 
+      ? 'Complaint marked as urgent' 
+      : 'Complaint urgency removed';
+
+    // Notify relevant users
+    await sendNotification(
+      complaint.userId,
+      message,
+      'urgency_update',
+      complaint._id
+    );
+
+    res.json(complaint);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };

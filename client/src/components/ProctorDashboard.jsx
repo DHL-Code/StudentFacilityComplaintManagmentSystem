@@ -313,7 +313,7 @@ function ProctorDashboard() {
             <FontAwesomeIcon icon={faSignOutAlt} /> Logout
           </button>
           {/* Add NotificationBell */}
-          <NotificationBell userId={proctorData?._id || proctorData?.staffId} />
+          <NotificationBell userId={proctorData?.staffId} />
         </div>
       </div>
 
@@ -341,6 +341,7 @@ function ProctorDashboard() {
         <button className="proctor-mobile-nav-item" onClick={handleLogout}>
           <FontAwesomeIcon icon={faSignOutAlt} /> Logout
         </button>
+        <NotificationBell userId={proctorData?.staffId} />
       </div>
 
       <div className="dashboard-container">
