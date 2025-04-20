@@ -1,7 +1,8 @@
 /* Home.css */
 
 .home-containers {
-  width: 100%; /* Ensure it takes full width */
+  width: 100%;
+  /* Ensure it takes full width */
   /* You might need a min-height depending on your layout */
 }
 
@@ -16,7 +17,8 @@
 .home-contact-section {
   padding: 60px 20px;
   text-align: center;
-  overflow: hidden; /* To contain floated elements and animations */
+  overflow: hidden;
+  /* To contain floated elements and animations */
 }
 
 .home-section-headers {
@@ -39,7 +41,8 @@
   transform: translateX(-50%);
   width: 50px;
   height: 3px;
-  background-color: #007bff; /* Primary color */
+  background-color: #007bff;
+  /* Primary color */
 }
 
 .home-section-headers p {
@@ -51,13 +54,15 @@
 /* Hero Section */
 .home-hero-sections {
   position: relative;
-  height: 600px; /* Adjust as needed */
+  height: 600px;
+  /* Adjust as needed */
   display: flex;
   justify-content: center;
   align-items: center;
   color: white;
   text-align: center;
-  overflow: hidden; /* Important to contain the absolute positioned backgrounds */
+  overflow: hidden;
+  /* Important to contain the absolute positioned backgrounds */
   background-image: url(../assets/wolkite.jpg);
 }
 
@@ -77,7 +82,8 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Semi-transparent overlay */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -243,7 +249,8 @@
 
 .home-role-icon {
   font-size: 2.5em;
-  color: #28a745; /* Success color */
+  color: #28a745;
+  /* Success color */
   margin-bottom: 15px;
 }
 
@@ -362,6 +369,7 @@
   color: #333;
   text-align: right;
 }
+
 .home-section-header {
   color: #333;
 }
@@ -407,7 +415,8 @@
 }
 
 .home-cta-buttons .home-primary-button {
-  background-color: #28a745; /* Success color */
+  background-color: #28a745;
+  /* Success color */
   color: white;
   box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3);
 }
@@ -429,11 +438,10 @@
 
 /* Contact Section */
 .home-contact-section {
-  background: linear-gradient(
-    135deg,
-    #020f1d,
-    #381a03
-  ); /* Gradient background */
+  background: linear-gradient(135deg,
+      #020f1d,
+      #381a03);
+  /* Gradient background */
   color: white;
   padding: 80px 20px;
   text-align: center;
@@ -442,7 +450,8 @@
 .home-contact-card {
   max-width: 600px;
   margin: 0 auto;
-  background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white card */
+  background-color: rgba(255, 255, 255, 0.9);
+  /* Semi-transparent white card */
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   padding: 40px;
@@ -465,7 +474,8 @@
   transform: translateX(-50%);
   width: 60px;
   height: 4px;
-  background-color: #007bff; /* Accent color */
+  background-color: #007bff;
+  /* Accent color */
   border-radius: 2px;
 }
 
@@ -486,7 +496,8 @@
 
 .home-contact-info svg {
   font-size: 1.5em;
-  color: #007bff; /* Accent color for icons */
+  color: #007bff;
+  /* Accent color for icons */
 }
 
 .home-contact-info span {
@@ -578,4 +589,61 @@
   .home-contact-info svg {
     font-size: 1.3em;
   }
+}
+
+.scanner-tab {
+  margin: 2rem auto;
+  max-width: 800px;
+  text-align: center;
+}
+
+.scanner-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.scanner-button.dark {
+  background-color: #2E7D32;
+}
+
+.scanner-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.scanner-container {
+  margin-top: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.scanned-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  font-size: 1.1rem;
+}
+
+.scanned-result p {
+  margin: 0;
+  color: #333;
+}
+
+.dark-mode .scanned-result {
+  background-color: #2d2d2d;
+}
+
+.dark-mode .scanned-result p {
+  color: #fff;
 }
