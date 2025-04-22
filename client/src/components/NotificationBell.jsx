@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, BellRing } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/Notification.css';
 
 const NotificationBell = ({ userId }) => {
@@ -8,10 +9,14 @@ const NotificationBell = ({ userId }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (userId) {
             fetchNotifications();
+            // Set up polling for new notifications every 30 seconds
+            const interval = setInterval(fetchNotifications, 30000);
+            return () => clearInterval(interval);
         }
     }, [userId]);
 
@@ -19,24 +24,122 @@ const NotificationBell = ({ userId }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`http://localhost:5000/api/notifications`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
-            });
+            // Fetch both regular notifications and complaint status updates
+            const [notificationsResponse, complaintsResponse] = await Promise.all([
+                fetch(`http://localhost:5000/api/notifications`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    },
+                }),
+                fetch(`http://localhost:5000/api/complaints?userId=${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    },
+                })
+            ]);
 
-            if (!response.ok) {
+            if (!notificationsResponse.ok || !complaintsResponse.ok) {
                 throw new Error('Failed to fetch notifications');
             }
 
-            const data = await response.json();
-            setNotifications(data);
-            setUnreadCount(data.filter(n => !n.isRead).length);
+            const [notificationsData, complaintsData] = await Promise.all([
+                notificationsResponse.json(),
+                complaintsResponse.json()
+            ]);
+
+            // Convert complaints to notification format and filter out viewed ones
+            const complaintNotifications = complaintsData
+                .filter(complaint => !complaint.viewedByStudent)
+                .map(complaint => ({
+                    _id: complaint._id,
+                    message: `Complaint: ${complaint.complaintType} - ${complaint.specificInfo} (Status: ${complaint.status || 'Pending'})`,
+                    type: 'complaint_status',
+                    isRead: false,
+                    createdAt: complaint.updatedAt || complaint.createdAt,
+                    complaintId: complaint._id
+                }));
+
+            // Filter out read notifications
+            const unreadNotifications = notificationsData.filter(n => !n.isRead);
+
+            // Combine both types of notifications
+            const allNotifications = [...unreadNotifications, ...complaintNotifications];
+            setNotifications(allNotifications);
+            setUnreadCount(allNotifications.length);
         } catch (err) {
             console.error('Error fetching notifications:', err);
             setError(err.message);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleNotificationClick = async (notification) => {
+        if (notification.type === 'complaint_status') {
+            // Close the notification dropdown
+            setIsOpen(false);
+
+            try {
+                // Fetch profile data first
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:5000/api/auth/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch profile');
+                }
+
+                const profileData = await response.json();
+                // Store profile data in localStorage
+                localStorage.setItem('userProfile', JSON.stringify(profileData));
+
+                // Mark the complaint as viewed by student
+                const markViewedResponse = await fetch(`http://localhost:5000/api/complaints/${notification.complaintId}/view-student`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!markViewedResponse.ok) {
+                    throw new Error('Failed to mark complaint as viewed');
+                }
+
+                // Mark the notification as read in the database
+                await markAsRead(notification._id);
+
+                // Remove the clicked notification from the list
+                setNotifications(prevNotifications =>
+                    prevNotifications.filter(n => n._id !== notification._id)
+                );
+                // Update unread count
+                setUnreadCount(prev => prev - 1);
+
+                // After profile is loaded, navigate to complaint status
+                window.location.href = '/StudentAccount?section=complaintStatus';
+            } catch (error) {
+                console.error('Error:', error);
+                // If there's an error, still navigate but show an error message
+                window.location.href = '/StudentAccount?section=complaintStatus';
+            }
+        } else {
+            // For regular notifications
+            try {
+                // Mark the notification as read in the database
+                await markAsRead(notification._id);
+
+                // Remove the clicked notification from the list
+                setNotifications(prevNotifications =>
+                    prevNotifications.filter(n => n._id !== notification._id)
+                );
+                // Update unread count
+                setUnreadCount(prev => prev - 1);
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
         }
     };
 
@@ -56,7 +159,6 @@ const NotificationBell = ({ userId }) => {
                 throw new Error('Failed to mark notification as read');
             }
 
-            // Update local state
             setNotifications(prev =>
                 prev.map(n =>
                     n._id === notificationId ? { ...n, isRead: true } : n
@@ -76,7 +178,9 @@ const NotificationBell = ({ userId }) => {
                     method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
                     },
+                    credentials: 'include'
                 }
             );
 
@@ -84,13 +188,18 @@ const NotificationBell = ({ userId }) => {
                 throw new Error('Failed to mark all notifications as read');
             }
 
-            // Update local state
+            // Update local state regardless of server response
             setNotifications(prev =>
                 prev.map(n => ({ ...n, isRead: true }))
             );
             setUnreadCount(0);
         } catch (err) {
             console.error('Error marking all notifications as read:', err);
+            // Still update the UI to show notifications as read
+            setNotifications(prev =>
+                prev.map(n => ({ ...n, isRead: true }))
+            );
+            setUnreadCount(0);
         }
     };
 
@@ -141,14 +250,14 @@ const NotificationBell = ({ userId }) => {
                     ) : error ? (
                         <div className="notification-error">{error}</div>
                     ) : notifications.length === 0 ? (
-                        <div className="notification-empty">No notifications</div>
+                        <div className="notification-empty">1</div>
                     ) : (
                         <div className="notification-list">
                             {notifications.map(notification => (
                                 <div
                                     key={notification._id}
                                     className={`notification-item ${notification.isRead ? '' : 'unread'}`}
-                                    onClick={() => markAsRead(notification._id)}
+                                    onClick={() => handleNotificationClick(notification)}
                                 >
                                     <div className="notification-message">{notification.message}</div>
                                     <div className="notification-time">{formatDate(notification.createdAt)}</div>

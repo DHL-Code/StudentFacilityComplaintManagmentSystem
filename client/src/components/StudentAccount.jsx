@@ -393,7 +393,18 @@ const Dashboard = () => {
         try {
             setLoadingComplaints(true);
             const token = localStorage.getItem('token');
-            const userId = profile?.userId; // Get the current user's ID
+
+            // Try to get userId from profile state first
+            let userId = profile?.userId;
+
+            // If not available in profile state, try to get from localStorage
+            if (!userId) {
+                const storedProfile = localStorage.getItem('userProfile');
+                if (storedProfile) {
+                    const parsedProfile = JSON.parse(storedProfile);
+                    userId = parsedProfile.userId;
+                }
+            }
 
             if (!userId) {
                 throw new Error('User ID not available');
@@ -582,6 +593,14 @@ const Dashboard = () => {
         }
     };
 
+    useEffect(() => {
+        // Check URL parameters for section
+        const urlParams = new URLSearchParams(window.location.search);
+        const section = urlParams.get('section');
+        if (section === 'complaintStatus') {
+            setActiveSection('complaintStatus');
+        }
+    }, []);
 
     return (
         <div className="student-dashboard">

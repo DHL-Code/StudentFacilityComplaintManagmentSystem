@@ -6,6 +6,7 @@ const {
   markAllAsRead
 } = require('../services/notificationService');
 const authMiddleware = require('../middleware/auth');
+const Notification = require('../models/Notification');
 
 // Get unread notifications
 router.get('/', authMiddleware, async (req, res) => {
@@ -37,6 +38,22 @@ router.patch('/read-all', authMiddleware, async (req, res) => {
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete a notification
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const notification = await Notification.findByIdAndDelete(req.params.id);
+
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    res.status(200).json({ message: 'Notification deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ message: 'Error deleting notification' });
   }
 });
 

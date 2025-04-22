@@ -38,7 +38,7 @@ const io = socketio(server, {
 // Socket.io connection handler
 io.on('connection', (socket) => {
   console.log('New client connected');
-  
+
   socket.on('join', (userId) => {
     socket.join(userId);
     console.log(`User ${userId} joined their room`);
@@ -56,7 +56,7 @@ app.set('io', io);
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -90,10 +90,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  
+
   let status = 500;
   let message = 'Internal server error';
-  
+
   if (err.name === 'ValidationError') {
     status = 400;
     message = err.message;
@@ -107,7 +107,7 @@ app.use((err, req, res, next) => {
     status = 401;
     message = 'Token expired';
   }
-  
+
   res.status(status).json({
     success: false,
     message: message,

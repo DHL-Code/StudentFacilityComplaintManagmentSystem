@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
@@ -47,17 +47,17 @@ router.post('/:complaintId/view', authMiddleware, async (req, res) => {
   try {
     const { complaintId } = req.params;
     const { proctorId } = req.body;
-    
+
     if (!proctorId) {
       return res.status(400).json({ message: 'Proctor ID is required' });
     }
-    
+
     const updatedComplaint = await Complaint.markAsViewed(complaintId, proctorId);
-    
+
     if (!updatedComplaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
-    
+
     res.status(200).json(updatedComplaint);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -81,13 +81,13 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
     });
 
     const savedComplaint = await newComplaint.save();
-    
+
     // Only proceed with notification if complaint was saved successfully
     try {
       // Create notification for proctor
       // You'll need to determine the proctor for this block - this is just an example
       const proctorId = await determineProctorForBlock(blockNumber);
-      
+
       if (proctorId) {
         const notification = await createNotification({
           recipientId: proctorId,
@@ -111,7 +111,7 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
     res.status(201).json(savedComplaint);
   } catch (error) {
     console.error('Error saving complaint:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       message: error.message,
       error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
@@ -122,23 +122,23 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 // In your complaints route (backend)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-      // Create query object
-      const query = {};
-      
-      // If userId query parameter is provided, filter by that user
-      if (req.query.userId) {
-          query.userId = req.query.userId;
-      }
-      
-      // If the user is a proctor/admin, you might want to add additional filters
-      const complaints = await Complaint.find(query).sort({ createdAt: -1 });
-      res.status(200).json(complaints);
+    // Create query object
+    const query = {};
+
+    // If userId query parameter is provided, filter by that user
+    if (req.query.userId) {
+      query.userId = req.query.userId;
+    }
+
+    // If the user is a proctor/admin, you might want to add additional filters
+    const complaints = await Complaint.find(query).sort({ createdAt: -1 });
+    res.status(200).json(complaints);
   } catch (error) {
-      console.error('Error fetching complaints:', error);
-      res.status(500).json({ 
-          error: error.message,
-          message: 'Failed to fetch complaints' 
-      });
+    console.error('Error fetching complaints:', error);
+    res.status(500).json({
+      error: error.message,
+      message: 'Failed to fetch complaints'
+    });
   }
 });
 // Get verified complaints
@@ -172,7 +172,7 @@ router.put('/:id/verify', authMiddleware, async (req, res) => {
     complaint.status = 'verified';
     complaint.viewedByStudent = false; // Student needs to be notified
     await complaint.addStatusUpdate('verified', req.user.userId);
-    
+
 
     const notification = await createNotification({
       recipientId: complaint.userId,
@@ -204,7 +204,19 @@ router.put('/:id/dismiss', authMiddleware, async (req, res) => {
     complaint.status = 'dismissed';
     complaint.viewedByStudent = false; // Student needs to be notified
     await complaint.addStatusUpdate('dismissed', req.user.userId);
-    
+
+    const notification = await createNotification({
+      recipientId: complaint.userId,
+      recipientType: 'student',
+      senderId: req.user.userId,
+      senderType: 'proctor',
+      type: 'complaint_dismissed',
+      message: `Your complaint "${complaint.specificInfo}" has been dismissed`,
+      relatedEntityId: complaint._id
+    });
+
+    req.app.get('io').to(complaint.userId).emit('new_notification', notification);
+
     res.json(complaint);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -218,7 +230,7 @@ router.put('/:id/flag', authMiddleware, async (req, res) => {
     const { isUrgent } = req.body;
     const complaint = await Complaint.findByIdAndUpdate(
       req.params.id,
-      { 
+      {
         isUrgent,
         $push: {
           statusUpdates: {
@@ -230,11 +242,11 @@ router.put('/:id/flag', authMiddleware, async (req, res) => {
       },
       { new: true }
     );
-    
+
     if (!complaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
-    
+
     res.json(complaint);
   } catch (error) {
     console.error('Error flagging complaint:', error);
@@ -247,7 +259,7 @@ router.get('/escalated', authMiddleware, async (req, res) => {
   try {
     const escalatedComplaints = await EscalatedComplaint.find()
       .sort({ escalatedAt: -1 }); // Sort by escalation date, newest first
-    
+
     res.json({
       success: true,
       data: escalatedComplaints
@@ -266,7 +278,7 @@ router.get('/escalated', authMiddleware, async (req, res) => {
 router.put('/:id/escalate', authMiddleware, async (req, res) => {
   try {
     const { reason, supervisorId } = req.body;
-    
+
     if (!reason) {
       return res.status(400).json({ message: 'Escalation reason is required' });
     }
@@ -358,7 +370,7 @@ router.put('/escalated/:id/resolve', authMiddleware, async (req, res) => {
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
-    
+
     if (!complaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
@@ -373,7 +385,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
     // Delete the complaint from the database
     await Complaint.findByIdAndDelete(req.params.id);
-    
+
     res.status(200).json({ message: 'Complaint deleted successfully' });
   } catch (error) {
     console.error('Error deleting complaint:', error);
@@ -406,18 +418,18 @@ router.post('/:id/view-proctor', authMiddleware, async (req, res) => {
       { viewedByProctor: true },
       { new: true }
     );
- // Create notification for student
- const notification = await createNotification({
-  recipientId: complaint.userId,
-  recipientModel: 'User',
-  senderId: req.user.userId,
-  senderModel: 'Proctor',
-  complaintId: complaint._id,
-  type: 'complaint_viewed'
-});
+    // Create notification for student
+    const notification = await createNotification({
+      recipientId: complaint.userId,
+      recipientModel: 'User',
+      senderId: req.user.userId,
+      senderModel: 'Proctor',
+      complaintId: complaint._id,
+      type: 'complaint_viewed'
+    });
 
-// Emit real-time notification
-req.app.get('io').to(complaint.userId).emit('new_notification', notification);
+    // Emit real-time notification
+    req.app.get('io').to(complaint.userId).emit('new_notification', notification);
     res.json(complaint);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -431,20 +443,22 @@ router.get('/unread-status-updates', authMiddleware, async (req, res) => {
       userId: req.user.userId,
       'statusUpdates.notificationViewed': false
     }).select('statusUpdates complaintType specificInfo');
-    
-    const updates = complaints.flatMap(complaint => 
+
+    const updates = complaints.flatMap(complaint =>
       complaint.statusUpdates
         .filter(update => !update.notificationViewed)
         .map(update => ({
           ...update.toObject(),
           complaintId: complaint._id,
           complaintType: complaint.complaintType,
-          specificInfo: complaint.specificInfo
+          specificInfo: complaint.specificInfo,
+          changedAt: update.changedAt || update.createdAt
         }))
     );
-    
+
     res.json(updates);
   } catch (error) {
+    console.error('Error fetching unread status updates:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -500,8 +514,8 @@ router.get('/unread-status-updates', authMiddleware, async (req, res) => {
       userId: req.user.userId,
       'statusUpdates.notificationViewed': false
     }).select('statusUpdates');
-    
-    const updates = complaints.flatMap(complaint => 
+
+    const updates = complaints.flatMap(complaint =>
       complaint.statusUpdates
         .filter(update => !update.notificationViewed)
         .map(update => ({
@@ -509,7 +523,7 @@ router.get('/unread-status-updates', authMiddleware, async (req, res) => {
           complaintId: complaint._id
         }))
     );
-    
+
     res.json(updates);
   } catch (err) {
     res.status(500).json({ message: err.message });
