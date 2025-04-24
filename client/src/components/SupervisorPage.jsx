@@ -1,6 +1,6 @@
 // SupervisorPage.jsx
 import React, { useState, useEffect } from 'react';
-import NotificationBell from '../components/NotificationBell';
+import SupervisorNotificationBell from '../components/SupervisorNotificationBell';
 import '../styles/SupervisorStyles.css';
 import { FaSun, FaMoon, FaBars, FaTimes } from 'react-icons/fa';
 
@@ -402,11 +402,10 @@ const SupervisorPage = () => {
                     <button className="Supervisor-theme-toggle" onClick={toggleTheme}>
                         {isDarkMode ? <FaSun className="Supervisor-theme-icon" /> : <FaMoon className="Supervisor-theme-icon" />}
                     </button>
+                    <SupervisorNotificationBell userId={profile?._id || profile?.userId} />
                     <button className="Supervisor-logout-btn" onClick={handleLogout}>
                         Logout
                     </button>
-                    {/* Add NotificationBell */}
-                    <NotificationBell userId={profile?._id || profile?.userId} />
                 </div>
             </div>
 
@@ -474,6 +473,7 @@ const SupervisorPage = () => {
                         <button className="Supervisor-theme-toggle" onClick={toggleTheme}>
                             {isDarkMode ? <FaSun className="Supervisor-theme-icon" /> : <FaMoon className="Supervisor-theme-icon" />}
                         </button>
+                        <SupervisorNotificationBell userId={profile?._id || profile?.userId} />
                         <button className="Supervisor-logout-btn" onClick={handleLogout}>
                             Logout
                         </button>

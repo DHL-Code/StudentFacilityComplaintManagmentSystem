@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, BellRing } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Notification.css';
+import SupervisorNotificationBell from '../components/SupervisorNotificationBell';
 
 const NotificationBell = ({ userId }) => {
     const [notifications, setNotifications] = useState([]);
