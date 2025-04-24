@@ -26,4 +26,14 @@ router.post('/submit', authMiddleware, async (req, res) => {
   }
 });
 
+// Route to get all feedback
+router.get('/', async (req, res) => {
+  try {
+    const feedback = await Feedback.find().sort({ createdAt: -1 });
+    res.json(feedback);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

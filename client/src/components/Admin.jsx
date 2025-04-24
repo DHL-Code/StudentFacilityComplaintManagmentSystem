@@ -842,27 +842,42 @@ const AdminPage = () => {
           ) : (
             <div className="feedback-container">
               {feedback.map((item) => (
-                <div key={item._id} className="feedback-card">
-                  <div className="feedback-header">
-                    <div className="rating">
+                <div key={item._id} className="feedback-card" style={{
+                  backgroundColor: '#2a2a2a',
+                  padding: '20px',
+                  marginBottom: '20px',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}>
+                  <div className="feedback-header" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px'
+                  }}>
+                    <div className="rating" style={{ color: '#FFD700' }}>
                       {[...Array(5)].map((_, index) => (
                         <span
                           key={index}
-                          className={`star ${index < item.rating ? 'filled' : 'empty'}`}
+                          style={{
+                            fontSize: '20px',
+                            marginRight: '2px',
+                            color: index < item.rating ? '#FFD700' : '#ddd'
+                          }}
                         >
                           ★
                         </span>
                       ))}
                     </div>
-                    <div className="feedback-date">
+                    <div className="feedback-date" style={{ color: '#aaa' }}>
                       {new Date(item.createdAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <div className="feedback-content">
+                  <div className="feedback-content" style={{ color: 'white', marginBottom: '15px' }}>
                     <p>{item.comment}</p>
                   </div>
-                  <div className="feedback-footer">
-                    <span>User ID: {item.userId}</span>
+                  <div className="feedback-footer" style={{ color: '#aaa', fontSize: '14px' }}>
+                    <span>Student ID: {item.userId}</span>
                   </div>
                 </div>
               ))}
