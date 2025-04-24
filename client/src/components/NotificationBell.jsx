@@ -250,7 +250,7 @@ const NotificationBell = ({ userId }) => {
                     ) : error ? (
                         <div className="notification-error">{error}</div>
                     ) : notifications.length === 0 ? (
-                        <div className="notification-empty">1</div>
+                        <div className="notification-empty">No notifications</div>
                     ) : (
                         <div className="notification-list">
                             {notifications.map(notification => (

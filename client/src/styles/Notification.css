@@ -197,3 +197,169 @@
 .dark-mode .mark-all-read:hover {
   background-color: #2d2d2d;
 }
+
+/* Proctor Notifications Page Styles */
+.proctor-notifications-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.notifications-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.notifications-header h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.notifications-header p {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.notifications-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.notification-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 4px solid #1890ff;
+}
+
+.notification-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.notification-content h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.notification-details {
+  margin-bottom: 1rem;
+}
+
+.notification-details p {
+  margin: 0.5rem 0;
+  color: #666;
+}
+
+.notification-time {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 1rem;
+}
+
+.notification-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.view-details-btn {
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.view-details-btn:hover {
+  background-color: #40a9ff;
+}
+
+.notifications-loading,
+.notifications-error,
+.notifications-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.notifications-error {
+  color: #ff4d4f;
+}
+
+.notifications-empty h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Priority Styles */
+.priority-high {
+  border-left-color: #ff4d4f;
+}
+
+.priority-medium {
+  border-left-color: #faad14;
+}
+
+.priority-low {
+  border-left-color: #52c41a;
+}
+
+/* Dark mode styles for proctor notifications */
+.dark-mode .proctor-notifications-page {
+  background-color: #1f1f1f;
+}
+
+.dark-mode .notifications-header h1 {
+  color: #fff;
+}
+
+.dark-mode .notifications-header p {
+  color: #aaa;
+}
+
+.dark-mode .notification-card {
+  background-color: #2d2d2d;
+  border-left-color: #64b5f6;
+}
+
+.dark-mode .notification-content h3 {
+  color: #fff;
+}
+
+.dark-mode .notification-details p {
+  color: #aaa;
+}
+
+.dark-mode .notification-time {
+  color: #888;
+}
+
+.dark-mode .view-details-btn {
+  background-color: #64b5f6;
+}
+
+.dark-mode .view-details-btn:hover {
+  background-color: #90caf9;
+}
+
+.dark-mode .priority-high {
+  border-left-color: #ff7875;
+}
+
+.dark-mode .priority-medium {
+  border-left-color: #ffd666;
+}
+
+.dark-mode .priority-low {
+  border-left-color: #95de64;
+}

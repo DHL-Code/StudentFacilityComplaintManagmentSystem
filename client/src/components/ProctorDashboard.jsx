@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import NotificationBell from '../components/NotificationBell';
+import ProctorNotificationBell from '../components/ProctorNotificationBell';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/ProctorDashboard.css';
 
 function ProctorDashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [notifications, setNotifications] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -24,6 +27,7 @@ function ProctorDashboard() {
     urgent: 0
   });
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [showComplaintModal, setShowComplaintModal] = useState(false);
 
   // Consolidated data fetching
   useEffect(() => {
@@ -170,6 +174,7 @@ function ProctorDashboard() {
   };
   const handleViewComplaint = async (complaint) => {
     setSelectedComplaint(complaint);
+    setShowComplaintModal(true);
 
     if (!complaint.viewedByProctor) {
       try {
@@ -293,6 +298,32 @@ function ProctorDashboard() {
     setIsMobileNavOpen(false);
   };
 
+  // Add this useEffect to handle navigation state
+  useEffect(() => {
+    if (location.state) {
+      const { section, complaintId } = location.state;
+      if (section) {
+        setActiveSection(section);
+        if (complaintId) {
+          // Find and set the selected complaint
+          const complaint = notifications.find(n => n._id === complaintId);
+          if (complaint) {
+            setSelectedComplaint(complaint);
+            setShowComplaintModal(true);
+          }
+        }
+      }
+      // Clear the navigation state to prevent the modal from showing again on refresh
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, notifications, navigate, location.pathname]);
+
+  // Update the close modal handler
+  const handleCloseModal = () => {
+    setSelectedComplaint(null);
+    setShowComplaintModal(false);
+  };
+
   return (
     <div className={`proctor-dashboard ${darkMode ? 'dark-mode' : ''}`}>
       <button className="proctor-mobile-nav-toggle" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
@@ -312,8 +343,8 @@ function ProctorDashboard() {
           <button className="logout-btn" onClick={handleLogout}>
             <FontAwesomeIcon icon={faSignOutAlt} /> Logout
           </button>
-          {/* Add NotificationBell */}
-          <NotificationBell userId={proctorData?.staffId} />
+          {/* Replace NotificationBell with ProctorNotificationBell */}
+          <ProctorNotificationBell userId={proctorData?.staffId} />
         </div>
       </div>
 
@@ -341,7 +372,8 @@ function ProctorDashboard() {
         <button className="proctor-mobile-nav-item" onClick={handleLogout}>
           <FontAwesomeIcon icon={faSignOutAlt} /> Logout
         </button>
-        <NotificationBell userId={proctorData?.staffId} />
+        {/* Replace NotificationBell with ProctorNotificationBell */}
+        <ProctorNotificationBell userId={proctorData?.staffId} />
       </div>
 
       <div className="dashboard-container">
@@ -743,10 +775,10 @@ function ProctorDashboard() {
       </div>
 
       {/* Complaint Detail Modal */}
-      {selectedComplaint && (
+      {showComplaintModal && selectedComplaint && (
         <div className="complaint-modal">
           <div className="modal-content">
-            <button className="close-modal" onClick={() => setSelectedComplaint(null)}>
+            <button className="close-modal" onClick={handleCloseModal}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
 
@@ -804,7 +836,7 @@ function ProctorDashboard() {
                 className={`action-btn verify ${selectedComplaint.status === 'verified' ? 'verified' : ''}`}
                 onClick={() => {
                   handleComplaintAction('verify', selectedComplaint._id);
-                  setSelectedComplaint(null);
+                  handleCloseModal();
                 }}
                 disabled={selectedComplaint.status === 'verified'}
               >
@@ -814,7 +846,7 @@ function ProctorDashboard() {
                 className={`action-btn dismiss ${selectedComplaint.status === 'dismissed' ? 'dismissed' : ''}`}
                 onClick={() => {
                   handleComplaintAction('dismiss', selectedComplaint._id);
-                  setSelectedComplaint(null);
+                  handleCloseModal();
                 }}
                 disabled={selectedComplaint.status === 'dismissed'}
               >
@@ -824,7 +856,7 @@ function ProctorDashboard() {
                 className={`action-btn flag ${selectedComplaint.isUrgent ? 'flagged' : ''}`}
                 onClick={() => {
                   handleComplaintAction('flag', selectedComplaint._id, selectedComplaint.isUrgent);
-                  setSelectedComplaint(null);
+                  handleCloseModal();
                 }}
               >
                 <FontAwesomeIcon icon={faFlag} /> {selectedComplaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
@@ -833,6 +865,7 @@ function ProctorDashboard() {
                 className="action-btn delete"
                 onClick={() => {
                   handleDeleteComplaint(selectedComplaint._id);
+                  handleCloseModal();
                 }}
               >
                 Delete
@@ -852,8 +885,6 @@ function ProctorDashboard() {
             <img src={expandedImage} alt="Expanded view" className="expanded-image" />
           </div>
         </div>
-
-
       )}
       {unreadComplaints.length > 0 && (
         <div className="notification-banner">
