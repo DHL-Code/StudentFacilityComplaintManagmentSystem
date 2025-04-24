@@ -70,31 +70,35 @@ const SupervisorNotificationBell = ({ userId }) => {
 			try {
 				// Mark the complaint as viewed by supervisor
 				const token = localStorage.getItem('token');
-				await fetch(`http://localhost:5000/api/complaints/${notification.complaintId}/view-supervisor`, {
+				const response = await fetch(`http://localhost:5000/api/complaints/${notification.complaintId}/view-supervisor`, {
 					method: 'POST',
 					headers: {
 						'Authorization': `Bearer ${token}`,
 					},
 				});
 
+				if (!response.ok) {
+					throw new Error('Failed to mark complaint as viewed');
+				}
+
 				// Update the notification count
 				setUnreadCount(prev => prev - 1);
 				setNotifications(prev => prev.filter(n => n._id !== notification._id));
 
-				// Navigate to the complaints section with the specific complaint ID
-				navigate('/SupervisorDashboard', {
+				// Navigate to the complaints section and set the selected complaint
+				navigate('/SupervisorPage', {
 					state: {
-						section: 'notifications',
-						complaintId: notification.complaintId
+						section: 'complaints',
+						selectedComplaintId: notification.complaintId
 					}
 				});
 			} catch (error) {
 				console.error('Error handling notification click:', error);
 				// Still navigate even if there's an error
-				navigate('/SupervisorDashboard', {
+				navigate('/SupervisorPage', {
 					state: {
-						section: 'notifications',
-						complaintId: notification.complaintId
+						section: 'complaints',
+						selectedComplaintId: notification.complaintId
 					}
 				});
 			}

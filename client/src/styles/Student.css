@@ -55,7 +55,8 @@ body {
   margin-bottom: 20px;
   padding: 0 10px;
   /* Add padding for touch targets */
-  gap: 10px; /* Add gap between buttons */
+  gap: 10px;
+  /* Add gap between buttons */
 }
 
 .student-top-nav button {
@@ -72,8 +73,10 @@ body {
   /* Orange color */
   display: block;
   /* Always show on mobile */
-  z-index: 1001; /* Ensure it's on top */
+  z-index: 1001;
+  /* Ensure it's on top */
 }
+
 /* Desktop Navigation Buttons */
 .student-desk-nav {
   display: none;
@@ -103,7 +106,8 @@ body {
   /* Stack items vertically */
   gap: 10px;
   /* Space between items */
-  z-index: 1000; /* Ensure it's below hamburger */
+  z-index: 1000;
+  /* Ensure it's below hamburger */
 }
 
 .student-nav-items.active {
@@ -286,6 +290,7 @@ button:hover {
     display: flex;
     flex-direction: column;
   }
+
   .student-dashboard {
     flex-direction: column;
     /* Stack elements vertically */
@@ -307,6 +312,7 @@ button:hover {
     padding: 10px;
     /* Reduce padding for mobile */
   }
+
   .student-nav-items {
     position: absolute;
     top: 50px;
@@ -328,6 +334,7 @@ button:hover {
   .student-nav-items {
     display: none;
   }
+
   .student-content {
     flex: 1;
     padding: 20px;
@@ -336,6 +343,7 @@ button:hover {
 
     /* Remove left margin for mobile */
   }
+
   .student-hamburger {
     display: none;
     /* Hide hamburger icon on desktop */
@@ -349,6 +357,7 @@ button:hover {
     /* Space below the buttons */
   }
 }
+
 .student-password-change-section {
   margin-top: 2rem;
   border-top: 1px solid #ccc;
@@ -359,6 +368,7 @@ button:hover {
   margin-bottom: 1rem;
   color: #cb184b;
 }
+
 /* Profile Photo Edit Section */
 .student-profile-photo-edit {
   text-align: center;
@@ -426,8 +436,10 @@ button:hover {
   font-size: 0.9rem;
   color: #6c757d;
 }
+
 .student-narrow-input {
-  max-width: 400px; /* Adjust as needed */
+  max-width: 400px;
+  /* Adjust as needed */
   width: 100%;
 }
 
@@ -465,6 +477,7 @@ button:hover {
   color: black;
   margin-top: 5%;
 }
+
 .gender {
   color: #f3eeee;
 }
@@ -524,6 +537,7 @@ button:hover {
   border-radius: 8px;
   margin: 20px;
 }
+
 /* aschegari */
 .student-complaint-card {
   background: white;
@@ -604,7 +618,8 @@ button:hover {
 /* Responsive design for smaller screens */
 @media (max-width: 768px) {
   .student-complaints-list {
-    grid-template-columns: 1fr; /* Single column on mobile */
+    grid-template-columns: 1fr;
+    /* Single column on mobile */
   }
 }
 
@@ -648,6 +663,11 @@ button:hover {
 
 .student-status-badge.verified {
   background-color: #4caf50;
+  color: white;
+}
+
+.student-status-badge.resolved {
+  background-color: #28a745;
   color: white;
 }
 
@@ -727,6 +747,7 @@ button:hover {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -735,19 +756,22 @@ button:hover {
 
 @media (min-width: 1024px) {
   .student-complaints-list {
-    grid-template-columns: repeat(3, 1fr); /* 3 columns on larger screens */
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 columns on larger screens */
   }
 }
 
 @media (max-width: 1023px) and (min-width: 768px) {
   .student-complaints-list {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns on medium screens */
+    grid-template-columns: repeat(2, 1fr);
+    /* 2 columns on medium screens */
   }
 }
 
 @media (max-width: 767px) {
   .student-complaints-list {
-    grid-template-columns: 1fr; /* 1 column on mobile */
+    grid-template-columns: 1fr;
+    /* 1 column on mobile */
   }
 }
 
@@ -811,6 +835,7 @@ body.dark-mode .student-gender-selection .gender {
 body.dark-mode .student-edit-profile form .gender-selection label {
   color: #ffffff !important;
 }
+
 body.dark-mode .student-hamburger {
   color: whitesmoke;
 }

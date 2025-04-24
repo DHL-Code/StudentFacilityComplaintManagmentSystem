@@ -254,6 +254,49 @@ router.put('/:id/flag', authMiddleware, async (req, res) => {
   }
 });
 
+// Resolve complaint (for supervisors)
+router.put('/:id/resolve', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    // Update complaint status
+    complaint.status = 'resolved';
+    complaint.resolvedAt = new Date();
+    complaint.viewedByStudent = false; // Set to false to notify student
+    complaint.viewedByProctor = false; // Set to false to notify proctor
+    await complaint.addStatusUpdate('resolved', req.user.userId);
+
+    // Create notification for student
+    const notification = await createNotification({
+      recipientId: complaint.userId,
+      recipientType: 'student',
+      senderId: req.user.userId,
+      senderType: 'supervisor',
+      type: 'complaint_resolved',
+      message: `Your complaint "${complaint.specificInfo}" has been resolved`,
+      relatedEntityId: complaint._id
+    });
+
+    req.app.get('io').to(complaint.userId).emit('new_notification', notification);
+
+    res.json({
+      success: true,
+      message: 'Complaint resolved successfully',
+      data: complaint
+    });
+  } catch (error) {
+    console.error('Error resolving complaint:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to resolve complaint',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // Get escalated complaints
 router.get('/escalated', authMiddleware, async (req, res) => {
   try {
@@ -323,9 +366,6 @@ router.put('/:id/escalate', authMiddleware, async (req, res) => {
       message: 'Complaint escalated successfully',
       complaint: escalatedComplaint
     });
-
-    res.json(complaint);
-
   } catch (error) {
     console.error('Error escalating complaint:', error);
     res.status(500).json({ message: error.message });
@@ -530,6 +570,27 @@ router.get('/unread-status-updates', authMiddleware, async (req, res) => {
   }
 });
 
-
+// Mark complaint as viewed by supervisor
+router.post('/:id/view-supervisor', authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: { viewedBySupervisor: true },
+        $push: {
+          viewedBy: {
+            userId: req.user.userId,
+            userType: 'supervisor',
+            viewedAt: new Date()
+          }
+        }
+      },
+      { new: true }
+    );
+    res.json(complaint);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 module.exports = router;

@@ -14,8 +14,8 @@ const complaintSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   blockNumber: { type: String, required: true },
   dormNumber: { type: String, required: true },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     enum: ['pending', 'verified', 'dismissed', 'escalated', 'resolved'],
     default: 'pending'
   },
@@ -27,10 +27,11 @@ const complaintSchema = new mongoose.Schema({
   statusUpdates: [statusUpdateSchema],
   viewedByProctor: { type: Boolean, default: false },
   viewedByStudent: { type: Boolean, default: false },
+  viewedBySupervisor: { type: Boolean, default: false },
   viewedBy: [
     {
       userId: String,
-      userType: String, // 'proctor' or 'student'
+      userType: String, // 'proctor', 'student', or 'supervisor'
       viewedAt: Date
     }
   ],
@@ -45,17 +46,17 @@ const complaintSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Add these static methods
-complaintSchema.statics.getComplaintsWithViewStatus = async function(blockNumber, proctorId) {
+complaintSchema.statics.getComplaintsWithViewStatus = async function (blockNumber, proctorId) {
   const query = blockNumber ? { blockNumber } : {};
   const complaints = await this.find(query).lean();
-  
+
   return complaints.map(complaint => ({
     ...complaint,
     viewedByProctor: complaint.viewedBy?.includes(proctorId) || false
   }));
 };
 
-complaintSchema.statics.markAsViewed = async function(complaintId, proctorId) {
+complaintSchema.statics.markAsViewed = async function (complaintId, proctorId) {
   return this.findByIdAndUpdate(
     complaintId,
     { $addToSet: { viewedBy: proctorId } },
@@ -64,7 +65,7 @@ complaintSchema.statics.markAsViewed = async function(complaintId, proctorId) {
 };
 
 // Add method to create status update
-complaintSchema.methods.addStatusUpdate = function(status, changedBy) {
+complaintSchema.methods.addStatusUpdate = function (status, changedBy) {
   this.statusUpdates.push({
     status,
     changedBy,

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import SupervisorNotificationBell from '../components/SupervisorNotificationBell';
 import '../styles/SupervisorStyles.css';
 import { FaSun, FaMoon, FaBars, FaTimes } from 'react-icons/fa';
+import { useLocation } from 'react-router-dom';
 
 const SupervisorPage = () => {
     const [profile, setProfile] = useState(null);
@@ -22,6 +23,8 @@ const SupervisorPage = () => {
     const [newProfilePreview, setNewProfilePreview] = useState(null);
     const [fileError, setFileError] = useState('');
     const [activeSection, setActiveSection] = useState('viewProfile');
+    const [selectedComplaintId, setSelectedComplaintId] = useState(null);
+    const location = useLocation();
 
     const [complaints, setComplaints] = useState([]);
     const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -64,6 +67,18 @@ const SupervisorPage = () => {
             fetchEscalatedComplaints();
         }
     }, [activeSection]);
+
+    useEffect(() => {
+        // Check for navigation state
+        if (location.state) {
+            if (location.state.section) {
+                setActiveSection(location.state.section);
+            }
+            if (location.state.selectedComplaintId) {
+                setSelectedComplaintId(location.state.selectedComplaintId);
+            }
+        }
+    }, [location]);
 
     const fetchProfile = async () => {
         setLoading(true);
@@ -318,17 +333,27 @@ const SupervisorPage = () => {
                 }
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to resolve complaint');
+                throw new Error(data.message || 'Failed to resolve complaint');
             }
 
-            // Refresh complaints list
-            await fetchVerifiedComplaints();
-            alert('Complaint resolved successfully');
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to resolve complaint');
+            }
+
+            // Update the complaints list by removing the resolved complaint
+            setComplaints(prevComplaints =>
+                prevComplaints.filter(complaint => complaint._id !== complaintId)
+            );
+
+            // Show success message
+            alert('Complaint has been successfully resolved');
         } catch (error) {
             console.error('Error resolving complaint:', error);
             setComplaintError(error.message);
+            alert('Failed to resolve complaint: ' + error.message);
         }
     };
 
