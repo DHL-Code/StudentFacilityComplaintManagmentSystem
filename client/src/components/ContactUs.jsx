@@ -17,20 +17,33 @@ const ContactUs = () => {
         setIsSubmitting(true);
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const response = await fetch('http://localhost:5000/api/contact/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email, message }),
+            });
 
-            setShowSuccess(true);
-            setName('');
-            setEmail('');
-            setMessage('');
+            const data = await response.json();
 
-            setTimeout(() => {
-                setShowSuccess(false);
-                navigate("/");
-            }, 3000);
+            if (response.ok) {
+                setShowSuccess(true);
+                setName('');
+                setEmail('');
+                setMessage('');
+
+                setTimeout(() => {
+                    setShowSuccess(false);
+                    navigate("/");
+                }, 3000);
+            } else {
+                throw new Error(data.message || 'Failed to send message');
+            }
         } catch (error) {
             console.error('Error:', error);
+            setShowSuccess(false);
+            // You might want to show an error message to the user here
         } finally {
             setIsSubmitting(false);
         }
@@ -103,7 +116,7 @@ const ContactUs = () => {
                     <div className="quick-links">
                         <p>Quick Links</p>
                         <Link to="/privacy">Privacy Policy</Link>
-                        <Link to="/terms">Terms of Service</Link>
+                        <Link to="/TermsOfService">Terms of Service</Link>
                         <Link to="/faq">FAQs</Link>
                         <Link to="/help">Help Center</Link>
                     </div>

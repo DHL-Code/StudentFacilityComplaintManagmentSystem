@@ -16,6 +16,7 @@ import DeanPage from './DeanPage';
 import Admin from './Admin';
 import OTPVerification from './OTPVerification';
 import NotificationBell from './NotificationBell';
+import TermsOfService from './TermsOfService';
 import { NotificationProvider } from '../contexts/NotificationContext';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
             <Route path="/SupervisorPage" element={<SupervisorPage />} />
             <Route path="/DeanPage" element={<DeanPage />} />
             <Route path="/Admin" element={<Admin />} />
+            <Route path="/TermsOfService" element={<TermsOfService />} />
           </Routes>
         </Router>
       </NotificationProvider>
