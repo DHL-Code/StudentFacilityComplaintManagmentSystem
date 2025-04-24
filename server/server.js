@@ -8,7 +8,8 @@ const authRoutes = require('./routes/auth');
 const contactRoutes = require('./routes/contact');
 const complaintRoutes = require('./routes/complaints');
 const adminRoutes = require('./routes/superAdminRoutes');
-const collegeRoutes = require('./routes/colleges');
+const collegeRoutes = require('./routes/collegeRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
 const notificationRoutes = require('./routes/notifications');
 const path = require('path');
 const dotenv = require('dotenv');
@@ -84,6 +85,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/colleges', collegeRoutes);
+app.use('/api/departments', departmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

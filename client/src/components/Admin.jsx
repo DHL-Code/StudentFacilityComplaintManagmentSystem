@@ -40,9 +40,12 @@ const AdminPage = () => {
 
   const [newCollege, setNewCollege] = useState({ name: '' });
   const [newDepartment, setNewDepartment] = useState({ name: '', college: '' });
-  const [colleges, setColleges] = useState([]);  // To store fetched colleges
+  const [colleges, setColleges] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [collegeErrorMessage, setCollegeErrorMessage] = useState('');
   const [departmentErrorMessage, setDepartmentErrorMessage] = useState('');
+  const [editingCollege, setEditingCollege] = useState(null);
+  const [editingDepartment, setEditingDepartment] = useState(null);
 
   const [validationErrors, setValidationErrors] = useState({
     email: '',
@@ -164,7 +167,7 @@ const AdminPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/colleges/create-department', {
+      const response = await fetch('http://localhost:5000/api/departments/create-department', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,8 +180,12 @@ const AdminPage = () => {
       if (response.ok) {
         setSuccessMessage(data.message);
         setNewDepartment({ name: '', college: '' });
+        // Fetch departments again to update the list
+        const departmentsResponse = await fetch('http://localhost:5000/api/departments');
+        const departmentsData = await departmentsResponse.json();
+        setDepartments(departmentsData);
       } else {
-        setDepartmentErrorMessage(data.message || 'Failed to create department'); // Changed to data.message
+        setDepartmentErrorMessage(data.message || 'Failed to create department');
       }
     } catch (error) {
       console.error('Error creating department:', error);
@@ -407,6 +414,196 @@ const AdminPage = () => {
 
     fetchAdminData();
   }, []);
+
+  // Add functions for college operations
+  const handleEditCollege = (college) => {
+    setEditingCollege(college);
+    setNewCollege({ name: college.name });
+  };
+
+  const handleDeleteCollege = async (collegeId) => {
+    if (!window.confirm('Are you sure you want to delete this college? This will also delete all associated departments.')) {
+      return;
+    }
+
+    setLoading(true);
+    setCollegeErrorMessage('');
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/colleges/${collegeId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete college');
+      }
+
+      // Update colleges list with the new data from the server
+      setColleges(data.colleges);
+      setSuccessMessage(data.message || 'College deleted successfully');
+    } catch (error) {
+      console.error('Error deleting college:', error);
+      setCollegeErrorMessage(error.message || 'Failed to delete college');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateCollege = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setCollegeErrorMessage('');
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/colleges/${editingCollege._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newCollege.name }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update college');
+      }
+
+      // Update colleges list with the new data from the server
+      setColleges(data.colleges);
+      setEditingCollege(null);
+      setNewCollege({ name: '' });
+      setSuccessMessage(data.message || 'College updated successfully');
+    } catch (error) {
+      console.error('Error updating college:', error);
+      setCollegeErrorMessage(error.message || 'Failed to update college');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add functions for department operations
+  const handleEditDepartment = (department) => {
+    setEditingDepartment(department);
+    setNewDepartment({
+      name: department.name,
+      college: department.college._id
+    });
+  };
+
+  const handleDeleteDepartment = async (departmentId) => {
+    if (!window.confirm('Are you sure you want to delete this department?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/departments/${departmentId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete department');
+      }
+
+      // Update departments list
+      setDepartments(departments.filter(dept => dept._id !== departmentId));
+      setSuccessMessage('Department deleted successfully');
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      setDepartmentErrorMessage('Failed to delete department');
+    }
+  };
+
+  const handleUpdateDepartment = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setDepartmentErrorMessage('');
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/departments/${editingDepartment._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newDepartment),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update department');
+      }
+
+      // Update departments list
+      setDepartments(departments.map(dept => 
+        dept._id === editingDepartment._id 
+          ? { ...dept, name: newDepartment.name, college: newDepartment.college }
+          : dept
+      ));
+
+      setEditingDepartment(null);
+      setNewDepartment({ name: '', college: '' });
+      setSuccessMessage('Department updated successfully');
+    } catch (error) {
+      console.error('Error updating department:', error);
+      setDepartmentErrorMessage('Failed to update department');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add useEffect to fetch departments
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/departments');
+        if (!response.ok) {
+          throw new Error('Failed to fetch departments');
+        }
+        const data = await response.json();
+        setDepartments(data);
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+        setDepartmentErrorMessage('Failed to load departments');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
+  // Add function to delete feedback
+  const handleDeleteFeedback = async (feedbackId) => {
+    if (!window.confirm('Are you sure you want to delete this feedback?')) {
+      return;
+    }
+
+    setFeedbackLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/feedback/${feedbackId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete feedback');
+      }
+
+      // Update feedback list
+      setFeedback(prevFeedback => prevFeedback.filter(item => item._id !== feedbackId));
+      setSuccessMessage('Feedback deleted successfully');
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+      setFeedbackError('Failed to delete feedback: ' + error.message);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
 
   return (
     <div className="admin-container">
@@ -741,8 +938,10 @@ const AdminPage = () => {
 
           {/* College Creation Form */}
           <div className="subsection">
-            <h3 style={{ color: 'white' }}>Create College</h3>
-            <form onSubmit={handleCreateCollege} className="college-form">
+            <h3 style={{ color: 'white' }}>
+              {editingCollege ? 'Edit College' : 'Create College'}
+            </h3>
+            <form onSubmit={editingCollege ? handleUpdateCollege : handleCreateCollege} className="college-form">
               <div className="form-group">
                 <label style={{ color: 'white' }}>College Name</label>
                 <input
@@ -752,13 +951,27 @@ const AdminPage = () => {
                   required
                 />
               </div>
-              <button
-                type="submit"
-                style={{ background: 'green', color: 'white' }}
-                disabled={loading}
-              >
-                {loading ? 'Creating...' : 'Create College'}
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{ background: 'green', color: 'white' }}
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : (editingCollege ? 'Update College' : 'Create College')}
+                </button>
+                {editingCollege && (
+                  <button
+                    type="button"
+                    style={{ background: 'gray', color: 'white' }}
+                    onClick={() => {
+                      setEditingCollege(null);
+                      setNewCollege({ name: '' });
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
               {collegeErrorMessage && (
                 <div className="error-message" style={{ color: 'red', marginTop: '10px' }}>
                   {collegeErrorMessage}
@@ -769,24 +982,76 @@ const AdminPage = () => {
             {/* Display Colleges */}
             <div className="colleges-list">
               <h4 style={{ color: 'white' }}>Existing Colleges</h4>
-              {colleges.length > 0 ? (
-                <ul>
-                  {colleges.map((college) => (
-                    <li key={college._id} style={{ color: 'white' }}>
-                      {college.name}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p style={{ color: 'white' }}>No colleges found.</p>
-              )}
+              <div style={{
+                maxHeight: '300px',
+                overflowY: 'auto',
+                padding: '10px',
+                backgroundColor: '#2a2a2a',
+                borderRadius: '8px',
+                marginTop: '10px'
+              }}>
+                {colleges.length > 0 ? (
+                  <ul style={{
+                    listStyle: 'none',
+                    padding: 0,
+                    margin: 0
+                  }}>
+                    {colleges.map((college) => (
+                      <li key={college._id} style={{
+                        color: 'white',
+                        padding: '10px',
+                        borderBottom: '1px solid #444',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <span>{college.name}</span>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            onClick={() => handleEditCollege(college)}
+                            style={{
+                              background: 'blue',
+                              color: 'white',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCollege(college._id)}
+                            style={{
+                              background: 'red',
+                              color: 'white',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
+                    No colleges found.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Department Creation Form */}
           <div className="subsection">
-            <h3 style={{ color: 'white' }}>Create Department</h3>
-            <form onSubmit={handleCreateDepartment} className="department-form">
+            <h3 style={{ color: 'white' }}>
+              {editingDepartment ? 'Edit Department' : 'Create Department'}
+            </h3>
+            <form onSubmit={editingDepartment ? handleUpdateDepartment : handleCreateDepartment} className="department-form">
               <div className="form-group">
                 <label style={{ color: 'white' }}>Department Name</label>
                 <input
@@ -811,19 +1076,104 @@ const AdminPage = () => {
                   ))}
                 </select>
               </div>
-              <button
-                type="submit"
-                style={{ background: 'green', color: 'white' }}
-                disabled={loading}
-              >
-                {loading ? 'Creating...' : 'Create Department'}
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{ background: 'green', color: 'white' }}
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : (editingDepartment ? 'Update Department' : 'Create Department')}
+                </button>
+                {editingDepartment && (
+                  <button
+                    type="button"
+                    style={{ background: 'gray', color: 'white' }}
+                    onClick={() => {
+                      setEditingDepartment(null);
+                      setNewDepartment({ name: '', college: '' });
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
               {departmentErrorMessage && (
                 <div className="error-message" style={{ color: 'red', marginTop: '10px' }}>
                   {departmentErrorMessage}
                 </div>
               )}
             </form>
+
+            {/* Display Departments */}
+            <div className="departments-list">
+              <h4 style={{ color: 'white' }}>Existing Departments</h4>
+              <div style={{
+                maxHeight: '300px',
+                overflowY: 'auto',
+                padding: '10px',
+                backgroundColor: '#2a2a2a',
+                borderRadius: '8px',
+                marginTop: '10px'
+              }}>
+                {departments.length > 0 ? (
+                  <ul style={{
+                    listStyle: 'none',
+                    padding: 0,
+                    margin: 0
+                  }}>
+                    {departments.map((department) => (
+                      <li key={department._id} style={{
+                        color: 'white',
+                        padding: '10px',
+                        borderBottom: '1px solid #444',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <span>{department.name}</span>
+                          <span style={{ color: '#aaa', marginLeft: '10px' }}>
+                            ({department.college?.name || 'Unknown College'})
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            onClick={() => handleEditDepartment(department)}
+                            style={{
+                              background: 'blue',
+                              color: 'white',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDepartment(department._id)}
+                            style={{
+                              background: 'red',
+                              color: 'white',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
+                    No departments found.
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -833,14 +1183,40 @@ const AdminPage = () => {
         <div className="section">
           <h2 style={{ color: 'white' }}>Student Feedback</h2>
 
+          {successMessage && (
+            <div style={{ 
+              color: 'green', 
+              backgroundColor: '#2a2a2a', 
+              padding: '10px', 
+              marginBottom: '10px',
+              borderRadius: '4px' 
+            }}>
+              {successMessage}
+            </div>
+          )}
+
+          {feedbackError && (
+            <div style={{ 
+              color: 'red', 
+              backgroundColor: '#2a2a2a', 
+              padding: '10px', 
+              marginBottom: '10px',
+              borderRadius: '4px' 
+            }}>
+              {feedbackError}
+            </div>
+          )}
+
           {feedbackLoading ? (
             <p style={{ color: 'white' }}>Loading feedback data...</p>
-          ) : feedbackError ? (
-            <p style={{ color: 'red' }}>{feedbackError}</p>
           ) : feedback.length === 0 ? (
             <p style={{ color: 'white' }}>No feedback available.</p>
           ) : (
-            <div className="feedback-container">
+            <div className="feedback-container" style={{
+              maxHeight: '600px',
+              overflowY: 'auto',
+              padding: '10px'
+            }}>
               {feedback.map((item) => (
                 <div key={item._id} className="feedback-card" style={{
                   backgroundColor: '#2a2a2a',
@@ -869,12 +1245,36 @@ const AdminPage = () => {
                         </span>
                       ))}
                     </div>
-                    <div className="feedback-date" style={{ color: '#aaa' }}>
-                      {new Date(item.createdAt).toLocaleDateString()}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="feedback-date" style={{ color: '#aaa' }}>
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteFeedback(item._id)}
+                        style={{
+                          background: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          padding: '5px 10px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.3s'
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
-                  <div className="feedback-content" style={{ color: 'white', marginBottom: '15px' }}>
-                    <p>{item.comment}</p>
+                  <div className="feedback-content" style={{ 
+                    color: 'white', 
+                    marginBottom: '15px',
+                    backgroundColor: '#363636',
+                    padding: '15px',
+                    borderRadius: '4px'
+                  }}>
+                    <p style={{ margin: 0 }}>{item.comment}</p>
                   </div>
                   <div className="feedback-footer" style={{ color: '#aaa', fontSize: '14px' }}>
                     <span>Student ID: {item.userId}</span>
