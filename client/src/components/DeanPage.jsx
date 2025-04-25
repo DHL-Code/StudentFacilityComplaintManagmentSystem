@@ -1,6 +1,6 @@
 // DeanPage.jsx
 import React, { useState, useEffect } from 'react';
-import NotificationBell from '../components/NotificationBell';
+import DeanNotificationBell from '../components/DeanNotificationBell';
 import '../styles/DeanStyles.css';
 import { FaSun, FaMoon } from 'react-icons/fa';
 
@@ -293,7 +293,7 @@ const DeanPage = () => {
           <button className="dean-theme-toggle" onClick={toggleTheme}>
             {isDarkMode ? <FaSun className="dean-theme-icon" /> : <FaMoon className="dean-theme-icon" />}
           </button>
-          <NotificationBell userId={deanData?.staffId} />
+          <DeanNotificationBell />
           <button className="dean-logout-btn" onClick={handleLogout}>
             Logout
           </button>

@@ -597,4 +597,32 @@ router.post('/:id/view-supervisor', authMiddleware, async (req, res) => {
   }
 });
 
+// Mark escalated complaint as viewed by dean
+router.post('/escalated/:id/view', authMiddleware, async (req, res) => {
+  try {
+    const escalatedComplaint = await EscalatedComplaint.findByIdAndUpdate(
+      req.params.id,
+      { viewedByDean: true },
+      { new: true }
+    );
+
+    if (!escalatedComplaint) {
+      return res.status(404).json({ message: 'Escalated complaint not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Complaint marked as viewed by dean',
+      data: escalatedComplaint
+    });
+  } catch (error) {
+    console.error('Error marking complaint as viewed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark complaint as viewed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 module.exports = router;

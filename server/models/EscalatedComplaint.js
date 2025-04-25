@@ -44,6 +44,10 @@ const escalatedComplaintSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    viewedByDean: {
+        type: Boolean,
+        default: false
+    },
     escalatedAt: {
         type: Date,
         default: Date.now
