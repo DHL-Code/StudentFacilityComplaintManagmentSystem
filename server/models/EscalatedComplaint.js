@@ -38,7 +38,7 @@ const escalatedComplaintSchema = new mongoose.Schema({
     status: {
         type: String,
         default: 'Escalated to dean',
-        enum: ['Escalated to dean']
+        enum: ['Escalated to dean', 'resolved']
     },
     isUrgent: {
         type: Boolean,
