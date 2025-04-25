@@ -119,7 +119,6 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 });
 
 // Get all complaints (for admin or user)
-// In your complaints route (backend)
 router.get('/', authMiddleware, async (req, res) => {
   try {
     // Create query object
@@ -128,6 +127,11 @@ router.get('/', authMiddleware, async (req, res) => {
     // If userId query parameter is provided, filter by that user
     if (req.query.userId) {
       query.userId = req.query.userId;
+    }
+
+    // If blockNumber query parameter is provided, filter by that block
+    if (req.query.blockNumber) {
+      query.blockNumber = req.query.blockNumber;
     }
 
     // If the user is a proctor/admin, you might want to add additional filters

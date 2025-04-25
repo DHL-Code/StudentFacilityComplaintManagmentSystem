@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ProctorNotificationBell from '../components/ProctorNotificationBell';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes, faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/ProctorDashboard.css';
 
@@ -28,6 +28,18 @@ function ProctorDashboard() {
   });
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [showComplaintModal, setShowComplaintModal] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showProfileUpdateModal, setShowProfileUpdateModal] = useState(false);
+  const [profileUpdateMessage, setProfileUpdateMessage] = useState('');
+  const [isUpdateSuccess, setIsUpdateSuccess] = useState(false);
 
   // Consolidated data fetching
   useEffect(() => {
@@ -324,6 +336,100 @@ function ProctorDashboard() {
     setShowComplaintModal(false);
   };
 
+  const handleEditProfile = () => {
+    setIsEditingProfile(true);
+    setEditFormData({
+      name: proctorData.name,
+      email: proctorData.email,
+      phone: proctorData.phone,
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
+
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      // Validate passwords if they are being changed
+      if (editFormData.newPassword || editFormData.confirmPassword) {
+        if (editFormData.newPassword !== editFormData.confirmPassword) {
+          throw new Error('New passwords do not match');
+        }
+        if (editFormData.newPassword.length < 6) {
+          throw new Error('New password must be at least 6 characters long');
+        }
+        if (!editFormData.currentPassword) {
+          throw new Error('Current password is required to change password');
+        }
+      }
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:5000/api/admin/staff/${proctorData.staffId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: editFormData.name,
+            email: editFormData.email,
+            phone: editFormData.phone,
+            currentPassword: editFormData.currentPassword,
+            newPassword: editFormData.newPassword
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+
+      const updatedData = await response.json();
+      setProctorData(prev => ({
+        ...prev,
+        name: editFormData.name,
+        email: editFormData.email,
+        phone: editFormData.phone
+      }));
+      setIsEditingProfile(false);
+      setError(null);
+      
+      // Show success modal
+      setProfileUpdateMessage('Profile updated successfully!');
+      setIsUpdateSuccess(true);
+      setShowProfileUpdateModal(true);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setError(error.message || 'Failed to update profile. Please try again.');
+      
+      // Show error modal
+      setProfileUpdateMessage(error.message || 'Failed to update profile. Please try again.');
+      setIsUpdateSuccess(false);
+      setShowProfileUpdateModal(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+    setError(null);
+  };
+
+  const handleCloseProfileUpdateModal = () => {
+    setShowProfileUpdateModal(false);
+    setProfileUpdateMessage('');
+  };
+
   return (
     <div className={`proctor-dashboard ${darkMode ? 'dark-mode' : ''}`}>
       <button className="proctor-mobile-nav-toggle" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
@@ -354,7 +460,7 @@ function ProctorDashboard() {
           Dashboard
         </button>
         <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('notifications')}>
-          Complaints {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+          Complaints
         </button>
         <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('profile')}>
           My Profile
@@ -392,7 +498,6 @@ function ProctorDashboard() {
             >
               <span className="menu-item-content">
                 Complaints
-                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
               </span>
             </button>
             <button
@@ -626,50 +731,134 @@ function ProctorDashboard() {
           {activeSection === 'profile' && proctorData && (
             <div className="profile-section">
               <h2>My Profile</h2>
-              <div className="profile-card">
-                <div className="profile-header">
-                  <div className="avatar">
-                    {proctorData.name.charAt(0)}
+              {isEditingProfile ? (
+                <div className="edit-profile-form">
+                  <div className="form-group">
+                    <label htmlFor="name">Name</label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={editFormData.name}
+                      onChange={handleEditFormChange}
+                    />
                   </div>
-                  <div className="profile-info">
-                    <h3>{proctorData.name}</h3>
-                    <p className="role">{proctorData.role}</p>
-                    <p className="staff-id">ID: {proctorData.staffId}</p>
+                  <div className="form-group">
+                    <label htmlFor="email">Email</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={editFormData.email}
+                      onChange={handleEditFormChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="phone">Phone</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={editFormData.phone}
+                      onChange={handleEditFormChange}
+                    />
+                  </div>
+                  
+                  <div className="password-change-section">
+                    <h3>Change Password</h3>
+                    <div className="form-group">
+                      <label htmlFor="currentPassword">Current Password</label>
+                      <input
+                        type="password"
+                        id="currentPassword"
+                        name="currentPassword"
+                        value={editFormData.currentPassword}
+                        onChange={handleEditFormChange}
+                        placeholder="Enter current password"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="newPassword">New Password</label>
+                      <input
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        value={editFormData.newPassword}
+                        onChange={handleEditFormChange}
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="confirmPassword">Confirm New Password</label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={editFormData.confirmPassword}
+                        onChange={handleEditFormChange}
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+                  </div>
+
+                  {error && <div className="error-message">{error}</div>}
+                  <div className="form-actions">
+                    <button className="save-btn" onClick={handleSaveProfile}>Save Changes</button>
+                    <button className="cancel-btn" onClick={handleCancelEdit}>Cancel</button>
                   </div>
                 </div>
-
-                <div className="profile-details">
-                  <div className="detail-group">
-                    <h4>Contact Information</h4>
-                    <div className="detail-item">
-                      <span className="detail-label">Email:</span>
-                      <span className="detail-value">{proctorData.email}</span>
+              ) : (
+                <div className="profile-card">
+                  <div className="profile-header">
+                    <div className="avatar">
+                      {proctorData.name.charAt(0)}
                     </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Phone:</span>
-                      <span className="detail-value">{proctorData.phone}</span>
-                    </div>
-                  </div>
-
-                  <div className="detail-group">
-                    <h4>Assignment</h4>
-                    <div className="detail-item">
-                      <span className="detail-label">Block:</span>
-                      <span className="detail-value">{proctorData.block}</span>
+                    <div className="profile-info">
+                      <h3>{proctorData.name}</h3>
+                      <p className="role">{proctorData.role}</p>
+                      <p className="staff-id">ID: {proctorData.staffId}</p>
                     </div>
                   </div>
 
-                  <div className="detail-group">
-                    <h4>Account</h4>
-                    <div className="detail-item">
-                      <span className="detail-label">Member Since:</span>
-                      <span className="detail-value">
-                        {new Date(proctorData.createdAt).toLocaleDateString()}
-                      </span>
+                  <div className="profile-details">
+                    <div className="detail-group">
+                      <h4>Contact Information</h4>
+                      <div className="detail-item">
+                        <span className="detail-label">Email:</span>
+                        <span className="detail-value">{proctorData.email}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Phone:</span>
+                        <span className="detail-value">{proctorData.phone}</span>
+                      </div>
                     </div>
+
+                    <div className="detail-group">
+                      <h4>Assignment</h4>
+                      <div className="detail-item">
+                        <span className="detail-label">Block:</span>
+                        <span className="detail-value">{proctorData.block}</span>
+                      </div>
+                    </div>
+
+                    <div className="detail-group">
+                      <h4>Account</h4>
+                      <div className="detail-item">
+                        <span className="detail-label">Member Since:</span>
+                        <span className="detail-value">
+                          {new Date(proctorData.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="profile-actions">
+                    <button className="edit-btn" onClick={handleEditProfile}>
+                      Edit Profile
+                    </button>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -904,6 +1093,34 @@ function ProctorDashboard() {
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Profile Update Modal */}
+      {showProfileUpdateModal && (
+        <div className="profile-update-modal">
+          <div className="modal-content">
+            <button className="close-modal" onClick={handleCloseProfileUpdateModal}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className={`modal-icon ${isUpdateSuccess ? 'success' : 'error'}`}>
+              {isUpdateSuccess ? (
+                <FontAwesomeIcon icon={faCheckCircle} />
+              ) : (
+                <FontAwesomeIcon icon={faExclamationCircle} />
+              )}
+            </div>
+            <h2>{isUpdateSuccess ? 'Success' : 'Error'}</h2>
+            <p>{profileUpdateMessage}</p>
+            <div className="modal-actions">
+              <button 
+                className={`modal-btn ${isUpdateSuccess ? 'success' : 'error'}`}
+                onClick={handleCloseProfileUpdateModal}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
