@@ -54,16 +54,34 @@ const transporter = nodemailer.createTransport({
   }
 })();
 
+// Helper function to find the last ID for a given role
+async function findLastStaffId(role) {
+  let Model;
+  switch(role) {
+    case 'proctor': Model = Proctor; break;
+    case 'supervisor': Model = Supervisor; break;
+    case 'dean': Model = Dean; break;
+    default: return 0;
+  }
+
+  const lastStaff = await Model.findOne().sort({ staffId: -1 });
+  if (lastStaff) {
+    const lastIdStr = lastStaff.staffId.slice(1);
+    return parseInt(lastIdStr) || 0;
+  }
+  return 0;
+}
+
 // Generate staff ID based on role
-const generateStaffId = (role) => {
+const generateStaffId = async (role) => {
   const prefix = {
     proctor: 'P',
     supervisor: 'S',
     dean: 'D'
   }[role] || 'X';
   
-  const randomNum = Math.floor(1000 + Math.random() * 9000);
-  return `${prefix}${randomNum}`;
+  const lastId = await findLastStaffId(role);
+  return `${prefix}${String(lastId + 1).padStart(4, '0')}`;
 };
 
 // Create new staff
@@ -111,7 +129,7 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
     }
 
     // Generate staff ID
-    const staffId = generateStaffId(role);
+    const staffId = await generateStaffId(role);
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
