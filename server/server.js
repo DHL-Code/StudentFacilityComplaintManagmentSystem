@@ -17,6 +17,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const fs = require('fs');
 const adminProfileRoutes = require('./routes/adminProfileRoutes');
+const staffRoutes = require('./routes/staff');
 
 // Load environment variables
 dotenv.config();
@@ -76,6 +77,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/profile', adminProfileRoutes);
 app.use('/api/blocks', blockRoutes);
 app.use('/api/dorms', dormRoutes);
+app.use('/api/admin', staffRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Error handling middleware

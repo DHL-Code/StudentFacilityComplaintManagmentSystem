@@ -249,15 +249,19 @@ const AdminPage = () => {
   const generateStaffId = (role) => {
     const prefixMap = {
       proctor: 'P',
-      supervisor: 'V',
+      supervisor: 'S',
       dean: 'D'
     };
-    const prefix = prefixMap[role] || 'S';
+    const prefix = prefixMap[role] || 'X';
+    
+    // Get the last ID from existing staff accounts
     const lastId = staffAccounts.reduce((max, acc) => {
-      const num = parseInt(acc.id.slice(1)) || 0;
+      const num = parseInt(acc.staffId.slice(1)) || 0;
       return num > max ? num : max;
     }, 0);
-    return `${prefix}${String(lastId + 1).padStart(3, '0')}`;
+    
+    // Increment the last ID and pad with zeros
+    return `${prefix}${String(lastId + 1).padStart(4, '0')}`;
   };
 
   // Generate Admin ID
@@ -273,56 +277,76 @@ const AdminPage = () => {
   const handleCreateStaff = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setSuccessMessage('');
     setErrorMessage('');
-    setValidationErrors({ email: '', phone: '', password: '' });
-
-    // Validate all fields
-    const emailError = validationErrors.email;
-    const phoneError = validationErrors.phone;
-    const passwordError = validationErrors.password;
-
-    if (emailError || phoneError || passwordError) {
-      setValidationErrors({
-        email: emailError,
-        phone: phoneError,
-        password: passwordError
-      });
-      setLoading(false);
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('name', newStaff.name);
-    formData.append('email', newStaff.email);
-    formData.append('phone', newStaff.phone);
-    formData.append('role', newStaff.role);
-    formData.append('password', newStaff.password);
-    if (newStaff.profilePhoto) {
-      formData.append('profilePhoto', newStaff.profilePhoto);
-    }
-    if (newStaff.role === 'proctor') {
-      formData.append('block', newStaff.block || '');
-    }
 
     try {
+      const formData = new FormData();
+      formData.append('name', newStaff.name);
+      formData.append('email', newStaff.email);
+      formData.append('phone', newStaff.phone);
+      formData.append('role', newStaff.role);
+      formData.append('password', newStaff.password);
+      
+      if (newStaff.role === 'proctor') {
+        const selectedBlock = blocks.find(b => b._id === newStaff.block);
+        if (!selectedBlock) {
+          setErrorMessage('Please select a valid block');
+          return;
+        }
+        formData.append('block', selectedBlock.number);
+      }
+
+      if (newStaff.profilePhoto) {
+        formData.append('profilePhoto', newStaff.profilePhoto);
+      }
+
       const response = await fetch('http://localhost:5000/api/admin/create-staff', {
         method: 'POST',
-        body: formData,
+        body: formData
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccessMessage(`Staff account created successfully! Staff ID: ${data.staffId}`);
-        setNewStaff({ name: '', email: '', phone: '', role: 'proctor', password: '', profilePhoto: null, block: '' });
-        setProfilePreview(null);
-      } else {
-        setErrorMessage(data.error || 'Failed to create staff account');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create staff account');
       }
+
+      const data = await response.json();
+      setSuccessMessage(data.message);
+      
+      // Update staffAccounts with the new staff member
+      setStaffAccounts(prev => [...prev, data.staff]);
+
+      // Refresh blocks list
+      const token = localStorage.getItem('token');
+      const blocksResponse = await fetch('http://localhost:5000/api/blocks', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!blocksResponse.ok) {
+        throw new Error('Failed to refresh blocks');
+      }
+
+      const blocksData = await blocksResponse.json();
+      setBlocks(blocksData);
+      
+      // Reset form while preserving the role and blocks state
+      setNewStaff({
+        name: '',
+        email: '',
+        phone: '',
+        role: newStaff.role, // Preserve the role
+        password: '',
+        block: '', // Clear the block selection
+        profilePhoto: null
+      });
+      setProfilePreview(null);
+
+      // Force a re-render of the form
+      setActiveTab(prev => prev);
     } catch (error) {
-      console.error('Error creating staff:', error);
-      setErrorMessage('An error occurred while creating the staff account. Please try again.');
+      setErrorMessage(error.message);
     } finally {
       setLoading(false);
     }
@@ -622,58 +646,15 @@ const AdminPage = () => {
   };
 
   // Add handleProfilePhotoChange function
-  const handleProfilePhotoChange = async (e) => {
+  const handleProfilePhotoChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setProfileError('Please upload an image file');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setProfileError('Image size should be less than 5MB');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setProfileError('');
-
-      // Create FormData object
-      const formData = new FormData();
-      formData.append('profilePhoto', file);
-      formData.append('adminId', adminData.adminId);
-
-      // Send the file to the server
-      const response = await fetch('http://localhost:5000/api/admin/profile/upload-profile-photo', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to upload profile photo');
-      }
-
-      const data = await response.json();
-      
-      // Update the profile photo in the UI
-      setCurrentProfilePhoto(data.profilePhotoUrl);
-      setSuccessMessage('Profile photo updated successfully');
-      
-      // Update the adminData state with the new photo URL
-      setAdminData(prev => ({
-        ...prev,
-        profilePhoto: data.profilePhotoUrl
-      }));
-    } catch (error) {
-      console.error('Error uploading profile photo:', error);
-      setProfileError(error.message || 'Failed to upload profile photo');
-    } finally {
-      setLoading(false);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePreview(reader.result);
+        setNewStaff(prev => ({ ...prev, profilePhoto: file }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -1208,12 +1189,15 @@ const AdminPage = () => {
         setBlocks(data);
       } catch (error) {
         console.error('Error fetching blocks:', error);
-        setBlockErrorMessage('Failed to load blocks');
+        setErrorMessage('Failed to load blocks');
       }
     };
 
-    fetchBlocks();
-  }, []);
+    // Fetch blocks when component mounts and when activeTab changes to create-staff
+    if (activeTab === 'create-staff') {
+      fetchBlocks();
+    }
+  }, [activeTab]);
 
   return (
     <div className="admin-container">
@@ -1580,15 +1564,7 @@ const AdminPage = () => {
                 type="file"
                 id="staffPhoto"
                 accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => setProfilePreview(reader.result);
-                    reader.readAsDataURL(file);
-                    setNewStaff({ ...newStaff, profilePhoto: file });
-                  }
-                }}
+                onChange={handleProfilePhotoChange}
                 hidden
               />
             </div>
@@ -1669,21 +1645,18 @@ const AdminPage = () => {
             {newStaff.role === 'proctor' && (
               <div className="form-group">
                 <label style={{ color: 'white' }}>Block</label>
-                <input
-                  type="text"
+                <select
                   value={newStaff.block}
-                  onChange={e => {
-                    const value = e.target.value;
-                    // Only allow numbers
-                    if (value === '' || /^\d+$/.test(value)) {
-                      setNewStaff({ ...newStaff, block: value });
-                    }
-                  }}
-                  placeholder="Enter block number"
+                  onChange={e => setNewStaff(prev => ({ ...prev, block: e.target.value }))}
                   required
-                  pattern="[0-9]*"
-                  inputMode="numeric"
-                />
+                >
+                  <option value="">Select Block</option>
+                  {blocks.map((block) => (
+                    <option key={block._id} value={block._id}>
+                      Block {block.number}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 
@@ -1694,8 +1667,6 @@ const AdminPage = () => {
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>
-
-
           </form>
         </div>
       )}
