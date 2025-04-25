@@ -28,8 +28,8 @@ const staffSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  staffId: {
-    type: String,
+  staffId: { 
+    type: String, 
     required: true,
     unique: true
   },
@@ -49,9 +49,7 @@ const staffSchema = new mongoose.Schema({
   }
 });
 
-// Create indexes
-staffSchema.index({ email: 1 }, { unique: true });
-staffSchema.index({ staffId: 1 }, { unique: true });
+// Create index for role only (email and staffId are already indexed by unique: true)
 staffSchema.index({ role: 1 });
 
 // Add password hashing middleware to the base schema

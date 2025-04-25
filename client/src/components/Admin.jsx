@@ -76,6 +76,8 @@ const AdminPage = () => {
   const [blockErrorMessage, setBlockErrorMessage] = useState('');
   const [dormErrorMessage, setDormErrorMessage] = useState('');
 
+  const [formErrors, setFormErrors] = useState({});
+
   // Fetch colleges on component mount, added error state
   useEffect(() => {
     const fetchColleges = async () => {
@@ -253,13 +255,13 @@ const AdminPage = () => {
       dean: 'D'
     };
     const prefix = prefixMap[role] || 'X';
-    
+
     // Get the last ID from existing staff accounts
     const lastId = staffAccounts.reduce((max, acc) => {
       const num = parseInt(acc.staffId.slice(1)) || 0;
       return num > max ? num : max;
     }, 0);
-    
+
     // Increment the last ID and pad with zeros
     return `${prefix}${String(lastId + 1).padStart(4, '0')}`;
   };
@@ -286,7 +288,7 @@ const AdminPage = () => {
       formData.append('phone', newStaff.phone);
       formData.append('role', newStaff.role);
       formData.append('password', newStaff.password);
-      
+
       if (newStaff.role === 'proctor') {
         const selectedBlock = blocks.find(b => b._id === newStaff.block);
         if (!selectedBlock) {
@@ -300,11 +302,12 @@ const AdminPage = () => {
         formData.append('profilePhoto', newStaff.profilePhoto);
       }
 
-      const response = await fetch('http://localhost:5000/api/admin/create-staff', {
+      const response = await fetch('http://localhost:5000/api/adminStaff/create-staff', {
         method: 'POST',
         body: formData
       });
 
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create staff account');
@@ -312,7 +315,7 @@ const AdminPage = () => {
 
       const data = await response.json();
       setSuccessMessage(data.message);
-      
+
       // Update staffAccounts with the new staff member
       setStaffAccounts(prev => [...prev, data.staff]);
 
@@ -330,7 +333,7 @@ const AdminPage = () => {
 
       const blocksData = await blocksResponse.json();
       setBlocks(blocksData);
-      
+
       // Reset form while preserving the role and blocks state
       setNewStaff({
         name: '',
@@ -575,8 +578,8 @@ const AdminPage = () => {
       }
 
       // Update departments list
-      setDepartments(departments.map(dept => 
-        dept._id === editingDepartment._id 
+      setDepartments(departments.map(dept =>
+        dept._id === editingDepartment._id
           ? { ...dept, name: newDepartment.name, college: newDepartment.college }
           : dept
       ));
@@ -767,7 +770,7 @@ const AdminPage = () => {
     // Clear all stored data
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
+
     // Redirect to login page
     window.location.href = '/login';
   };
@@ -948,7 +951,7 @@ const AdminPage = () => {
 
         const blocksData = await blocksResponse.json();
         const dormsData = await dormsResponse.json();
-        
+
         setBlocks(blocksData);
         setDorms(dormsData);
       } catch (error) {
@@ -1022,7 +1025,7 @@ const AdminPage = () => {
       }
 
       const data = await response.json();
-      setBlocks(blocks.map(block => 
+      setBlocks(blocks.map(block =>
         block._id === editingBlock._id ? data : block
       ));
       setEditingBlock(null);
@@ -1128,7 +1131,7 @@ const AdminPage = () => {
       }
 
       const data = await response.json();
-      setDorms(dorms.map(dorm => 
+      setDorms(dorms.map(dorm =>
         dorm._id === editingDorm._id ? data : dorm
       ));
       setEditingDorm(null);
@@ -1199,11 +1202,46 @@ const AdminPage = () => {
     }
   }, [activeTab]);
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!newStaff.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    if (!newStaff.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(newStaff.email)) {
+      errors.email = 'Email is invalid';
+    }
+
+    if (!newStaff.phone.trim()) {
+      errors.phone = 'Phone is required';
+    }
+
+    if (!newStaff.role) {
+      errors.role = 'Role is required';
+    }
+
+    if (!newStaff.password) {
+      errors.password = 'Password is required';
+    } else if (newStaff.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+
+    if (newStaff.role === 'proctor' && !newStaff.block) {
+      errors.block = 'Block is required for proctors';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   return (
     <div className="admin-container">
       <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ color: 'white' }}>System Administration Dashboard</h1>
-        <button 
+        <button
           onClick={handleLogout}
           style={{
             background: '#dc3545',
@@ -1924,24 +1962,24 @@ const AdminPage = () => {
           <h2 style={{ color: 'white' }}>Student Feedback</h2>
 
           {successMessage && (
-            <div style={{ 
-              color: 'green', 
-              backgroundColor: '#2a2a2a', 
-              padding: '10px', 
+            <div style={{
+              color: 'green',
+              backgroundColor: '#2a2a2a',
+              padding: '10px',
               marginBottom: '10px',
-              borderRadius: '4px' 
+              borderRadius: '4px'
             }}>
               {successMessage}
             </div>
           )}
 
           {feedbackError && (
-            <div style={{ 
-              color: 'red', 
-              backgroundColor: '#2a2a2a', 
-              padding: '10px', 
+            <div style={{
+              color: 'red',
+              backgroundColor: '#2a2a2a',
+              padding: '10px',
               marginBottom: '10px',
-              borderRadius: '4px' 
+              borderRadius: '4px'
             }}>
               {feedbackError}
             </div>
@@ -2007,8 +2045,8 @@ const AdminPage = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="feedback-content" style={{ 
-                    color: 'white', 
+                  <div className="feedback-content" style={{
+                    color: 'white',
                     marginBottom: '15px',
                     backgroundColor: '#363636',
                     padding: '15px',
@@ -2030,7 +2068,7 @@ const AdminPage = () => {
       {activeTab === 'reports' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Generate Reports</h2>
-          
+
           <div className="report-controls" style={{ marginBottom: '20px' }}>
             <div className="form-group" style={{ marginBottom: '15px' }}>
               <label style={{ color: 'white', marginRight: '10px' }}>Report Type:</label>
@@ -2101,23 +2139,23 @@ const AdminPage = () => {
               marginBottom: '20px'
             }}>
               {successMessage && (
-                <div style={{ 
-                  color: 'green', 
-                  backgroundColor: '#1a1a1a', 
-                  padding: '10px', 
+                <div style={{
+                  color: 'green',
+                  backgroundColor: '#1a1a1a',
+                  padding: '10px',
                   marginBottom: '10px',
-                  borderRadius: '4px' 
+                  borderRadius: '4px'
                 }}>
                   {successMessage}
                 </div>
               )}
               {blockErrorMessage && (
-                <div style={{ 
-                  color: 'red', 
-                  backgroundColor: '#1a1a1a', 
-                  padding: '10px', 
+                <div style={{
+                  color: 'red',
+                  backgroundColor: '#1a1a1a',
+                  padding: '10px',
                   marginBottom: '10px',
-                  borderRadius: '4px' 
+                  borderRadius: '4px'
                 }}>
                   {blockErrorMessage}
                 </div>
@@ -2249,23 +2287,23 @@ const AdminPage = () => {
               marginBottom: '20px'
             }}>
               {successMessage && (
-                <div style={{ 
-                  color: 'green', 
-                  backgroundColor: '#1a1a1a', 
-                  padding: '10px', 
+                <div style={{
+                  color: 'green',
+                  backgroundColor: '#1a1a1a',
+                  padding: '10px',
                   marginBottom: '10px',
-                  borderRadius: '4px' 
+                  borderRadius: '4px'
                 }}>
                   {successMessage}
                 </div>
               )}
               {dormErrorMessage && (
-                <div style={{ 
-                  color: 'red', 
-                  backgroundColor: '#1a1a1a', 
-                  padding: '10px', 
+                <div style={{
+                  color: 'red',
+                  backgroundColor: '#1a1a1a',
+                  padding: '10px',
                   marginBottom: '10px',
-                  borderRadius: '4px' 
+                  borderRadius: '4px'
                 }}>
                   {dormErrorMessage}
                 </div>

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const Staff = require('../models/Staff');
+const { Proctor, Supervisor, Dean } = require('../models/Staff');
 const Block = require('../models/Block');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
@@ -21,13 +21,38 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Configure nodemailer
+console.log('Email Configuration Debug:', {
+  user: process.env.EMAIL_USER,
+  hasPass: !!process.env.EMAIL_PASS,
+  envKeys: Object.keys(process.env),
+  nodeEnv: process.env.NODE_ENV
+});
+
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
+    pass: process.env.EMAIL_PASS
   }
 });
+
+// Test the connection immediately
+(async () => {
+  try {
+    await transporter.verify();
+    console.log('Email server connection verified successfully');
+  } catch (error) {
+    console.error('Email server connection failed:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode
+    });
+  }
+})();
 
 // Generate staff ID based on role
 const generateStaffId = (role) => {
@@ -46,6 +71,16 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
   try {
     const { name, email, phone, role, password, block } = req.body;
     
+    // Log the request data
+    console.log('Creating staff with data:', {
+      name,
+      email,
+      phone,
+      role,
+      password: !!password,
+      block
+    });
+
     // Validate required fields
     if (!name || !email || !phone || !role || !password) {
       return res.status(400).json({ error: 'All fields are required' });
@@ -64,9 +99,14 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
       }
     }
 
-    // Check if email already exists
-    const existingStaff = await Staff.findOne({ email });
-    if (existingStaff) {
+    // Check if email already exists in any collection
+    const existingEmail = await Promise.all([
+      Proctor.findOne({ email }),
+      Supervisor.findOne({ email }),
+      Dean.findOne({ email })
+    ]);
+
+    if (existingEmail.some(result => result !== null)) {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
@@ -76,17 +116,46 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new staff
-    const newStaff = new Staff({
-      name,
-      email,
-      phone,
-      role,
-      password: hashedPassword,
-      staffId,
-      block: role === 'proctor' ? block : undefined,
-      profilePhoto: req.file ? req.file.filename : undefined
-    });
+    // Create new staff based on role
+    let newStaff;
+    switch (role) {
+      case 'proctor':
+        newStaff = new Proctor({
+          name,
+          email,
+          phone,
+          role,
+          password: hashedPassword,
+          staffId,
+          block,
+          profilePhoto: req.file ? req.file.filename : undefined
+        });
+        break;
+      case 'supervisor':
+        newStaff = new Supervisor({
+          name,
+          email,
+          phone,
+          role,
+          password: hashedPassword,
+          staffId,
+          profilePhoto: req.file ? req.file.filename : undefined
+        });
+        break;
+      case 'dean':
+        newStaff = new Dean({
+          name,
+          email,
+          phone,
+          role,
+          password: hashedPassword,
+          staffId,
+          profilePhoto: req.file ? req.file.filename : undefined
+        });
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid role' });
+    }
 
     await newStaff.save();
 
@@ -111,7 +180,20 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    try {
+      console.log('Attempting to send email to:', email);
+      console.log('Mail options:', {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject
+      });
+      
+      await transporter.sendMail(mailOptions);
+      console.log('Email sent successfully');
+    } catch (emailError) {
+      console.error('Error sending email:', emailError);
+      // Continue with staff creation even if email fails
+    }
 
     // Return the created staff data including block information
     res.status(201).json({
@@ -123,7 +205,8 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
         phone,
         role,
         block: role === 'proctor' ? block : undefined,
-        staffId
+        staffId,
+        profilePhoto: req.file ? `/uploads/staff-photos/${req.file.filename}` : undefined
       }
     });
   } catch (error) {
