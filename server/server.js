@@ -61,8 +61,14 @@ app.use(cors({
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
+const staffPhotosDir = path.join(uploadsDir, 'staff-photos');
+
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+if (!fs.existsSync(staffPhotosDir)) {
+  fs.mkdirSync(staffPhotosDir, { recursive: true });
 }
 
 // Routes
@@ -77,7 +83,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/profile', adminProfileRoutes);
 app.use('/api/blocks', blockRoutes);
 app.use('/api/dorms', dormRoutes);
-app.use('/api/admin', staffRoutes);
+app.use('/api/adminStaff', staffRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Error handling middleware

@@ -79,7 +79,7 @@ router.put('/:id', auth, async (req, res) => {
       { number },
       { new: true, runValidators: true }
     );
-
+    
     if (!block) {
       return res.status(404).json({ message: 'Block not found' });
     }

@@ -8,7 +8,7 @@ const blockSchema = new mongoose.Schema({
     validate: {
       validator: function(v) {
         return /^\d+$/.test(v); // Ensure number is numeric
-      },
+  },
       message: props => `${props.value} is not a valid block number!`
     }
   },
@@ -24,7 +24,7 @@ const blockSchema = new mongoose.Schema({
 blockSchema.pre('save', async function(next) {
   try {
     const model = mongoose.model('Block');
-    
+
     // Check if this is a new block
     if (this.isNew) {
       // Verify the block number doesn't exist

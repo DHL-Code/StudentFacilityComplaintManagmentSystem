@@ -46,7 +46,7 @@ router.post('/', auth, async (req, res) => {
     if (!number || !block) {
       return res.status(400).json({ message: 'Dorm number and block are required' });
     }
-
+    
     // Check if block exists
     const existingBlock = await Block.findById(block);
     if (!existingBlock) {
@@ -69,7 +69,7 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json(dorm);
   } catch (error) {
     console.error('Error creating dorm:', error);
-    res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
   }
 });
 
@@ -82,7 +82,7 @@ router.put('/:id', auth, async (req, res) => {
     if (!number || !block) {
       return res.status(400).json({ message: 'Dorm number and block are required' });
     }
-
+    
     // Check if block exists
     const existingBlock = await Block.findById(block);
     if (!existingBlock) {
@@ -111,7 +111,7 @@ router.put('/:id', auth, async (req, res) => {
 
     res.json(dorm);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
   }
 });
 
