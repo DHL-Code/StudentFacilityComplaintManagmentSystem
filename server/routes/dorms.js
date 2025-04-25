@@ -4,8 +4,8 @@ const Dorm = require('../models/Dorm');
 const Block = require('../models/Block');
 const auth = require('../middleware/auth');
 
-// Get all dorms
-router.get('/', auth, async (req, res) => {
+// Get all dorms - no auth required for signup
+router.get('/', async (req, res) => {
   try {
     const dorms = await Dorm.find().populate('block');
     res.json(dorms);
@@ -14,8 +14,8 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Get dorms by block
-router.get('/block/:blockId', auth, async (req, res) => {
+// Get dorms by block - no auth required for signup
+router.get('/block/:blockId', async (req, res) => {
   try {
     const dorms = await Dorm.find({ block: req.params.blockId }).populate('block');
     res.json(dorms);

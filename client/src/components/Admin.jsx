@@ -78,6 +78,24 @@ const AdminPage = () => {
 
   const [formErrors, setFormErrors] = useState({});
 
+  const [studentApprovals, setStudentApprovals] = useState([]);
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvUploadError, setCsvUploadError] = useState('');
+  const [csvUploadSuccess, setCsvUploadSuccess] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [editingStudents, setEditingStudents] = useState({});
+
+  const [newStudent, setNewStudent] = useState({
+    studentId: '',
+    name: '',
+    email: '',
+    department: '',
+    college: '',
+    password: ''
+  });
+  const [showAddStudentForm, setShowAddStudentForm] = useState(false);
+
   // Fetch colleges on component mount, added error state
   useEffect(() => {
     const fetchColleges = async () => {
@@ -1235,6 +1253,195 @@ const AdminPage = () => {
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  // Fetch student approvals
+  useEffect(() => {
+    const fetchStudentApprovals = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/student-approvals', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch student approvals');
+        }
+        const data = await response.json();
+        setStudentApprovals(data);
+      } catch (error) {
+        console.error('Error fetching student approvals:', error);
+      }
+    };
+
+    if (activeTab === 'account-approvals') {
+      fetchStudentApprovals();
+    }
+  }, [activeTab]);
+
+  // Handle CSV file upload
+  const handleCsvUpload = async (e) => {
+    e.preventDefault();
+    if (!csvFile) {
+      setCsvUploadError('Please select a CSV file');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', csvFile);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/student-approvals/upload-csv', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload CSV file');
+      }
+
+      const data = await response.json();
+      setCsvUploadSuccess(data.message);
+      setCsvUploadError('');
+      setCsvFile(null);
+      
+      // Refresh student approvals list
+      const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const approvalsData = await approvalsResponse.json();
+      setStudentApprovals(approvalsData);
+    } catch (error) {
+      console.error('Error uploading CSV:', error);
+      setCsvUploadError('Failed to upload CSV file');
+      setCsvUploadSuccess('');
+    }
+  };
+
+  // Handle student approval/rejection
+  const handleStudentAction = async (studentId, action) => {
+    try {
+      if (action === 'rejected' && !rejectionReason) {
+        setSelectedStudent(studentApprovals.find(s => s._id === studentId));
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/student-approvals/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          status: action,
+          rejectionReason: action === 'rejected' ? rejectionReason : undefined
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update student status');
+      }
+
+      // Update the student in the list
+      setStudentApprovals(prev => prev.map(student => 
+        student._id === studentId 
+          ? { ...student, status: action }
+          : student
+      ));
+
+      setSelectedStudent(null);
+      setRejectionReason('');
+      setSuccessMessage(`Student ${action} successfully`);
+    } catch (error) {
+      console.error('Error updating student status:', error);
+      setErrorMessage('Failed to update student status');
+    }
+  };
+
+  // Handle student deletion
+  const handleDeleteStudent = async (studentId) => {
+    if (!window.confirm('Are you sure you want to delete this student approval?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/student-approvals/${studentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete student approval');
+      }
+
+      // Refresh student approvals list
+      const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const approvalsData = await approvalsResponse.json();
+      setStudentApprovals(approvalsData);
+    } catch (error) {
+      console.error('Error deleting student approval:', error);
+    }
+  };
+
+  // Add these new handler functions
+  const handleStudentEdit = (studentId, field, value) => {
+    setEditingStudents(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveStudent = async (studentId) => {
+    try {
+      const editedStudent = editingStudents[studentId];
+      if (!editedStudent) return;
+
+      const response = await fetch(`http://localhost:5000/api/student-approvals/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(editedStudent)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update student');
+      }
+
+      // Update the student in the list
+      setStudentApprovals(prev => prev.map(student => 
+        student._id === studentId 
+          ? { ...student, ...editedStudent }
+          : student
+      ));
+
+      // Clear the editing state for this student
+      setEditingStudents(prev => {
+        const newState = { ...prev };
+        delete newState[studentId];
+        return newState;
+      });
+
+      setSuccessMessage('Student updated successfully');
+    } catch (error) {
+      console.error('Error updating student:', error);
+      setErrorMessage('Failed to update student');
+    }
   };
 
   return (
@@ -2447,6 +2654,387 @@ const AdminPage = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Student Approvals Section */}
+      {activeTab === 'account-approvals' && (
+        <div className="section">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Student Account Approvals</h2>
+            <button
+              onClick={() => setShowAddStudentForm(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Add New Student
+            </button>
+          </div>
+
+          {/* Add Student Form Modal */}
+          {showAddStudentForm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-gray-800 p-6 rounded-lg w-[500px]">
+                <h3 className="text-xl font-bold text-white mb-4">Add New Student</h3>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  try {
+                    const response = await fetch('http://localhost:5000/api/student-approvals', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                      },
+                      body: JSON.stringify(newStudent)
+                    });
+                    if (!response.ok) throw new Error('Failed to add student');
+                    const data = await response.json();
+                    setStudentApprovals(prev => [...prev, data]);
+                    setShowAddStudentForm(false);
+                    setNewStudent({
+                      studentId: '',
+                      name: '',
+                      email: '',
+                      department: '',
+                      college: '',
+                      password: ''
+                    });
+                    setSuccessMessage('Student added successfully');
+                  } catch (error) {
+                    setErrorMessage('Failed to add student');
+                  }
+                }}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-white mb-1">Student ID</label>
+                      <input
+                        type="text"
+                        value={newStudent.studentId}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, studentId: e.target.value }))}
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={newStudent.name}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={newStudent.email}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white mb-1">College</label>
+                      <select
+                        value={newStudent.college}
+                        onChange={async (e) => {
+                          const collegeId = e.target.value;
+                          setNewStudent(prev => ({ ...prev, college: collegeId, department: '' }));
+                          if (collegeId) {
+                            try {
+                              const response = await fetch(`http://localhost:5000/api/departments/by-college/${collegeId}`, {
+                                headers: {
+                                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                }
+                              });
+                              if (!response.ok) throw new Error('Failed to fetch departments');
+                              const data = await response.json();
+                              setDepartments(data);
+                            } catch (error) {
+                              console.error('Error fetching departments:', error);
+                              setErrorMessage('Failed to load departments');
+                            }
+                          } else {
+                            setDepartments([]);
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                        required
+                      >
+                        <option value="">Select College</option>
+                        {colleges.map((college) => (
+                          <option key={college._id} value={college._id}>
+                            {college.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-white mb-1">Department</label>
+                      <select
+                        value={newStudent.department}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, department: e.target.value }))}
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                        required
+                        disabled={!newStudent.college}
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map((department) => (
+                          <option key={department._id} value={department._id}>
+                            {department.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-white mb-1">Password</label>
+                      <input
+                        type="password"
+                        value={newStudent.password}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, password: e.target.value }))}
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddStudentForm(false);
+                        setNewStudent({
+                          studentId: '',
+                          name: '',
+                          email: '',
+                          department: '',
+                          college: '',
+                          password: ''
+                        });
+                        setDepartments([]);
+                      }}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Add Student
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* CSV Upload Section */}
+          <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+            <h3 className="text-xl font-bold text-white mb-4">Upload Student CSV</h3>
+            <form onSubmit={handleCsvUpload} className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setCsvFile(e.target.files[0])}
+                  className="block w-full text-sm text-gray-300
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-600 file:text-white
+                    hover:file:bg-blue-700"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Upload CSV
+                </button>
+              </div>
+              {csvUploadError && (
+                <div className="text-red-500 bg-red-100 p-3 rounded">
+                  {csvUploadError}
+                </div>
+              )}
+              {csvUploadSuccess && (
+                <div className="text-green-500 bg-green-100 p-3 rounded">
+                  {csvUploadSuccess}
+                </div>
+              )}
+            </form>
+          </div>
+
+          {/* Student Approvals Table */}
+          <div className="bg-gray-800 rounded-lg shadow-lg p-6">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-gray-700">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Student ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Department</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">College</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Registration Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {studentApprovals.map((student) => (
+                    <tr key={student._id} className={`${
+                      student.status === 'rejected' ? 'bg-red-900/20' : 
+                      student.status === 'approved' ? 'bg-green-900/20' : 
+                      'bg-gray-800'
+                    }`}>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                        {editingStudents[student._id] ? (
+                          <input
+                            type="text"
+                            value={editingStudents[student._id].studentId || student.studentId}
+                            onChange={(e) => handleStudentEdit(student._id, 'studentId', e.target.value)}
+                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
+                          />
+                        ) : (
+                          student.studentId
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                        {editingStudents[student._id] ? (
+                          <input
+                            type="text"
+                            value={editingStudents[student._id].name || student.name}
+                            onChange={(e) => handleStudentEdit(student._id, 'name', e.target.value)}
+                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
+                          />
+                        ) : (
+                          student.name
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                        {editingStudents[student._id] ? (
+                          <input
+                            type="email"
+                            value={editingStudents[student._id].email || student.email}
+                            onChange={(e) => handleStudentEdit(student._id, 'email', e.target.value)}
+                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
+                          />
+                        ) : (
+                          student.email
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                        {editingStudents[student._id] ? (
+                          <input
+                            type="text"
+                            value={editingStudents[student._id].department || student.department}
+                            onChange={(e) => handleStudentEdit(student._id, 'department', e.target.value)}
+                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
+                          />
+                        ) : (
+                          student.department
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                        {editingStudents[student._id] ? (
+                          <select
+                            value={editingStudents[student._id].college || student.college}
+                            onChange={(e) => handleStudentEdit(student._id, 'college', e.target.value)}
+                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
+                          >
+                            {colleges.map((college) => (
+                              <option key={college._id} value={college._id}>
+                                {college.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          colleges.find(c => c._id === student.college)?.name || student.college
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={student.status}
+                          onChange={(e) => handleStudentAction(student._id, e.target.value)}
+                          className={`px-2 py-1 rounded ${
+                            student.status === 'rejected' ? 'bg-red-900/50 text-red-200' :
+                            student.status === 'approved' ? 'bg-green-900/50 text-green-200' :
+                            'bg-yellow-900/50 text-yellow-200'
+                          } border border-gray-600 focus:outline-none`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                        {new Date(student.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex space-x-2">
+                          {editingStudents[student._id] ? (
+                            <button
+                              onClick={() => handleSaveStudent(student._id)}
+                              className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
+                            >
+                              Save
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setEditingStudents(prev => ({ ...prev, [student._id]: { ...student } }))}
+                              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteStudent(student._id)}
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Rejection Modal */}
+          {selectedStudent && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-gray-800 p-6 rounded-lg w-96">
+                <h3 className="text-lg font-bold text-white mb-4">Reject Student</h3>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Enter rejection reason"
+                  className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded mb-4 focus:border-blue-500 focus:outline-none"
+                  rows="4"
+                />
+                <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={() => {
+                      setSelectedStudent(null);
+                      setRejectionReason('');
+                    }}
+                    className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleStudentAction(selectedStudent._id, 'rejected')}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

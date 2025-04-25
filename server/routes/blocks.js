@@ -3,8 +3,8 @@ const router = express.Router();
 const Block = require('../models/Block');
 const auth = require('../middleware/auth');
 
-// Get all blocks
-router.get('/', auth, async (req, res) => {
+// Get all blocks - no auth required for signup
+router.get('/', async (req, res) => {
   try {
     const blocks = await Block.find();
     res.json(blocks);

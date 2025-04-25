@@ -29,6 +29,14 @@ const Signup = () => {
     const [blockNumber, setBlockNumber] = useState("");
     const [dormNumber, setDormNumber] = useState("");
     const departmentRef = useRef(null);
+    
+    // Add new state variables for blocks and dorms
+    const [blocks, setBlocks] = useState([]);
+    const [dorms, setDorms] = useState([]);
+    const [loadingBlocks, setLoadingBlocks] = useState(true);
+    const [loadingDorms, setLoadingDorms] = useState(false);
+    const [blockError, setBlockError] = useState("");
+    const [dormError, setDormError] = useState("");
 
     // Fetch colleges on component mount using the shared function
     useEffect(() => {
@@ -70,6 +78,55 @@ const Signup = () => {
 
         fetchDepartments();
     }, [college]);
+
+    // Add useEffect to fetch blocks and dorms
+    useEffect(() => {
+        const fetchBlocksAndDorms = async () => {
+            try {
+                setLoadingBlocks(true);
+                const blocksResponse = await fetch('http://localhost:5000/api/blocks');
+                if (!blocksResponse.ok) {
+                    throw new Error('Failed to fetch blocks');
+                }
+                const blocksData = await blocksResponse.json();
+                setBlocks(blocksData);
+            } catch (error) {
+                console.error('Error fetching blocks:', error);
+                setBlockError(error.message);
+            } finally {
+                setLoadingBlocks(false);
+            }
+        };
+
+        fetchBlocksAndDorms();
+    }, []);
+
+    // Add useEffect to fetch dorms when block is selected
+    useEffect(() => {
+        const fetchDorms = async () => {
+            if (!blockNumber) {
+                setDorms([]);
+                return;
+            }
+
+            try {
+                setLoadingDorms(true);
+                const dormsResponse = await fetch(`http://localhost:5000/api/dorms/block/${blockNumber}`);
+                if (!dormsResponse.ok) {
+                    throw new Error('Failed to fetch dorms');
+                }
+                const dormsData = await dormsResponse.json();
+                setDorms(dormsData);
+            } catch (error) {
+                console.error('Error fetching dorms:', error);
+                setDormError(error.message);
+            } finally {
+                setLoadingDorms(false);
+            }
+        };
+
+        fetchDorms();
+    }, [blockNumber]);
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -170,15 +227,11 @@ const Signup = () => {
             case "blockNumber":
                 if (!value) {
                     errorMessage = "Block Number is required";
-                } else if (!/^\d+$/.test(value)) { // Check for integer
-                    errorMessage = "Block Number must be an integer.";
                 }
                 break;
             case "dormNumber":
                 if (!value) {
                     errorMessage = "Dorm Number is required";
-                } else if (!/^\d+$/.test(value)) { // Check for integer
-                    errorMessage = "Dorm Number must be an integer.";
                 }
                 break;
             default:
@@ -483,19 +536,42 @@ const Signup = () => {
                             <Home className="mr-2" />
                             Block Number
                         </label>
-                        <input
-                            type="text"
-                            id="blockNumber"
-                            name="blockNumber"
-                            placeholder="Enter your block number"
-                            value={blockNumber}
-                            onChange={(e) => setBlockNumber(e.target.value)}
-                            onBlur={(e) => {
-                                handleBlur(e);
-                                validateField("blockNumber", e.target.value); // Validate on blur
-                            }}
-                            className={validationErrors.blockNumber ? "error-input" : ""}
-                        />
+                        {loadingBlocks ? (
+                            <div style={{ color: '#666', padding: '8px 0' }}>Loading blocks...</div>
+                        ) : (
+                            <select
+                                id="blockNumber"
+                                name="blockNumber"
+                                value={blockNumber}
+                                onChange={(e) => {
+                                    setBlockNumber(e.target.value);
+                                    setDormNumber(''); // Reset dorm selection when block changes
+                                    validateField("blockNumber", e.target.value);
+                                }}
+                                onBlur={(e) => {
+                                    handleBlur(e);
+                                    validateField("blockNumber", e.target.value);
+                                }}
+                                className={validationErrors.blockNumber ? "error-input" : ""}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '6px',
+                                    backgroundColor: '#fff',
+                                    color: '#222',
+                                    fontSize: '1em'
+                                }}
+                            >
+                                <option key="default" value="">Select Block</option>
+                                {blocks.map((block) => (
+                                    <option key={block._id} value={block._id}>
+                                        Block {block.number}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        {blockError && <span className="error">{blockError}</span>}
                         {validationErrors.blockNumber && <span className="error">{validationErrors.blockNumber}</span>}
                     </div>
 
@@ -504,19 +580,45 @@ const Signup = () => {
                             <Home className="mr-2" />
                             Dorm Number
                         </label>
-                        <input
-                            type="text"
-                            id="dormNumber"
-                            name="dormNumber"
-                            placeholder="Enter your dorm number"
-                            value={dormNumber}
-                            onChange={(e) => setDormNumber(e.target.value)}
-                            onBlur={(e) => {
-                                handleBlur(e);
-                                validateField("dormNumber", e.target.value); // Validate on blur
-                            }}
-                            className={validationErrors.dormNumber ? "error-input" : ""}
-                        />
+                        {blockNumber ? (
+                            loadingDorms ? (
+                                <div style={{ color: '#666', padding: '8px 0' }}>Loading dorms...</div>
+                            ) : (
+                                <select
+                                    id="dormNumber"
+                                    name="dormNumber"
+                                    value={dormNumber}
+                                    onChange={(e) => {
+                                        setDormNumber(e.target.value);
+                                        validateField("dormNumber", e.target.value);
+                                    }}
+                                    onBlur={(e) => {
+                                        handleBlur(e);
+                                        validateField("dormNumber", e.target.value);
+                                    }}
+                                    className={validationErrors.dormNumber ? "error-input" : ""}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '6px',
+                                        backgroundColor: '#fff',
+                                        color: '#222',
+                                        fontSize: '1em'
+                                    }}
+                                >
+                                    <option value="">Select Dorm</option>
+                                    {dorms.map((dorm) => (
+                                        <option key={dorm._id} value={dorm._id}>
+                                            Dorm {dorm.number}
+                                        </option>
+                                    ))}
+                                </select>
+                            )
+                        ) : (
+                            <div style={{ color: '#666', padding: '8px 0' }}>Please select a block first</div>
+                        )}
+                        {dormError && <span className="error">{dormError}</span>}
                         {validationErrors.dormNumber && <span className="error">{validationErrors.dormNumber}</span>}
                     </div>
 

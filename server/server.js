@@ -18,6 +18,7 @@ const dotenv = require('dotenv');
 const fs = require('fs');
 const adminProfileRoutes = require('./routes/adminProfileRoutes');
 const staffRoutes = require('./routes/staff');
+const studentApprovalRoutes = require('./routes/studentApprovalRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -55,13 +56,14 @@ io.on('connection', (socket) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 const staffPhotosDir = path.join(uploadsDir, 'staff-photos');
+const studentCsvDir = path.join(uploadsDir, 'student-csv');
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
@@ -69,6 +71,10 @@ if (!fs.existsSync(uploadsDir)) {
 
 if (!fs.existsSync(staffPhotosDir)) {
   fs.mkdirSync(staffPhotosDir, { recursive: true });
+}
+
+if (!fs.existsSync(studentCsvDir)) {
+  fs.mkdirSync(studentCsvDir, { recursive: true });
 }
 
 // Routes
@@ -84,6 +90,7 @@ app.use('/api/admin/profile', adminProfileRoutes);
 app.use('/api/blocks', blockRoutes);
 app.use('/api/dorms', dormRoutes);
 app.use('/api/adminStaff', staffRoutes);
+app.use('/api/student-approvals', studentApprovalRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Error handling middleware
