@@ -460,7 +460,7 @@ function ProctorDashboard() {
           Dashboard
         </button>
         <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('notifications')}>
-          Complaints {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+          Complaints
         </button>
         <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('profile')}>
           My Profile
@@ -498,7 +498,6 @@ function ProctorDashboard() {
             >
               <span className="menu-item-content">
                 Complaints
-                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
               </span>
             </button>
             <button
