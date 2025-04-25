@@ -3,6 +3,7 @@ import NotificationBell from '../components/NotificationBell';
 import '../styles/AdminStyles.css';
 import { AlertCircle } from 'lucide-react';
 import MessagePopup from './MessagePopup';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('account-approvals');
@@ -59,6 +60,21 @@ const AdminPage = () => {
   const [adminData, setAdminData] = useState(null);
   const [error, setError] = useState(null);
   const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
+
+  const [reportData, setReportData] = useState(null);
+  const [reportType, setReportType] = useState('proctor');
+  const [timePeriod, setTimePeriod] = useState('weekly');
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState('');
+
+  const [blocks, setBlocks] = useState([]);
+  const [dorms, setDorms] = useState([]);
+  const [newBlock, setNewBlock] = useState({ number: '' });
+  const [newDorm, setNewDorm] = useState({ number: '', block: '' });
+  const [editingBlock, setEditingBlock] = useState(null);
+  const [editingDorm, setEditingDorm] = useState(null);
+  const [blockErrorMessage, setBlockErrorMessage] = useState('');
+  const [dormErrorMessage, setDormErrorMessage] = useState('');
 
   // Fetch colleges on component mount, added error state
   useEffect(() => {
@@ -605,25 +621,619 @@ const AdminPage = () => {
     }
   };
 
+  // Add handleProfilePhotoChange function
+  const handleProfilePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setProfileError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setProfileError('');
+
+      // Create FormData object
+      const formData = new FormData();
+      formData.append('profilePhoto', file);
+      formData.append('adminId', adminData.adminId);
+
+      // Send the file to the server
+      const response = await fetch('http://localhost:5000/api/admin/profile/upload-profile-photo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload profile photo');
+      }
+
+      const data = await response.json();
+      
+      // Update the profile photo in the UI
+      setCurrentProfilePhoto(data.profilePhotoUrl);
+      setSuccessMessage('Profile photo updated successfully');
+      
+      // Update the adminData state with the new photo URL
+      setAdminData(prev => ({
+        ...prev,
+        profilePhoto: data.profilePhotoUrl
+      }));
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      setProfileError(error.message || 'Failed to upload profile photo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add handleSaveProfile function
+  const handleSaveProfile = async () => {
+    try {
+      setLoading(true);
+      setProfileError('');
+
+      // Validate required fields
+      if (!adminData.name.trim()) {
+        setProfileError('Name is required');
+        return;
+      }
+
+      if (!adminData.email.trim()) {
+        setProfileError('Email is required');
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(adminData.email)) {
+        setProfileError('Please enter a valid email address');
+        return;
+      }
+
+      // Send the updated profile data to the server
+      const response = await fetch('http://localhost:5000/api/admin/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: adminData.name,
+          email: adminData.email,
+          phone: adminData.phone,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+
+      setSuccessMessage('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setProfileError(error.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // Validate password if it's being changed
+      if (newPassword) {
+        if (newPassword !== confirmPassword) {
+          setError('New passwords do not match');
+          setLoading(false);
+          return;
+        }
+        if (newPassword.length < 6) {
+          setError('Password must be at least 6 characters long');
+          setLoading(false);
+          return;
+        }
+      }
+
+      const response = await fetch('http://localhost:5000/api/admin/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          adminId: adminData.id,
+          name: adminData.name,
+          email: adminData.email,
+          phone: adminData.phone,
+          currentPassword: currentPassword, // Add current password
+          newPassword: newPassword // Add new password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update profile');
+      }
+
+      setSuccess('Profile updated successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordForm(false);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    // Clear all stored data
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Redirect to login page
+    window.location.href = '/login';
+  };
+
+  const handleGenerateReport = async () => {
+    setReportLoading(true);
+    setReportError('');
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/generate-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportType,
+          timePeriod,
+          targetRole: reportType
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to generate report');
+      }
+
+      setReportData(data.reportData);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setReportError(error.message);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const renderReport = () => {
+    if (!reportData) return null;
+
+    const renderProctorReport = (proctor) => (
+      <div key={proctor.staffId} className="mb-8 p-6 bg-white rounded-lg shadow">
+        <h3 className="text-xl font-semibold mb-4">{proctor.name} - Block {proctor.block}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-blue-50 p-4 rounded">
+            <h4 className="font-medium text-blue-800">Performance Summary</h4>
+            <div className="mt-2 space-y-2">
+              <p>Total Complaints: {proctor.summary.totalComplaints}</p>
+              <p>Resolved: {proctor.summary.resolved}</p>
+              <p>Pending: {proctor.summary.pending}</p>
+              <p>In Progress: {proctor.summary.inProgress}</p>
+              <p>Performance Score: {proctor.summary.performanceScore}%</p>
+              <p>Avg. Resolution Time: {proctor.summary.averageResolutionTime} hours</p>
+            </div>
+          </div>
+          <div className="bg-gray-50 p-4 rounded">
+            <h4 className="font-medium text-gray-800">Recent Complaints</h4>
+            <div className="mt-2 space-y-2">
+              {proctor.complaints.slice(0, 5).map(complaint => (
+                <div key={complaint.id} className="text-sm">
+                  <p className="font-medium">{complaint.title}</p>
+                  <p className="text-gray-600">Status: {complaint.status}</p>
+                  <p className="text-gray-500 text-xs">Created: {new Date(complaint.createdAt).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const renderSupervisorReport = (supervisor) => (
+      <div key={supervisor.staffId} className="mb-8 p-6 bg-white rounded-lg shadow">
+        <h3 className="text-xl font-semibold mb-4">{supervisor.name}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-green-50 p-4 rounded">
+            <h4 className="font-medium text-green-800">Performance Summary</h4>
+            <div className="mt-2 space-y-2">
+              <p>Total Complaints: {supervisor.summary.totalComplaints}</p>
+              <p>Resolved: {supervisor.summary.resolved}</p>
+              <p>Pending: {supervisor.summary.pending}</p>
+              <p>In Progress: {supervisor.summary.inProgress}</p>
+              <p>Performance Score: {supervisor.summary.performanceScore}%</p>
+              <p>Avg. Resolution Time: {supervisor.summary.averageResolutionTime} hours</p>
+            </div>
+          </div>
+          <div className="bg-gray-50 p-4 rounded">
+            <h4 className="font-medium text-gray-800">Recent Complaints</h4>
+            <div className="mt-2 space-y-2">
+              {supervisor.complaints.slice(0, 5).map(complaint => (
+                <div key={complaint.id} className="text-sm">
+                  <p className="font-medium">{complaint.title}</p>
+                  <p className="text-gray-600">Status: {complaint.status}</p>
+                  <p className="text-gray-500 text-xs">Created: {new Date(complaint.createdAt).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const renderDeanReport = (dean) => (
+      <div key={dean.staffId} className="mb-8 p-6 bg-white rounded-lg shadow">
+        <h3 className="text-xl font-semibold mb-4">{dean.name}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-purple-50 p-4 rounded">
+            <h4 className="font-medium text-purple-800">Feedback Summary</h4>
+            <div className="mt-2 space-y-2">
+              <p>Total Feedback: {dean.summary.totalFeedback}</p>
+              <p>Positive: {dean.summary.positive}</p>
+              <p>Neutral: {dean.summary.neutral}</p>
+              <p>Negative: {dean.summary.negative}</p>
+              <p>Satisfaction Rate: {dean.summary.satisfactionRate}%</p>
+              <p>Average Rating: {dean.summary.averageRating}/5</p>
+            </div>
+          </div>
+          <div className="bg-gray-50 p-4 rounded">
+            <h4 className="font-medium text-gray-800">Recent Feedback</h4>
+            <div className="mt-2 space-y-2">
+              {dean.feedback.slice(0, 5).map(f => (
+                <div key={f.id} className="text-sm">
+                  <div className="flex items-center">
+                    <span className="font-medium mr-2">Rating:</span>
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className={`w-4 h-4 ${i < f.rating ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mt-1">{f.comment}</p>
+                  <p className="text-gray-500 text-xs">From: Student {f.studentId}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-6">Performance Report - {timePeriod}</h2>
+        {reportData.proctors && reportData.proctors.map(renderProctorReport)}
+        {reportData.supervisors && reportData.supervisors.map(renderSupervisorReport)}
+        {reportData.deans && reportData.deans.map(renderDeanReport)}
+      </div>
+    );
+  };
+
+  // Add useEffect to fetch blocks and dorms
+  useEffect(() => {
+    const fetchBlocksAndDorms = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const [blocksResponse, dormsResponse] = await Promise.all([
+          fetch('http://localhost:5000/api/blocks', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }),
+          fetch('http://localhost:5000/api/dorms', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+        ]);
+
+        if (!blocksResponse.ok) {
+          const errorData = await blocksResponse.json();
+          throw new Error(errorData.message || 'Failed to fetch blocks');
+        }
+
+        if (!dormsResponse.ok) {
+          const errorData = await dormsResponse.json();
+          throw new Error(errorData.message || 'Failed to fetch dorms');
+        }
+
+        const blocksData = await blocksResponse.json();
+        const dormsData = await dormsResponse.json();
+        
+        setBlocks(blocksData);
+        setDorms(dormsData);
+      } catch (error) {
+        console.error('Error fetching blocks and dorms:', error);
+        setBlockErrorMessage(error.message);
+      }
+    };
+
+    fetchBlocksAndDorms();
+  }, []);
+
+  // Add block management functions
+  const handleCreateBlock = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setBlockErrorMessage('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/blocks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newBlock),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create block');
+      }
+
+      const data = await response.json();
+      setBlocks([...blocks, data]);
+      setNewBlock({ number: '' });
+      setSuccessMessage('Block created successfully');
+    } catch (error) {
+      setBlockErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditBlock = (block) => {
+    setEditingBlock(block);
+    setNewBlock({
+      number: block.number
+    });
+  };
+
+  const handleUpdateBlock = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setBlockErrorMessage('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/blocks/${editingBlock._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newBlock),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update block');
+      }
+
+      const data = await response.json();
+      setBlocks(blocks.map(block => 
+        block._id === editingBlock._id ? data : block
+      ));
+      setEditingBlock(null);
+      setNewBlock({ number: '' });
+      setSuccessMessage('Block updated successfully');
+    } catch (error) {
+      setBlockErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBlock = async (blockId) => {
+    if (!window.confirm('Are you sure you want to delete this block? This will also delete all associated dorms.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/blocks/${blockId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete block');
+      }
+
+      setBlocks(blocks.filter(block => block._id !== blockId));
+      setDorms(dorms.filter(dorm => dorm.block !== blockId));
+      setSuccessMessage('Block deleted successfully');
+    } catch (error) {
+      setBlockErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add dorm management functions
+  const handleCreateDorm = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setDormErrorMessage('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/dorms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newDorm),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create dorm');
+      }
+
+      const data = await response.json();
+      setDorms([...dorms, data]);
+      setNewDorm({ number: '', block: '' });
+      setSuccessMessage('Dorm created successfully');
+    } catch (error) {
+      setDormErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditDorm = (dorm) => {
+    setEditingDorm(dorm);
+    setNewDorm({
+      number: dorm.number,
+      block: dorm.block
+    });
+  };
+
+  const handleUpdateDorm = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setDormErrorMessage('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/dorms/${editingDorm._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newDorm),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update dorm');
+      }
+
+      const data = await response.json();
+      setDorms(dorms.map(dorm => 
+        dorm._id === editingDorm._id ? data : dorm
+      ));
+      setEditingDorm(null);
+      setNewDorm({ number: '', block: '' });
+      setSuccessMessage('Dorm updated successfully');
+    } catch (error) {
+      setDormErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteDorm = async (dormId) => {
+    if (!window.confirm('Are you sure you want to delete this dorm?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/dorms/${dormId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete dorm');
+      }
+
+      setDorms(dorms.filter(dorm => dorm._id !== dormId));
+      setSuccessMessage('Dorm deleted successfully');
+    } catch (error) {
+      setDormErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add useEffect to fetch blocks with authentication
+  useEffect(() => {
+    const fetchBlocks = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/blocks', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch blocks');
+        }
+
+        const data = await response.json();
+        setBlocks(data);
+      } catch (error) {
+        console.error('Error fetching blocks:', error);
+        setBlockErrorMessage('Failed to load blocks');
+      }
+    };
+
+    fetchBlocks();
+  }, []);
+
   return (
     <div className="admin-container">
-      <h1 style={{ color: 'white' }}>System Administration Dashboard</h1>
-
-      {/* Message Popups */}
-      {successMessage && (
-        <MessagePopup
-          type="success"
-          message={successMessage}
-          onClose={handleCloseMessage}
-        />
-      )}
-      {errorMessage && (
-        <MessagePopup
-          type="error"
-          message={errorMessage}
-          onClose={handleCloseMessage}
-        />
-      )}
+      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ color: 'white' }}>System Administration Dashboard</h1>
+        <button 
+          onClick={handleLogout}
+          style={{
+            background: '#dc3545',
+            color: 'white',
+            border: 'none',
+            padding: '10px 20px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginRight: '20px'
+          }}
+        >
+          Logout
+        </button>
+      </div>
 
       <nav className="admin-nav">
         <button onClick={() => setActiveTab('account-approvals')}>
@@ -644,6 +1254,9 @@ const AdminPage = () => {
         <button onClick={() => setActiveTab('colleges-departments')}>
           Colleges & Departments
         </button>
+        <button onClick={() => setActiveTab('blocks-dorms')}>
+          Blocks & Dorms
+        </button>
         {/* Add NotificationBell */}
         <NotificationBell userId={adminData?.adminId} />
       </nav>
@@ -656,134 +1269,290 @@ const AdminPage = () => {
           {loading ? (
             <p style={{ color: 'white' }}>Loading profile data...</p>
           ) : adminData ? (
-            <div className="profile-card" style={{
-              backgroundColor: '#2a2a2a',
-              borderRadius: '8px',
-              padding: '20px',
-              marginBottom: '20px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '20px'
+            <div className="profile-container">
+              {/* Profile Card */}
+              <div className="profile-card" style={{
+                backgroundColor: '#2a2a2a',
+                borderRadius: '8px',
+                padding: '20px',
+                marginBottom: '20px',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
               }}>
-                {currentProfilePhoto ? (
-                  <img
-                    src={currentProfilePhoto}
-                    alt="Profile"
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      marginRight: '20px'
-                    }}
-                    onError={(e) => {
-                      console.error('Failed to load profile photo:', currentProfilePhoto);
-                      e.target.style.display = 'none';
-                      e.target.parentNode.innerHTML = `
-                        <div style="
-                          width: 80px; 
-                          height: 80px; 
-                          border-radius: 50%; 
-                          background-color: #4a4a4a; 
-                          display: flex; 
-                          justify-content: center; 
-                          align-items: center;
-                          margin-right: 20px;
-                          font-size: 32px;
-                          color: white;
-                        ">
-                          ${adminData.name.charAt(0)}
-                        </div>
-                      `;
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    backgroundColor: '#4a4a4a',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginRight: '20px',
-                    fontSize: '32px',
-                    color: 'white'
-                  }}>
-                    {adminData.name.charAt(0)}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '20px'
+                }}>
+                  <div className="profile-photo-container" style={{ position: 'relative' }}>
+                    {currentProfilePhoto ? (
+                      <img
+                        src={currentProfilePhoto}
+                        alt="Profile"
+                        style={{
+                          width: '120px',
+                          height: '120px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          marginRight: '20px',
+                          border: '3px solid #4a4a4a'
+                        }}
+                        onError={(e) => {
+                          console.error('Failed to load profile photo:', currentProfilePhoto);
+                          e.target.style.display = 'none';
+                          e.target.parentNode.innerHTML = `
+                            <div style="
+                              width: 120px; 
+                              height: 120px; 
+                              border-radius: 50%; 
+                              background-color: #4a4a4a; 
+                              display: flex; 
+                              justify-content: center; 
+                              align-items: center;
+                              margin-right: 20px;
+                              font-size: 48px;
+                              color: white;
+                              border: 3px solid #4a4a4a;
+                            ">
+                              ${adminData.name.charAt(0)}
+                            </div>
+                          `;
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '120px',
+                        height: '120px',
+                        borderRadius: '50%',
+                        backgroundColor: '#4a4a4a',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginRight: '20px',
+                        fontSize: '48px',
+                        color: 'white',
+                        border: '3px solid #4a4a4a'
+                      }}>
+                        {adminData.name.charAt(0)}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => document.getElementById('profilePhotoInput').click()}
+                      style={{
+                        position: 'absolute',
+                        bottom: '10px',
+                        right: '10px',
+                        background: '#4a4a4a',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '30px',
+                        height: '30px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <span style={{ fontSize: '20px' }}>+</span>
+                    </button>
+                    <input
+                      type="file"
+                      id="profilePhotoInput"
+                      accept="image/*"
+                      onChange={handleProfilePhotoChange}
+                      style={{ display: 'none' }}
+                    />
                   </div>
-                )}
-                <div>
-                  <h3 style={{ color: 'white', margin: '0 0 5px 0' }}>{adminData.name}</h3>
-                  <p style={{ color: '#aaa', margin: '0 0 5px 0' }}>{adminData.role}</p>
-                  <p style={{ color: '#aaa', margin: '0' }}>ID: {adminData.adminId}</p>
+                  <div>
+                    <h3 style={{ color: 'white', margin: '0 0 5px 0' }}>{adminData.name}</h3>
+                    <p style={{ color: '#aaa', margin: '0 0 5px 0' }}>{adminData.role}</p>
+                    <p style={{ color: '#aaa', margin: '0' }}>ID: {adminData.adminId}</p>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '20px' }}>
+                  <h4 style={{ color: 'white', marginBottom: '10px' }}>Account Information</h4>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '20px'
+                  }}>
+                    <div style={{
+                      backgroundColor: '#3a3a3a',
+                      padding: '15px',
+                      borderRadius: '8px'
+                    }}>
+                      <h5 style={{ color: '#aaa', margin: '0 0 10px 0' }}>Personal Information</h5>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '10px',
+                        paddingBottom: '10px',
+                        borderBottom: '1px solid #444'
+                      }}>
+                        <span style={{ color: '#aaa' }}>Name:</span>
+                        <input
+                          type="text"
+                          value={adminData.name}
+                          onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid #444',
+                            color: 'white',
+                            padding: '5px',
+                            borderRadius: '4px'
+                          }}
+                        />
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '10px',
+                        paddingBottom: '10px',
+                        borderBottom: '1px solid #444'
+                      }}>
+                        <span style={{ color: '#aaa' }}>Email:</span>
+                        <input
+                          type="email"
+                          value={adminData.email}
+                          onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid #444',
+                            color: 'white',
+                            padding: '5px',
+                            borderRadius: '4px'
+                          }}
+                        />
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '10px',
+                        paddingBottom: '10px',
+                        borderBottom: '1px solid #444'
+                      }}>
+                        <span style={{ color: '#aaa' }}>Phone:</span>
+                        <input
+                          type="tel"
+                          value={adminData.phone}
+                          onChange={(e) => setAdminData({ ...adminData, phone: e.target.value })}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid #444',
+                            color: 'white',
+                            padding: '5px',
+                            borderRadius: '4px'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{
+                      backgroundColor: '#3a3a3a',
+                      padding: '15px',
+                      borderRadius: '8px'
+                    }}>
+                      <h5 style={{ color: '#aaa', margin: '0 0 10px 0' }}>Account Security</h5>
+                      <form onSubmit={handlePasswordChange}>
+                        <div style={{
+                          marginBottom: '10px',
+                          paddingBottom: '10px',
+                          borderBottom: '1px solid #444'
+                        }}>
+                          <label style={{ color: '#aaa', display: 'block', marginBottom: '5px' }}>Current Password</label>
+                          <input
+                            type="password"
+                            value={passwordForm.currentPassword}
+                            onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                            style={{
+                              width: '100%',
+                              background: 'transparent',
+                              border: '1px solid #444',
+                              color: 'white',
+                              padding: '5px',
+                              borderRadius: '4px'
+                            }}
+                          />
+                        </div>
+                        <div style={{
+                          marginBottom: '10px',
+                          paddingBottom: '10px',
+                          borderBottom: '1px solid #444'
+                        }}>
+                          <label style={{ color: '#aaa', display: 'block', marginBottom: '5px' }}>New Password</label>
+                          <input
+                            type="password"
+                            value={passwordForm.newPassword}
+                            onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                            style={{
+                              width: '100%',
+                              background: 'transparent',
+                              border: '1px solid #444',
+                              color: 'white',
+                              padding: '5px',
+                              borderRadius: '4px'
+                            }}
+                          />
+                        </div>
+                        <div style={{
+                          marginBottom: '10px'
+                        }}>
+                          <label style={{ color: '#aaa', display: 'block', marginBottom: '5px' }}>Confirm New Password</label>
+                          <input
+                            type="password"
+                            value={passwordForm.confirmPassword}
+                            onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                            style={{
+                              width: '100%',
+                              background: 'transparent',
+                              border: '1px solid #444',
+                              color: 'white',
+                              padding: '5px',
+                              borderRadius: '4px'
+                            }}
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          style={{
+                            width: '100%',
+                            background: '#4a4a4a',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Change Password
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    marginTop: '20px',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '10px'
+                  }}>
+                    <button
+                      onClick={handleSaveProfile}
+                      style={{
+                        background: '#4a4a4a',
+                        color: 'white',
+                        border: 'none',
+                        padding: '10px 20px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Save Changes
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <div style={{ marginTop: '20px' }}>
-                <h4 style={{ color: 'white', marginBottom: '10px' }}>Account Information</h4>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: '10px',
-                  paddingBottom: '10px',
-                  borderBottom: '1px solid #444'
-                }}>
-                  <span style={{ color: '#aaa' }}>Email:</span>
-                  <span style={{ color: 'white' }}>
-                    {adminData.email && adminData.email !== 'Not available' ?
-                      adminData.email :
-                      <span style={{ color: '#aaa', fontStyle: 'italic' }}>Not available</span>
-                    }
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: '10px',
-                  paddingBottom: '10px',
-                  borderBottom: '1px solid #444'
-                }}>
-                  <span style={{ color: '#aaa' }}>Phone:</span>
-                  <span style={{ color: 'white' }}>
-                    {adminData.phone && adminData.phone !== 'Not available' ?
-                      adminData.phone :
-                      <span style={{ color: '#aaa', fontStyle: 'italic' }}>Not available</span>
-                    }
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: '10px',
-                  paddingBottom: '10px',
-                  borderBottom: '1px solid #444'
-                }}>
-                  <span style={{ color: '#aaa' }}>Account Created:</span>
-                  <span style={{ color: 'white' }}>
-                    {new Date(adminData.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              {(adminData.email === 'Not available' || adminData.phone === 'Not available') && (
-                <div style={{
-                  marginTop: '20px',
-                  padding: '15px',
-                  backgroundColor: '#3a3a3a',
-                  borderRadius: '5px',
-                  fontSize: '14px',
-                  color: '#aaa'
-                }}>
-                  <p style={{ margin: '0 0 10px 0' }}>
-                    <strong>Note:</strong> Some profile information is not available.
-                    This information will be updated when you log in again or when the system administrator updates your profile.
-                  </p>
-                </div>
-              )}
             </div>
           ) : (
             <p style={{ color: 'white' }}>Failed to load profile data.</p>
@@ -1283,6 +2052,392 @@ const AdminPage = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Reports Section */}
+      {activeTab === 'reports' && (
+        <div className="section">
+          <h2 style={{ color: 'white' }}>Generate Reports</h2>
+          
+          <div className="report-controls" style={{ marginBottom: '20px' }}>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ color: 'white', marginRight: '10px' }}>Report Type:</label>
+              <select
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                style={{ padding: '8px', borderRadius: '4px' }}
+              >
+                <option value="proctor">Proctor Performance</option>
+                <option value="supervisor">Supervisor Performance</option>
+                <option value="dean">Dean Performance</option>
+              </select>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ color: 'white', marginRight: '10px' }}>Time Period:</label>
+              <select
+                value={timePeriod}
+                onChange={(e) => setTimePeriod(e.target.value)}
+                style={{ padding: '8px', borderRadius: '4px' }}
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleGenerateReport}
+              disabled={reportLoading}
+              style={{
+                background: '#4a4a4a',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {reportLoading ? 'Generating Report...' : 'Generate Report'}
+            </button>
+          </div>
+
+          {reportError && (
+            <div style={{ color: 'red', marginBottom: '15px' }}>
+              {reportError}
+            </div>
+          )}
+
+          {reportData && renderReport()}
+        </div>
+      )}
+
+      {/* Add Blocks & Dorms Section */}
+      {activeTab === 'blocks-dorms' && (
+        <div className="section">
+          <h2 style={{ color: 'white' }}>Manage Blocks and Dorms</h2>
+
+          {/* Block Management */}
+          <div className="subsection">
+            <h3 style={{ color: 'white' }}>
+              {editingBlock ? 'Edit Block' : 'Create Block'}
+            </h3>
+            <form onSubmit={editingBlock ? handleUpdateBlock : handleCreateBlock} className="block-form" style={{
+              backgroundColor: '#2a2a2a',
+              padding: '20px',
+              borderRadius: '8px',
+              marginBottom: '20px'
+            }}>
+              {successMessage && (
+                <div style={{ 
+                  color: 'green', 
+                  backgroundColor: '#1a1a1a', 
+                  padding: '10px', 
+                  marginBottom: '10px',
+                  borderRadius: '4px' 
+                }}>
+                  {successMessage}
+                </div>
+              )}
+              {blockErrorMessage && (
+                <div style={{ 
+                  color: 'red', 
+                  backgroundColor: '#1a1a1a', 
+                  padding: '10px', 
+                  marginBottom: '10px',
+                  borderRadius: '4px' 
+                }}>
+                  {blockErrorMessage}
+                </div>
+              )}
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Block Number</label>
+                <input
+                  type="text"
+                  value={newBlock.number}
+                  onChange={(e) => setNewBlock({ ...newBlock, number: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: '1px solid #444',
+                    color: 'white',
+                    padding: '8px',
+                    borderRadius: '4px'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{
+                    background: '#4a4a4a',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    flex: 1
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : (editingBlock ? 'Update Block' : 'Create Block')}
+                </button>
+                {editingBlock && (
+                  <button
+                    type="button"
+                    style={{
+                      background: '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px 20px',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      setEditingBlock(null);
+                      setNewBlock({ number: '' });
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+
+            {/* Display Blocks */}
+            <div className="blocks-list">
+              <h4 style={{ color: 'white' }}>Existing Blocks</h4>
+              <div className="list-container" style={{
+                maxHeight: '300px',
+                overflowY: 'auto',
+                backgroundColor: '#2a2a2a',
+                borderRadius: '8px',
+                padding: '10px'
+              }}>
+                {blocks.length > 0 ? (
+                  blocks.map((block) => (
+                    <div key={block._id} className="list-item" style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '10px',
+                      borderBottom: '1px solid #444',
+                      color: 'white'
+                    }}>
+                      <span>Block {block.number}</span>
+                      <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          onClick={() => handleEditBlock(block)}
+                          style={{
+                            background: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            padding: '5px 10px',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBlock(block._id)}
+                          style={{
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            padding: '5px 10px',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
+                    No blocks found.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Dorm Management */}
+          <div className="subsection">
+            <h3 style={{ color: 'white' }}>
+              {editingDorm ? 'Edit Dorm' : 'Create Dorm'}
+            </h3>
+            <form onSubmit={editingDorm ? handleUpdateDorm : handleCreateDorm} className="dorm-form" style={{
+              backgroundColor: '#2a2a2a',
+              padding: '20px',
+              borderRadius: '8px',
+              marginBottom: '20px'
+            }}>
+              {successMessage && (
+                <div style={{ 
+                  color: 'green', 
+                  backgroundColor: '#1a1a1a', 
+                  padding: '10px', 
+                  marginBottom: '10px',
+                  borderRadius: '4px' 
+                }}>
+                  {successMessage}
+                </div>
+              )}
+              {dormErrorMessage && (
+                <div style={{ 
+                  color: 'red', 
+                  backgroundColor: '#1a1a1a', 
+                  padding: '10px', 
+                  marginBottom: '10px',
+                  borderRadius: '4px' 
+                }}>
+                  {dormErrorMessage}
+                </div>
+              )}
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Dorm Number</label>
+                <input
+                  type="text"
+                  value={newDorm.number}
+                  onChange={(e) => setNewDorm({ ...newDorm, number: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: '1px solid #444',
+                    color: 'white',
+                    padding: '8px',
+                    borderRadius: '4px'
+                  }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Block</label>
+                <select
+                  value={newDorm.block}
+                  onChange={(e) => setNewDorm({ ...newDorm, block: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: '1px solid #444',
+                    color: 'white',
+                    padding: '8px',
+                    borderRadius: '4px'
+                  }}
+                >
+                  <option value="">Select Block</option>
+                  {blocks.map((block) => (
+                    <option key={block._id} value={block._id}>
+                      Block {block.number}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{
+                    background: '#4a4a4a',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    flex: 1
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : (editingDorm ? 'Update Dorm' : 'Create Dorm')}
+                </button>
+                {editingDorm && (
+                  <button
+                    type="button"
+                    style={{
+                      background: '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px 20px',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      setEditingDorm(null);
+                      setNewDorm({ number: '', block: '' });
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+
+            {/* Display Dorms */}
+            <div className="dorms-list">
+              <h4 style={{ color: 'white' }}>Existing Dorms</h4>
+              <div className="list-container" style={{
+                maxHeight: '300px',
+                overflowY: 'auto',
+                backgroundColor: '#2a2a2a',
+                borderRadius: '8px',
+                padding: '10px'
+              }}>
+                {dorms.length > 0 ? (
+                  dorms.map((dorm) => (
+                    <div key={dorm._id} className="list-item" style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '10px',
+                      borderBottom: '1px solid #444',
+                      color: 'white'
+                    }}>
+                      <span>
+                        Dorm {dorm.number} in Block {blocks.find(b => b._id === dorm.block)?.number}
+                      </span>
+                      <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          onClick={() => handleEditDorm(dorm)}
+                          style={{
+                            background: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            padding: '5px 10px',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDorm(dorm._id)}
+                          style={{
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            padding: '5px 10px',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
+                    No dorms found.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

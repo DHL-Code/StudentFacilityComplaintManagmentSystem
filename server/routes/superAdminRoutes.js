@@ -8,6 +8,8 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const Complaint = require('../models/Complaint.js');
+const Feedback = require('../models/Feedback.js');
 
 // Health check endpoint
 router.get('/health', (req, res) => {
@@ -463,6 +465,196 @@ router.get('/admin/:adminId', async (req, res) => {
       error: 'Failed to fetch admin data',
       details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
+  }
+});
+
+// Generate reports
+router.post('/generate-report', async (req, res) => {
+  try {
+    const { reportType, timePeriod, targetRole } = req.body;
+
+    let startDate, endDate;
+    const now = new Date();
+
+    // Set date range based on time period
+    switch (timePeriod) {
+      case 'weekly':
+        startDate = new Date(now.setDate(now.getDate() - 7));
+        break;
+      case 'monthly':
+        startDate = new Date(now.setMonth(now.getMonth() - 1));
+        break;
+      case 'quarterly':
+        startDate = new Date(now.setMonth(now.getMonth() - 3));
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid time period' });
+    }
+
+    let reportData = {};
+
+    switch (targetRole) {
+      case 'proctor':
+        // Get proctor data
+        const proctors = await Proctor.find();
+        const proctorReports = await Promise.all(proctors.map(async (proctor) => {
+          const complaints = await Complaint.find({
+            assignedTo: proctor.staffId,
+            createdAt: { $gte: startDate }
+          });
+          
+          const resolvedComplaints = complaints.filter(c => c.status === 'resolved');
+          const pendingComplaints = complaints.filter(c => c.status === 'pending');
+          const inProgressComplaints = complaints.filter(c => c.status === 'in-progress');
+          
+          // Calculate average resolution time in hours
+          const avgResolutionTime = resolvedComplaints.length > 0 
+            ? Math.round(resolvedComplaints.reduce((sum, c) => {
+                const resolutionTime = new Date(c.resolvedAt) - new Date(c.createdAt);
+                return sum + resolutionTime;
+              }, 0) / resolvedComplaints.length / (1000 * 60 * 60))
+            : 0;
+
+          // Calculate performance score (0-100)
+          const performanceScore = complaints.length > 0 
+            ? Math.round((resolvedComplaints.length / complaints.length) * 100)
+            : 0;
+
+          return {
+            staffId: proctor.staffId,
+            name: proctor.name,
+            block: proctor.block,
+            summary: {
+              totalComplaints: complaints.length,
+              resolved: resolvedComplaints.length,
+              pending: pendingComplaints.length,
+              inProgress: inProgressComplaints.length,
+              performanceScore,
+              averageResolutionTime: avgResolutionTime
+            },
+            complaints: complaints.map(c => ({
+              id: c._id,
+              title: c.title,
+              status: c.status,
+              createdAt: c.createdAt,
+              resolvedAt: c.resolvedAt,
+              category: c.category
+            }))
+          };
+        }));
+        reportData.proctors = proctorReports;
+        break;
+
+      case 'supervisor':
+        // Get supervisor data
+        const supervisors = await Supervisor.find();
+        const supervisorReports = await Promise.all(supervisors.map(async (supervisor) => {
+          const complaints = await Complaint.find({
+            assignedTo: supervisor.staffId,
+            createdAt: { $gte: startDate }
+          });
+          
+          const resolvedComplaints = complaints.filter(c => c.status === 'resolved');
+          const pendingComplaints = complaints.filter(c => c.status === 'pending');
+          const inProgressComplaints = complaints.filter(c => c.status === 'in-progress');
+          
+          // Calculate average resolution time in hours
+          const avgResolutionTime = resolvedComplaints.length > 0 
+            ? Math.round(resolvedComplaints.reduce((sum, c) => {
+                const resolutionTime = new Date(c.resolvedAt) - new Date(c.createdAt);
+                return sum + resolutionTime;
+              }, 0) / resolvedComplaints.length / (1000 * 60 * 60))
+            : 0;
+
+          // Calculate performance score (0-100)
+          const performanceScore = complaints.length > 0 
+            ? Math.round((resolvedComplaints.length / complaints.length) * 100)
+            : 0;
+
+          return {
+            staffId: supervisor.staffId,
+            name: supervisor.name,
+            summary: {
+              totalComplaints: complaints.length,
+              resolved: resolvedComplaints.length,
+              pending: pendingComplaints.length,
+              inProgress: inProgressComplaints.length,
+              performanceScore,
+              averageResolutionTime: avgResolutionTime
+            },
+            complaints: complaints.map(c => ({
+              id: c._id,
+              title: c.title,
+              status: c.status,
+              createdAt: c.createdAt,
+              resolvedAt: c.resolvedAt,
+              category: c.category
+            }))
+          };
+        }));
+        reportData.supervisors = supervisorReports;
+        break;
+
+      case 'dean':
+        // Get dean data
+        const deans = await Dean.find();
+        const deanReports = await Promise.all(deans.map(async (dean) => {
+          const feedback = await Feedback.find({
+            createdAt: { $gte: startDate }
+          });
+          
+          const positiveFeedback = feedback.filter(f => f.rating >= 4);
+          const neutralFeedback = feedback.filter(f => f.rating === 3);
+          const negativeFeedback = feedback.filter(f => f.rating <= 2);
+          
+          // Calculate satisfaction rate
+          const satisfactionRate = feedback.length > 0 
+            ? Math.round((positiveFeedback.length / feedback.length) * 100)
+            : 0;
+
+          // Calculate average rating
+          const avgRating = feedback.length > 0
+            ? (feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length).toFixed(1)
+            : 0;
+
+          return {
+            staffId: dean.staffId,
+            name: dean.name,
+            summary: {
+              totalFeedback: feedback.length,
+              positive: positiveFeedback.length,
+              neutral: neutralFeedback.length,
+              negative: negativeFeedback.length,
+              satisfactionRate,
+              averageRating: avgRating
+            },
+            feedback: feedback.map(f => ({
+              id: f._id,
+              rating: f.rating,
+              comment: f.comment,
+              createdAt: f.createdAt,
+              studentId: f.userId
+            }))
+          };
+        }));
+        reportData.deans = deanReports;
+        break;
+
+      default:
+        return res.status(400).json({ message: 'Invalid target role' });
+    }
+
+    res.json({
+      message: 'Report generated successfully',
+      reportData,
+      timePeriod,
+      startDate,
+      endDate: new Date(),
+      reportType: targetRole
+    });
+  } catch (error) {
+    console.error('Error generating report:', error);
+    res.status(500).json({ message: 'Failed to generate report', error: error.message });
   }
 });
 

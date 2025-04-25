@@ -1,30 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getUnreadNotifications,
-  markAsRead,
-  markAllAsRead
-} = require('../services/notificationService');
-const authMiddleware = require('../middleware/auth');
 const Notification = require('../models/Notification');
+const auth = require('../middleware/auth');
 
-// Get unread notifications
-router.get('/', authMiddleware, async (req, res) => {
+// Get all notifications for a user
+router.get('/', auth, async (req, res) => {
   try {
-    const notifications = await getUnreadNotifications(req.user.userId);
+    const notifications = await Notification.find({ user: req.user.id })
+      .sort({ createdAt: -1 });
     res.json(notifications);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Mark single notification as read
-router.patch('/:id/read', authMiddleware, async (req, res) => {
+// Mark notification as read
+router.patch('/:id/read', auth, async (req, res) => {
   try {
-    const notification = await markAsRead(req.params.id, req.user.userId);
+    const notification = await Notification.findById(req.params.id);
     if (!notification) {
       return res.status(404).json({ message: 'Notification not found' });
     }
+    if (notification.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    notification.read = true;
+    await notification.save();
     res.json(notification);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -32,9 +33,12 @@ router.patch('/:id/read', authMiddleware, async (req, res) => {
 });
 
 // Mark all notifications as read
-router.patch('/read-all', authMiddleware, async (req, res) => {
+router.patch('/read-all', auth, async (req, res) => {
   try {
-    await markAllAsRead(req.user.userId);
+    await Notification.updateMany(
+      { user: req.user.id, read: false },
+      { $set: { read: true } }
+    );
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -42,18 +46,19 @@ router.patch('/read-all', authMiddleware, async (req, res) => {
 });
 
 // Delete a notification
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
-    const notification = await Notification.findByIdAndDelete(req.params.id);
-
+    const notification = await Notification.findById(req.params.id);
     if (!notification) {
       return res.status(404).json({ message: 'Notification not found' });
     }
-
-    res.status(200).json({ message: 'Notification deleted successfully' });
+    if (notification.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    await notification.remove();
+    res.json({ message: 'Notification deleted successfully' });
   } catch (error) {
-    console.error('Error deleting notification:', error);
-    res.status(500).json({ message: 'Error deleting notification' });
+    res.status(500).json({ message: error.message });
   }
 });
 

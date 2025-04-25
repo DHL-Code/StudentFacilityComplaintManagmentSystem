@@ -41,15 +41,15 @@ const Dashboard = () => {
     const [complaints, setComplaints] = useState([]);
     const [loadingComplaints, setLoadingComplaints] = useState(false);
     const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phoneNumber: '',
-        department: '',
-        gender: '',
+        fullName: profile?.fullName || '',
+        email: profile?.email || '',
+        phoneNumber: profile?.phoneNumber || '',
+        department: profile?.department || '',
+        gender: profile?.gender || '',
         currentPassword: '',
         newPassword: '',
         confirmNewPassword: '',
-        college: ''
+        college: profile?.college || ''
     });
 
     const handleNavigation = (section) => {
@@ -830,7 +830,7 @@ const Dashboard = () => {
                                     <input
                                         className="student-narrow-input"
                                         type="text"
-                                        value={formData.fullName}
+                                        value={formData.fullName || ''}
                                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                                     />
                                 </label>
@@ -840,7 +840,7 @@ const Dashboard = () => {
                                     <input
                                         className="student-narrow-input"
                                         type="email"
-                                        value={formData.email}
+                                        value={formData.email || ''}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     />
                                 </label>
@@ -849,7 +849,7 @@ const Dashboard = () => {
                                     Phone Number:
                                     <input
                                         type="tel"
-                                        value={formData.phoneNumber}
+                                        value={formData.phoneNumber || ''}
                                         onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                                     />
                                 </label>

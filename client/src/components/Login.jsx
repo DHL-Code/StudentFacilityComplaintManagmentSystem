@@ -91,19 +91,15 @@ const Login = () => {
   };
 
   return (
-    <div className={`login-page"${darkMode ? 'dark-mode' : ''}`}>
+    <div className={`login-container ${darkMode ? 'dark' : ''}`}>
       <Navbar />
-      <div className="login-container">
-        <div className="login-card">
-          <div className="login-header">
-            <h2>Welcome Back!</h2>
-            <p>Please login to your account</p>
-          </div>
-
+      <div className="login-form-container">
+        <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="login-form">
+          <h2>Login</h2>
           {error && <div className="error-message">{error}</div>}
-
+          
           <div className="form-group">
-            <label htmlFor="role">Account Type</label>
+            <label htmlFor="role">Role</label>
             <select
               id="role"
               value={role}
@@ -119,22 +115,15 @@ const Login = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="username">User ID</label>
+            <label htmlFor="userId">User ID</label>
             <input
               type="text"
-              id="username"
-              placeholder={`Enter your ${role} ID`}
+              id="userId"
+              placeholder="Enter your user ID"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               className="form-control"
             />
-            <small className="input-hint">
-              {role === 'student' && 'Student ID starts with S'}
-              {role === 'proctor' && 'Proctor ID starts with P'}
-              {role === 'supervisor' && 'Supervisor ID starts with V'}
-              {role === 'dean' && 'Dean ID starts with D'}
-              {role === 'admin' && 'Admin ID starts with A'}
-            </small>
           </div>
 
           <div className="form-group">
@@ -149,26 +138,14 @@ const Login = () => {
             />
           </div>
 
-          <button
-            className="login-button"
-            onClick={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Logging in...' : 'Log In'}
+          <button type="submit" className="login-button" disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
 
-          <div className="login-footer">
-            <Link to="/forgot-password" className="forgot-password">
-              Forgot Password?
-            </Link>
-
-            {role === 'student' && (
-              <p className="signup-link">
-                Don't have an account? <Link to="/signup">Sign Up</Link>
-              </p>
-            )}
+          <div className="signup-link">
+            Don't have an account? <Link to="/signup">Sign up</Link>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
