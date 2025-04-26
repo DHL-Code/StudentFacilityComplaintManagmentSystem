@@ -8,6 +8,7 @@ const StudentApproval = require('../models/StudentApproval');
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const adminAuth = require('../middleware/adminAuth');
+const nodemailer = require('nodemailer');
 
 // Configure multer for CSV file upload
 const storage = multer.diskStorage({
@@ -32,6 +33,15 @@ const upload = multer({
       cb(new Error('Only CSV files are allowed'));
     }
   }
+});
+
+// Configure email transporter
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
 });
 
 // Upload and process CSV file
@@ -85,27 +95,67 @@ router.get('/', auth, async (req, res) => {
 
 // Update student approval status
 router.put('/:id', auth, async (req, res) => {
-  try {
-    const { status, rejectionReason } = req.body;
-    const approval = await StudentApproval.findById(req.params.id);
-    
-    if (!approval) {
-      return res.status(404).json({ message: 'Student approval not found' });
-    }
+    try {
+        const { status, rejectionReason } = req.body;
+        const approval = await StudentApproval.findById(req.params.id);
+        
+        if (!approval) {
+            return res.status(404).json({ message: 'Student approval not found' });
+        }
 
-    approval.status = status;
-    approval.approvalDate = Date.now();
-    approval.approvedBy = req.user.id;
-    
-    if (status === 'rejected') {
-      approval.rejectionReason = rejectionReason;
-    }
+        approval.status = status;
+        approval.approvalDate = Date.now();
+        approval.approvedBy = req.user.id;
+        
+        if (status === 'rejected') {
+            approval.rejectionReason = rejectionReason;
+        }
 
-    await approval.save();
-    res.json(approval);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+        await approval.save();
+
+        // Send email notification
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: approval.email,
+            subject: `Account ${status === 'approved' ? 'Approved' : 'Rejected'} - Student Facility Complaint Management System`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: ${status === 'approved' ? '#4CAF50' : '#f44336'};">Account ${status === 'approved' ? 'Approved' : 'Rejected'}</h2>
+                    <p>Dear ${approval.name},</p>
+                    
+                    ${status === 'approved' ? `
+                        <p>We are pleased to inform you that your account has been approved by the administrator.</p>
+                        <p>You can now log in to the Student Facility Complaint Management System using your credentials.</p>
+                        <p>Please visit: <a href="http://localhost:5173/login">http://localhost:5173/login</a></p>
+                        <p>Your login details:</p>
+                        <ul>
+                            <li>User ID: ${approval.studentId}</li>
+                            <li>Use the password you created during registration</li>
+                        </ul>
+                    ` : `
+                        <p>We regret to inform you that your account registration has been rejected.</p>
+                        <p>Reason for rejection: ${rejectionReason || 'Not specified'}</p>
+                        <p>If you believe this is a mistake or would like to appeal this decision, please contact the admin office.</p>
+                    `}
+                    
+                    <p>Best regards,<br>Student Facility Complaint Management System</p>
+                </div>
+            `
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log(`Email sent to ${approval.email} for ${status} status`);
+        } catch (emailError) {
+            console.error('Error sending email:', emailError);
+            // Don't fail the request if email fails
+        }
+
+        res.json(approval);
+    } catch (error) {
+        console.error('Error updating approval status:', error);
+        res.status(500).json({ message: error.message });
+    }
 });
 
 // Delete student approval
