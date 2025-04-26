@@ -31,6 +31,7 @@ const notificationSchema = new mongoose.Schema({
       'complaint_submitted',
       'complaint_viewed', 
       'complaint_verified',
+      'complaint_dismissed',
       'complaint_escalated',
       'complaint_resolved',
       'feedback_submitted'
