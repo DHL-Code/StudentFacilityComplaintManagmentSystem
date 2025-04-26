@@ -3,11 +3,13 @@ import ProctorNotificationBell from '../components/ProctorNotificationBell';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes, faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import '../styles/ProctorDashboard.css';
 
 function ProctorDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { darkMode, toggleDarkMode } = useTheme();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [notifications, setNotifications] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -18,7 +20,6 @@ function ProctorDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [proctorData, setProctorData] = useState(null);
-  const [darkMode, setDarkMode] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [expandedImage, setExpandedImage] = useState(null);
   const [unreadComplaints, setUnreadComplaints] = useState([]);
@@ -282,15 +283,10 @@ function ProctorDashboard() {
     }
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.body.classList.toggle('dark-mode');
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const handleExpandImage = (imageUrl) => {
