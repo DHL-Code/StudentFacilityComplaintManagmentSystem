@@ -748,12 +748,14 @@ function ProctorDashboard() {
                             >
                               {complaint.status === 'dismissed' ? 'Dismissed' : 'Dismiss'}
                             </button>
-                            <button
-                              className={`action-btn flag ${complaint.isUrgent ? 'flagged' : ''}`}
-                              onClick={() => handleComplaintAction('flag', complaint._id, complaint.isUrgent)}
-                            >
-                              <FontAwesomeIcon icon={faFlag} /> {complaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
-                            </button>
+                            {complaint.status === 'verified' && (
+                              <button
+                                className={`action-btn flag ${complaint.isUrgent ? 'flagged' : ''}`}
+                                onClick={() => handleComplaintAction('flag', complaint._id, complaint.isUrgent)}
+                              >
+                                <FontAwesomeIcon icon={faFlag} /> {complaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
+                              </button>
+                            )}
                             <button
                               className="action-btn delete"
                               onClick={(e) => {
@@ -1100,15 +1102,17 @@ function ProctorDashboard() {
               >
                 {selectedComplaint.status === 'dismissed' ? 'Dismissed' : 'Dismiss'}
               </button>
-              <button
-                className={`action-btn flag ${selectedComplaint.isUrgent ? 'flagged' : ''}`}
-                onClick={() => {
-                  handleComplaintAction('flag', selectedComplaint._id, selectedComplaint.isUrgent);
-                  handleCloseModal();
-                }}
-              >
-                <FontAwesomeIcon icon={faFlag} /> {selectedComplaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
-              </button>
+              {selectedComplaint.status === 'verified' && (
+                <button
+                  className={`action-btn flag ${selectedComplaint.isUrgent ? 'flagged' : ''}`}
+                  onClick={() => {
+                    handleComplaintAction('flag', selectedComplaint._id, selectedComplaint.isUrgent);
+                    handleCloseModal();
+                  }}
+                >
+                  <FontAwesomeIcon icon={faFlag} /> {selectedComplaint.isUrgent ? 'Unflag' : 'Flag Urgent'}
+                </button>
+              )}
               <button
                 className="action-btn delete"
                 onClick={() => {
