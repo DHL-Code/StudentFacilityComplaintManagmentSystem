@@ -116,7 +116,13 @@ const Signup = () => {
 
             try {
                 setLoadingDorms(true);
-                const dormsResponse = await fetch(`http://localhost:5000/api/dorms/block/${blockNumber}`);
+                // Find the block object that matches the selected block number
+                const selectedBlock = blocks.find(block => block.number === blockNumber);
+                if (!selectedBlock) {
+                    throw new Error('Selected block not found');
+                }
+                
+                const dormsResponse = await fetch(`http://localhost:5000/api/dorms/block/${selectedBlock._id}`);
                 if (!dormsResponse.ok) {
                     throw new Error('Failed to fetch dorms');
                 }
@@ -131,7 +137,7 @@ const Signup = () => {
         };
 
         fetchDorms();
-    }, [blockNumber]);
+    }, [blockNumber, blocks]);
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -606,7 +612,7 @@ const Signup = () => {
                             >
                                 <option key="default" value="">Select Block</option>
                                 {blocks.map((block) => (
-                                    <option key={block._id} value={block._id}>
+                                    <option key={block._id} value={block.number}>
                                         Block {block.number}
                                     </option>
                                 ))}
@@ -650,7 +656,7 @@ const Signup = () => {
                                 >
                                     <option value="">Select Dorm</option>
                                     {dorms.map((dorm) => (
-                                        <option key={dorm._id} value={dorm._id}>
+                                        <option key={dorm._id} value={dorm.number}>
                                             Dorm {dorm.number}
                                         </option>
                                     ))}
