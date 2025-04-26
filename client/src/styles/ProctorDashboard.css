@@ -1506,3 +1506,17 @@ html {
   background: var(--success-bg);
   border-radius: 5px;
 }
+
+input, textarea, select {
+  background: var(--white);
+  color: var(--dark-color);
+  border: 1px solid var(--light-gray);
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background: #181818;
+  color: #f7f7f7;
+  border: 1px solid #444;
+}

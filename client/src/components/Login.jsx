@@ -14,6 +14,14 @@ const Login = () => {
   const navigate = useNavigate();
   const { darkMode } = useTheme();
 
+  const roleGuidance = {
+    student: "Student ID starts with S",
+    proctor: "Proctor ID starts with P",
+    supervisor: "Supervisor ID starts with V",
+    dean: "Dean ID starts with D",
+    admin: "Admin ID starts with A"
+  };
+
   const handleLogin = async () => {
     if (!userId || !password) {
       setError('Please enter both User ID and Password.');
@@ -116,23 +124,27 @@ const Login = () => {
       <Navbar />
       <div className="login-form-container">
         <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="login-form">
-          <h2>Login</h2>
+          <h2>Welcome Back!</h2>
+          <p className="login-subtitle">Please login to your account</p>
           {error && <div className="error-message">{error}</div>}
           
           <div className="form-group">
-            <label htmlFor="role">Role</label>
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="form-control"
-            >
-              <option value="student">Student</option>
-              <option value="proctor">Proctor</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="dean">Dean</option>
-              <option value="admin">Admin</option>
-            </select>
+            <label htmlFor="role">Account Type</label>
+            <div className="select-wrapper">
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="form-control"
+              >
+                <option value="student">Student</option>
+                <option value="proctor">Proctor</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="dean">Dean</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="role-guidance">{roleGuidance[role]}</div>
           </div>
 
           <div className="form-group">

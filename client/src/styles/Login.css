@@ -8,12 +8,127 @@
 }
 
 .login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #050506, #a777e3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 80px;
+}
+
+.login-form-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex: 1;
-  padding: 2rem;
-  margin-top: 5%;
+  min-height: 80vh;
+  width: 100%;
+}
+
+.login-form {
+  background: #fff;
+  padding: 2.5rem 2rem;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.login-form h2 {
+  text-align: center;
+  color: #111 !important;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* Light mode (default) */
+.form-control {
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background: #fff;
+  color: #222;
+}
+
+/* Dark mode */
+[data-theme="dark"] .form-control {
+  background: #181818;
+  color: #f7f7f7;
+  border: 1px solid #444;
+}
+
+[data-theme="dark"] .login-form {
+  background: #23232b;
+  color: #f7f7f7;
+}
+
+[data-theme="dark"] .login-form h2,
+[data-theme="dark"] .login-subtitle,
+[data-theme="dark"] .form-group label {
+  color: #e0e0e0;
+}
+
+.login-button {
+  background: linear-gradient(90deg, #0a1833 0%, #1761a0 60%, #3bb3fa 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.8rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.08);
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-button:hover {
+  background: linear-gradient(90deg, #09142a 0%, #155089 60%, #21a1e3 100%);
+}
+
+.error-message {
+  color: #d32f2f;
+  background: #fdecea;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.login-options {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.signup-link, .forgot-password-link {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+  .login-form {
+    padding: 1.2rem 0.5rem;
+    max-width: 95vw;
+  }
 }
 
 /* Login Card */
@@ -48,51 +163,49 @@
   font-size: 0.95rem;
 }
 
-/* Form Elements */
-.form-group {
-  margin-bottom: 1.5rem;
+.login-subtitle {
+  text-align: center;
+  color: #a0a4aa;
+  font-size: 1rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1.2rem;
+  font-weight: 400;
 }
 
+/* Form Elements */
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #2c3e50;
+  color: #111 !important;
   font-weight: 500;
   font-size: 0.95rem;
 }
 
-/* Form Control Base Style */
-.form-control {
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s;
-  background-color: white; /* Changed from #f8f9fa to white */
-  color: #2c3e50;
-}
-
 /* Select Dropdown Specific Styles */
-select.form-control {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234299E1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1.2em;
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.select-wrapper select.form-control {
+  width: 100%;
   padding-right: 2.8rem;
-  cursor: pointer;
-  border: 2px solid #e0e6ed;
-  transition: all 0.3s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: #222; /* or your field background */
+  color: #fff;      /* or your text color */
 }
 
-select.form-control:hover {
-  border-color: #b3cde0;
-}
-
-select.form-control:focus {
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+.select-wrapper::after {
+  content: '▼';
+  position: absolute;
+  top: 50%;
+  right: 1.2rem;
+  font-size: 1.2em;
+  color: #aaa;
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
 /* Focus State */
@@ -107,36 +220,6 @@ select.form-control:focus {
   margin-top: 0.3rem;
   font-size: 0.8rem;
   color: #7f8c8d;
-}
-
-/* Button */
-.login-button {
-  width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin-top: 0.5rem;
-}
-
-.login-button:hover {
-  background: linear-gradient(135deg, #2980b9 0%, #1a252f 100%);
-  transform: translateY(-2px);
-}
-
-.login-button:active {
-  transform: translateY(0);
-}
-
-.login-button:disabled {
-  background: #95a5a6;
-  cursor: not-allowed;
-  transform: none;
 }
 
 /* Footer Links */
@@ -174,52 +257,9 @@ select.form-control:focus {
   text-decoration: underline;
 }
 
-/* Error Message */
-.error-message {
-  background-color: #fdecea;
-  color: #d32f2f;
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-  border-left: 4px solid #d32f2f;
-}
-
-.login-options {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.signup-link {
-  color: #666;
-  font-size: 14px;
-}
-
-.signup-link a {
-  color: #007bff;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.signup-link a:hover {
-  text-decoration: underline;
-}
-
-.forgot-password-link {
-  margin-top: 5px;
-}
-
-.forgot-password-link a {
-  color: #3498db;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.forgot-password-link a:hover {
-  color: #2980b9;
-  text-decoration: underline;
+.role-guidance {
+  color: #a0a4aa;
+  font-size: 0.95em;
+  margin-top: 0.3em;
+  margin-left: 2px;
 }
