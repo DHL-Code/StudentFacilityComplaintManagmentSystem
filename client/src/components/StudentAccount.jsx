@@ -213,7 +213,6 @@ const Dashboard = () => {
 
     // Update departments when college changes
     useEffect(() => {
-
         const fetchDepartments = async (collegeName) => {
             try {
                 setLoadingDepartments(true);
@@ -224,6 +223,7 @@ const Dashboard = () => {
                     return;
                 }
 
+                console.log(`Fetching departments for college: ${collegeName}`);
                 const token = localStorage.getItem('token');
                 const response = await fetch(`http://localhost:5000/api/colleges/${collegeName}/departments`, {
                     headers: {
@@ -237,16 +237,15 @@ const Dashboard = () => {
                 }
 
                 const data = await response.json();
+                console.log(`Departments fetched: ${data.length}`);
                 setAvailableDepartments(data);
             } catch (error) {
                 console.error('Error fetching departments:', error);
-                setError('Failed to load departments. Please try again later.');
-                setAvailableDepartments([]);
+                setError(error.message || 'Failed to load departments');
             } finally {
                 setLoadingDepartments(false);
             }
         };
-
 
         if (formData.college) {
             // Find the college ID from the selected college name
@@ -519,27 +518,37 @@ const Dashboard = () => {
         }
     };
 
-    const fetchDepartments = async (collegeId) => {
+    const fetchDepartments = async (collegeName) => {
         try {
-            if (!collegeId) {
+            setLoadingDepartments(true);
+            setError(null);
+
+            if (!collegeName) {
                 setAvailableDepartments([]);
                 return;
             }
 
+            console.log(`Fetching departments for college: ${collegeName}`);
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/colleges/${collegeId}/departments`, {
+            const response = await fetch(`http://localhost:5000/api/colleges/${collegeName}/departments`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
             });
 
-            if (!response.ok) throw new Error('Failed to fetch departments');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to fetch departments');
+            }
 
             const data = await response.json();
+            console.log(`Departments fetched: ${data.length}`);
             setAvailableDepartments(data);
         } catch (error) {
             console.error('Error fetching departments:', error);
-            setError('Failed to load departments');
+            setError(error.message || 'Failed to load departments');
+        } finally {
+            setLoadingDepartments(false);
         }
     };
 

@@ -27,8 +27,8 @@ router.get('/', async (req, res) => {
 router.get('/:collegeName/departments', async (req, res) => {
     const { collegeName } = req.params;
     try {
-        // This should find by name, not ID
-        const college = await College.findOne({ name: collegeName });
+        // Make the search case-insensitive
+        const college = await College.findOne({ name: { $regex: new RegExp(`^${collegeName}$`, 'i') } });
         if (!college) {
             return res.status(404).json({ message: 'College not found' });
         }
@@ -110,6 +110,22 @@ router.post('/create-department', async (req, res) => {
 
     } catch (error) {
         return sendErrorResponse(res, 500, 'Failed to create department', error);
+    }
+});
+
+// API endpoint to check if a college exists by name
+router.get('/check/:collegeName', async (req, res) => {
+    const { collegeName } = req.params;
+    try {
+        // Make the search case-insensitive
+        const college = await College.findOne({ name: { $regex: new RegExp(`^${collegeName}$`, 'i') } });
+        if (!college) {
+            return res.status(404).json({ message: 'College not found', exists: false });
+        }
+        
+        res.json({ exists: true, college });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 

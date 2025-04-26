@@ -13,6 +13,29 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get departments by college name
+router.get('/:collegeName/departments', async (req, res) => {
+  try {
+    const { collegeName } = req.params;
+    
+    // Find the college by name (case insensitive)
+    const college = await College.findOne({ 
+      name: { $regex: new RegExp(`^${collegeName}$`, 'i') } 
+    });
+    
+    if (!college) {
+      return res.status(404).json({ message: 'College not found' });
+    }
+    
+    // Find all departments for this college
+    const departments = await Department.find({ college: college._id });
+    res.json(departments);
+  } catch (error) {
+    console.error('Error fetching departments:', error);
+    res.status(500).json({ message: 'Failed to fetch departments', error: error.message });
+  }
+});
+
 // Create college
 router.post('/create-college', async (req, res) => {
   try {

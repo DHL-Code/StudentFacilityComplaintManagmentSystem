@@ -29,7 +29,7 @@ const Signup = () => {
     const [blockNumber, setBlockNumber] = useState("");
     const [dormNumber, setDormNumber] = useState("");
     const departmentRef = useRef(null);
-    
+
     // Add new state variables for blocks and dorms
     const [blocks, setBlocks] = useState([]);
     const [dorms, setDorms] = useState([]);
@@ -38,11 +38,15 @@ const Signup = () => {
     const [blockError, setBlockError] = useState("");
     const [dormError, setDormError] = useState("");
 
-    // Fetch colleges on component mount using the shared function
+    // Fetch colleges on component mount
     useEffect(() => {
         const fetchColleges = async () => {
             try {
-                const data = await fetchCollegesData();
+                const response = await fetch('http://localhost:5000/api/colleges');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch colleges');
+                }
+                const data = await response.json();
                 setColleges(data);
             } catch (err) {
                 setError(err.message || "Error fetching colleges");
@@ -54,19 +58,20 @@ const Signup = () => {
         fetchColleges();
     }, []);
 
-    // Fetch departments when the selected college changes
+    // Fetch departments when college changes
     useEffect(() => {
         const fetchDepartments = async () => {
             if (college) {
                 setLoadingDepartments(true);
                 try {
-                    const response = await fetch(`http://localhost:5000/api/colleges/${college}/departments`);
+                    const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(college)}/departments`);
                     if (!response.ok) {
-                        throw new Error("Failed to fetch departments");
+                        throw new Error('Failed to fetch departments');
                     }
                     const data = await response.json();
                     setDepartments(data);
                 } catch (err) {
+                    console.error("Error fetching departments:", err);
                     setError(err.message || "Error fetching departments");
                 } finally {
                     setLoadingDepartments(false);
@@ -462,16 +467,17 @@ const Signup = () => {
                                 id="college"
                                 value={college}
                                 onChange={(e) => {
-                                    setCollege(e.target.value);
+                                    const selectedCollege = e.target.value;
+                                    setCollege(selectedCollege);
                                     setDepartment(''); // Reset department when college changes
-                                    validateField("college", e.target.value);
+                                    validateField("college", selectedCollege);
                                 }}
                                 onBlur={handleBlur}
                                 className={validationErrors.college ? "error-input" : ""}
                             >
                                 <option value="">Select College</option>
                                 {colleges.map((col) => (
-                                    <option key={col.id} value={col.name}>
+                                    <option key={col._id} value={col.name}>
                                         {col.name}
                                     </option>
                                 ))}
@@ -502,7 +508,7 @@ const Signup = () => {
                                 >
                                     <option value="">Select Department</option>
                                     {departments.map((dept) => (
-                                        <option key={dept.id} value={dept.name}>
+                                        <option key={dept._id} value={dept.name}>
                                             {dept.name}
                                         </option>
                                     ))}
@@ -540,19 +546,19 @@ const Signup = () => {
                             <div style={{ color: '#666', padding: '8px 0' }}>Loading blocks...</div>
                         ) : (
                             <select
-                                id="blockNumber"
-                                name="blockNumber"
-                                value={blockNumber}
+                            id="blockNumber"
+                            name="blockNumber"
+                            value={blockNumber}
                                 onChange={(e) => {
                                     setBlockNumber(e.target.value);
                                     setDormNumber(''); // Reset dorm selection when block changes
                                     validateField("blockNumber", e.target.value);
                                 }}
-                                onBlur={(e) => {
-                                    handleBlur(e);
+                            onBlur={(e) => {
+                                handleBlur(e);
                                     validateField("blockNumber", e.target.value);
-                                }}
-                                className={validationErrors.blockNumber ? "error-input" : ""}
+                            }}
+                            className={validationErrors.blockNumber ? "error-input" : ""}
                                 style={{
                                     width: '100%',
                                     padding: '12px',
@@ -585,18 +591,18 @@ const Signup = () => {
                                 <div style={{ color: '#666', padding: '8px 0' }}>Loading dorms...</div>
                             ) : (
                                 <select
-                                    id="dormNumber"
-                                    name="dormNumber"
-                                    value={dormNumber}
+                            id="dormNumber"
+                            name="dormNumber"
+                            value={dormNumber}
                                     onChange={(e) => {
                                         setDormNumber(e.target.value);
                                         validateField("dormNumber", e.target.value);
                                     }}
-                                    onBlur={(e) => {
-                                        handleBlur(e);
+                            onBlur={(e) => {
+                                handleBlur(e);
                                         validateField("dormNumber", e.target.value);
-                                    }}
-                                    className={validationErrors.dormNumber ? "error-input" : ""}
+                            }}
+                            className={validationErrors.dormNumber ? "error-input" : ""}
                                     style={{
                                         width: '100%',
                                         padding: '12px',
