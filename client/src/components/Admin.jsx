@@ -82,6 +82,8 @@ const AdminPage = () => {
   const [studentApprovals, setStudentApprovals] = useState([]);
   const [csvFile, setCsvFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredApprovals, setFilteredApprovals] = useState([]);
 
   const [newStudent, setNewStudent] = useState({
     studentId: '',
@@ -94,9 +96,6 @@ const AdminPage = () => {
   });
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
 
   // Fetch colleges on component mount, added error state
   useEffect(() => {
@@ -1451,26 +1450,22 @@ const AdminPage = () => {
     }
   };
 
-  // Add search functionality
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const query = searchQuery.toLowerCase().trim();
-    
-    if (!query) {
-      setSearchResults([]);
-      return;
+  // Add useEffect to filter student approvals based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredApprovals(studentApprovals);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = studentApprovals.filter(approval => 
+        approval.studentId.toLowerCase().includes(query) || 
+        approval.name.toLowerCase().includes(query) || 
+        approval.email.toLowerCase().includes(query) ||
+        approval.department.toLowerCase().includes(query) ||
+        approval.college.toLowerCase().includes(query)
+      );
+      setFilteredApprovals(filtered);
     }
-
-    const results = studentApprovals.filter(student => 
-      student.studentId.toLowerCase().includes(query) ||
-      student.name.toLowerCase().includes(query) ||
-      student.email.toLowerCase().includes(query) ||
-      student.department.toLowerCase().includes(query) ||
-      student.college.toLowerCase().includes(query)
-    );
-    
-    setSearchResults(results);
-  };
+  }, [searchQuery, studentApprovals]);
 
   // Update handleCreateStudent to check for uniqueness
   const handleCreateStudent = async (e) => {
@@ -1480,17 +1475,20 @@ const AdminPage = () => {
     setErrorMessage('');
 
     try {
-      // Check if studentId or email already exists
-      const existingStudent = studentApprovals.find(
-        student => student.studentId === newStudent.studentId || student.email === newStudent.email
-      );
+      // Check if studentId already exists
+      const existingId = studentApprovals.find(s => s.studentId === newStudent.studentId);
+      if (existingId) {
+        setErrorMessage('Student ID already exists. Please use a different ID.');
+        setLoading(false);
+        return;
+      }
 
-      if (existingStudent) {
-        throw new Error(
-          existingStudent.studentId === newStudent.studentId
-            ? 'Student ID already exists'
-            : 'Email already exists'
-        );
+      // Check if email already exists
+      const existingEmail = studentApprovals.find(s => s.email === newStudent.email);
+      if (existingEmail) {
+        setErrorMessage('Email already exists. Please use a different email.');
+        setLoading(false);
+        return;
       }
 
       // Format the date to be compatible with datetime-local input
@@ -1541,10 +1539,24 @@ const AdminPage = () => {
       }
     } catch (error) {
       console.error('Error creating student approval:', error);
-      setErrorMessage(error.message || 'An error occurred while creating the student approval request');
+      setErrorMessage('An error occurred while creating the student approval request');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditStudent = (student) => {
+    setEditingStudent(student);
+    setNewStudent({
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+      department: student.department,
+      college: student.college,
+      status: student.status,
+      registrationDate: new Date(student.registrationDate).toISOString().slice(0, 16)
+    });
+    setShowAddStudentForm(true);
   };
 
   // Update handleUpdateStudent to check for uniqueness
@@ -1555,19 +1567,24 @@ const AdminPage = () => {
     setErrorMessage('');
 
     try {
-      // Check if studentId or email already exists in other students
-      const existingStudent = studentApprovals.find(
-        student => 
-          (student.studentId === newStudent.studentId || student.email === newStudent.email) &&
-          student._id !== editingStudent._id
+      // Check if studentId already exists (excluding the current student)
+      const existingId = studentApprovals.find(s => 
+        s.studentId === newStudent.studentId && s._id !== editingStudent._id
       );
+      if (existingId) {
+        setErrorMessage('Student ID already exists. Please use a different ID.');
+        setLoading(false);
+        return;
+      }
 
-      if (existingStudent) {
-        throw new Error(
-          existingStudent.studentId === newStudent.studentId
-            ? 'Student ID already exists'
-            : 'Email already exists'
-        );
+      // Check if email already exists (excluding the current student)
+      const existingEmail = studentApprovals.find(s => 
+        s.email === newStudent.email && s._id !== editingStudent._id
+      );
+      if (existingEmail) {
+        setErrorMessage('Email already exists. Please use a different email.');
+        setLoading(false);
+        return;
       }
 
       const response = await fetch(`http://localhost:5000/api/student-approvals/${editingStudent._id}`, {
@@ -1619,20 +1636,6 @@ const AdminPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleEditStudent = (student) => {
-    setEditingStudent(student);
-    setNewStudent({
-      studentId: student.studentId,
-      name: student.name,
-      email: student.email,
-      department: student.department,
-      college: student.college,
-      status: student.status,
-      registrationDate: new Date(student.registrationDate).toISOString().slice(0, 16)
-    });
-    setShowAddStudentForm(true);
   };
 
   // Update the form submission handler in the Add Student Form Modal
@@ -2871,43 +2874,211 @@ const AdminPage = () => {
             </button>
           </div>
 
-          {/* Search Form */}
+          {/* Add Student Form Modal */}
+          {showAddStudentForm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-gray-800 p-6 rounded-lg w-[500px]">
+                <h3 className="text-xl font-bold text-white mb-4">Add New Student</h3>
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-white mb-1">Student ID</label>
+                    <input
+                      type="text"
+                      value={newStudent.studentId}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, studentId: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={newStudent.name}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={newStudent.email}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">College</label>
+                    <select
+                      value={newStudent.college}
+                      onChange={async (e) => {
+                        const selectedCollege = e.target.value;
+                        setNewStudent(prev => ({ ...prev, college: selectedCollege, department: '' }));
+                        if (selectedCollege) {
+                          try {
+                            // Get departments using the college name directly
+                            const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(selectedCollege)}/departments`, {
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                              }
+                            });
+                            if (!response.ok) throw new Error('Failed to fetch departments');
+                            const data = await response.json();
+                            setDepartments(data);
+                          } catch (error) {
+                            console.error('Error fetching departments:', error);
+                            setErrorMessage('Failed to load departments');
+                          }
+                        } else {
+                          setDepartments([]);
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    >
+                      <option value="">Select College</option>
+                      {colleges.map((college) => (
+                        <option key={college._id} value={college.name}>
+                          {college.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Department</label>
+                    <select
+                      value={newStudent.department}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, department: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                      disabled={!newStudent.college}
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((department) => (
+                        <option key={department._id} value={department._id}>
+                          {department.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Status</label>
+                    <select
+                      value={newStudent.status}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, status: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Registration Date</label>
+                    <input
+                      type="datetime-local"
+                      value={newStudent.registrationDate}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, registrationDate: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddStudentForm(false);
+                        setNewStudent({
+                          studentId: '',
+                          name: '',
+                          email: '',
+                          department: '',
+                          college: '',
+                          status: 'pending',
+                          registrationDate: new Date().toISOString().slice(0, 16)
+                        });
+                        setDepartments([]);
+                      }}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Add Student
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* CSV Upload Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <form onSubmit={handleSearch} className="flex gap-4">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by ID, name, email, department, or college..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <h2 className="text-2xl font-bold mb-4">Upload Students CSV</h2>
+            <form onSubmit={handleCsvUpload} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select CSV File
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setCsvFile(e.target.files[0])}
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100"
+                />
+              </div>
+              {uploadStatus && (
+                <p className={`text-sm ${uploadStatus.includes('Successfully') ? 'text-green-600' : 'text-red-600'}`}>
+                  {uploadStatus}
+                </p>
+              )}
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
               >
-                Search
+                Upload CSV
               </button>
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchResults([]);
-                  }}
-                  className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Clear
-                </button>
-              )}
             </form>
           </div>
 
           {/* Student Approvals Table */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4">
-                {searchResults.length > 0 ? 'Search Results' : 'Student Approvals'}
-              </h2>
+              <h2 className="text-2xl font-bold mb-4">Student Approvals</h2>
+              
+              {/* Search Bar */}
+              <div className="mb-4">
+                <div className="flex">
+                  <input
+                    type="text"
+                    placeholder="Search by ID, name, email, department, or college..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button 
+                    className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Search
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  {filteredApprovals.length} of {studentApprovals.length} students found
+                </p>
+              </div>
+              
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -2923,7 +3094,7 @@ const AdminPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {(searchResults.length > 0 ? searchResults : studentApprovals).map((approval) => (
+                    {filteredApprovals.map((approval) => (
                       <tr key={approval._id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.studentId}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.name}</td>
