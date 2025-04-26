@@ -94,7 +94,18 @@ const Signup = () => {
                     throw new Error('Failed to fetch blocks');
                 }
                 const blocksData = await blocksResponse.json();
-                setBlocks(blocksData);
+                
+                // Filter blocks based on gender
+                const filteredBlocks = blocksData.filter(block => {
+                    if (gender === 'male') {
+                        return block.number >= 201 && block.number <= 222;
+                    } else if (gender === 'female') {
+                        return block.number >= 223 && block.number <= 237;
+                    }
+                    return false; // Don't show any blocks if gender is not selected
+                });
+                
+                setBlocks(filteredBlocks);
             } catch (error) {
                 console.error('Error fetching blocks:', error);
                 setBlockError(error.message);
@@ -104,7 +115,7 @@ const Signup = () => {
         };
 
         fetchBlocksAndDorms();
-    }, []);
+    }, [gender]); // Add gender as a dependency
 
     // Add useEffect to fetch dorms when block is selected
     useEffect(() => {
