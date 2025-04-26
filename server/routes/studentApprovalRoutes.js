@@ -49,15 +49,13 @@ router.post('/upload-csv', auth, upload.single('file'), async (req, res) => {
         for (const row of results) {
           const existingStudent = await StudentApproval.findOne({ studentId: row.studentId });
           if (!existingStudent) {
-            const hashedPassword = await bcrypt.hash(row.studentId, 10); // Default password is student ID
             await StudentApproval.create({
               studentId: row.studentId,
               name: row.name,
               email: row.email,
-              password: hashedPassword,
               department: row.department,
               college: row.college,
-              status: 'approved' // Auto-approve if in CSV
+              status: 'pending' // Set to pending by default
             });
           }
         }

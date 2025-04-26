@@ -1,0 +1,6 @@
+studentId,name,email,department,college,registrationDate
+2024001,John Doe,john.doe@example.com,Computer Science,Engineering,2024-03-20T10:00:00
+2024002,Jane Smith,jane.smith@example.com,Mechanical Engineering,Engineering,2024-03-20T10:30:00
+2024003,Alice Johnson,alice.j@example.com,Physics,Science,2024-03-20T11:00:00
+2024004,Bob Wilson,bob.w@example.com,Mathematics,Science,2024-03-20T11:30:00
+2024005,Sarah Brown,sarah.b@example.com,Business Administration,Business,2024-03-20T12:00:00 

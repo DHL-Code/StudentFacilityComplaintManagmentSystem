@@ -12,6 +12,7 @@ const AdminPage = () => {
   const [adminAccounts, setAdminAccounts] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [reports, setReports] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [newStaff, setNewStaff] = useState({
     name: '',
     email: '',
@@ -80,11 +81,7 @@ const AdminPage = () => {
 
   const [studentApprovals, setStudentApprovals] = useState([]);
   const [csvFile, setCsvFile] = useState(null);
-  const [csvUploadError, setCsvUploadError] = useState('');
-  const [csvUploadSuccess, setCsvUploadSuccess] = useState('');
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [editingStudents, setEditingStudents] = useState({});
+  const [uploadStatus, setUploadStatus] = useState('');
 
   const [newStudent, setNewStudent] = useState({
     studentId: '',
@@ -96,6 +93,10 @@ const AdminPage = () => {
     registrationDate: new Date().toISOString().slice(0, 16)
   });
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
 
   // Fetch colleges on component mount, added error state
   useEffect(() => {
@@ -1284,7 +1285,7 @@ const AdminPage = () => {
   const handleCsvUpload = async (e) => {
     e.preventDefault();
     if (!csvFile) {
-      setCsvUploadError('Please select a CSV file');
+      setUploadStatus('Please select a CSV file');
       return;
     }
 
@@ -1292,6 +1293,7 @@ const AdminPage = () => {
     formData.append('file', csvFile);
 
     try {
+      setUploadStatus('Uploading...');
       const response = await fetch('http://localhost:5000/api/student-approvals/upload-csv', {
         method: 'POST',
         headers: {
@@ -1300,27 +1302,31 @@ const AdminPage = () => {
         body: formData
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to upload CSV file');
+        throw new Error(data.message || 'Failed to upload CSV file');
       }
 
-      const data = await response.json();
-      setCsvUploadSuccess(data.message);
-      setCsvUploadError('');
+      setUploadStatus(`Successfully processed ${data.count} students`);
       setCsvFile(null);
       
-      // Refresh student approvals list
+      // Refresh the student approvals list
       const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+      
+      if (!approvalsResponse.ok) {
+        throw new Error('Failed to refresh student list');
+      }
+      
       const approvalsData = await approvalsResponse.json();
       setStudentApprovals(approvalsData);
     } catch (error) {
       console.error('Error uploading CSV:', error);
-      setCsvUploadError('Failed to upload CSV file');
-      setCsvUploadSuccess('');
+      setUploadStatus(`Error: ${error.message}`);
     }
   };
 
@@ -1445,6 +1451,28 @@ const AdminPage = () => {
     }
   };
 
+  // Add search functionality
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const query = searchQuery.toLowerCase().trim();
+    
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+
+    const results = studentApprovals.filter(student => 
+      student.studentId.toLowerCase().includes(query) ||
+      student.name.toLowerCase().includes(query) ||
+      student.email.toLowerCase().includes(query) ||
+      student.department.toLowerCase().includes(query) ||
+      student.college.toLowerCase().includes(query)
+    );
+    
+    setSearchResults(results);
+  };
+
+  // Update handleCreateStudent to check for uniqueness
   const handleCreateStudent = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -1452,6 +1480,19 @@ const AdminPage = () => {
     setErrorMessage('');
 
     try {
+      // Check if studentId or email already exists
+      const existingStudent = studentApprovals.find(
+        student => student.studentId === newStudent.studentId || student.email === newStudent.email
+      );
+
+      if (existingStudent) {
+        throw new Error(
+          existingStudent.studentId === newStudent.studentId
+            ? 'Student ID already exists'
+            : 'Email already exists'
+        );
+      }
+
       // Format the date to be compatible with datetime-local input
       const formattedDate = new Date(newStudent.registrationDate).toISOString().slice(0, 16);
 
@@ -1500,9 +1541,107 @@ const AdminPage = () => {
       }
     } catch (error) {
       console.error('Error creating student approval:', error);
-      setErrorMessage('An error occurred while creating the student approval request');
+      setErrorMessage(error.message || 'An error occurred while creating the student approval request');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Update handleUpdateStudent to check for uniqueness
+  const handleUpdateStudent = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    try {
+      // Check if studentId or email already exists in other students
+      const existingStudent = studentApprovals.find(
+        student => 
+          (student.studentId === newStudent.studentId || student.email === newStudent.email) &&
+          student._id !== editingStudent._id
+      );
+
+      if (existingStudent) {
+        throw new Error(
+          existingStudent.studentId === newStudent.studentId
+            ? 'Student ID already exists'
+            : 'Email already exists'
+        );
+      }
+
+      const response = await fetch(`http://localhost:5000/api/student-approvals/${editingStudent._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          studentId: newStudent.studentId,
+          name: newStudent.name,
+          email: newStudent.email,
+          department: newStudent.department,
+          college: newStudent.college,
+          status: newStudent.status,
+          registrationDate: newStudent.registrationDate
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to update student');
+      }
+
+      // Update the student in the list
+      setStudentApprovals(prevApprovals => 
+        prevApprovals.map(approval => 
+          approval._id === editingStudent._id 
+            ? { ...approval, ...newStudent }
+            : approval
+        )
+      );
+
+      setSuccessMessage('Student updated successfully');
+      setEditingStudent(null);
+      setNewStudent({
+        studentId: '',
+        name: '',
+        email: '',
+        department: '',
+        college: '',
+        status: 'pending',
+        registrationDate: new Date().toISOString().slice(0, 16)
+      });
+      setShowAddStudentForm(false);
+    } catch (error) {
+      console.error('Error updating student:', error);
+      setErrorMessage(error.message || 'An error occurred while updating the student');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditStudent = (student) => {
+    setEditingStudent(student);
+    setNewStudent({
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+      department: student.department,
+      college: student.college,
+      status: student.status,
+      registrationDate: new Date(student.registrationDate).toISOString().slice(0, 16)
+    });
+    setShowAddStudentForm(true);
+  };
+
+  // Update the form submission handler in the Add Student Form Modal
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (editingStudent) {
+      handleUpdateStudent(e);
+    } else {
+      handleCreateStudent(e);
     }
   };
 
@@ -2732,322 +2871,103 @@ const AdminPage = () => {
             </button>
           </div>
 
-          {/* Add Student Form Modal */}
-          {showAddStudentForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-gray-800 p-6 rounded-lg w-[500px]">
-                <h3 className="text-xl font-bold text-white mb-4">Add New Student</h3>
-                <form onSubmit={handleCreateStudent} className="space-y-4">
-                  <div>
-                    <label className="block text-white mb-1">Student ID</label>
-                    <input
-                      type="text"
-                      value={newStudent.studentId}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, studentId: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-white mb-1">Name</label>
-                    <input
-                      type="text"
-                      value={newStudent.name}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-white mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={newStudent.email}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-white mb-1">College</label>
-                    <select
-                      value={newStudent.college}
-                      onChange={async (e) => {
-                        const selectedCollege = e.target.value;
-                        setNewStudent(prev => ({ ...prev, college: selectedCollege, department: '' }));
-                        if (selectedCollege) {
-                          try {
-                            // Get departments using the college name directly
-                            const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(selectedCollege)}/departments`, {
-                              headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`
-                              }
-                            });
-                            if (!response.ok) throw new Error('Failed to fetch departments');
-                            const data = await response.json();
-                            setDepartments(data);
-                          } catch (error) {
-                            console.error('Error fetching departments:', error);
-                            setErrorMessage('Failed to load departments');
-                          }
-                        } else {
-                          setDepartments([]);
-                        }
-                      }}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    >
-                      <option value="">Select College</option>
-                      {colleges.map((college) => (
-                        <option key={college._id} value={college.name}>
-                          {college.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-white mb-1">Department</label>
-                    <select
-                      value={newStudent.department}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, department: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                      disabled={!newStudent.college}
-                    >
-                      <option value="">Select Department</option>
-                      {departments.map((department) => (
-                        <option key={department._id} value={department._id}>
-                          {department.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-white mb-1">Status</label>
-                    <select
-                      value={newStudent.status}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, status: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-white mb-1">Registration Date</label>
-                    <input
-                      type="datetime-local"
-                      value={newStudent.registrationDate}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, registrationDate: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2 mt-6">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddStudentForm(false);
-                        setNewStudent({
-                          studentId: '',
-                          name: '',
-                          email: '',
-                          department: '',
-                          college: '',
-                          status: 'pending',
-                          registrationDate: new Date().toISOString().slice(0, 16)
-                        });
-                        setDepartments([]);
-                      }}
-                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Add Student
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* CSV Upload Section */}
-          <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-            <h3 className="text-xl font-bold text-white mb-4">Upload Student CSV</h3>
-            <form onSubmit={handleCsvUpload} className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setCsvFile(e.target.files[0])}
-                  className="block w-full text-sm text-gray-300
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-600 file:text-white
-                    hover:file:bg-blue-700"
-                />
+          {/* Search Form */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <form onSubmit={handleSearch} className="flex gap-4">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by ID, name, email, department, or college..."
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Search
+              </button>
+              {searchQuery && (
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
+                  className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
                 >
-                  Upload CSV
+                  Clear
                 </button>
-              </div>
-              {csvUploadError && (
-                <div className="text-red-500 bg-red-100 p-3 rounded">
-                  {csvUploadError}
-                </div>
-              )}
-              {csvUploadSuccess && (
-                <div className="text-green-500 bg-green-100 p-3 rounded">
-                  {csvUploadSuccess}
-                </div>
               )}
             </form>
           </div>
 
           {/* Student Approvals Table */}
-          <div className="bg-gray-800 rounded-lg shadow-lg p-6">
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gray-700">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Student ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Department</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">College</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Registration Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {studentApprovals.map((student) => (
-                    <tr key={student._id} className={`${
-                      student.status === 'rejected' ? 'bg-red-900/20' : 
-                      student.status === 'approved' ? 'bg-green-900/20' : 
-                      'bg-gray-800'
-                    }`}>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                        {editingStudents[student._id] ? (
-                          <input
-                            type="text"
-                            value={editingStudents[student._id].studentId || student.studentId}
-                            onChange={(e) => handleStudentEdit(student._id, 'studentId', e.target.value)}
-                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
-                          />
-                        ) : (
-                          student.studentId
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                        {editingStudents[student._id] ? (
-                          <input
-                            type="text"
-                            value={editingStudents[student._id].name || student.name}
-                            onChange={(e) => handleStudentEdit(student._id, 'name', e.target.value)}
-                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
-                          />
-                        ) : (
-                          student.name
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                        {editingStudents[student._id] ? (
-                          <input
-                            type="email"
-                            value={editingStudents[student._id].email || student.email}
-                            onChange={(e) => handleStudentEdit(student._id, 'email', e.target.value)}
-                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
-                          />
-                        ) : (
-                          student.email
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                        {editingStudents[student._id] ? (
-                          <input
-                            type="text"
-                            value={editingStudents[student._id].department || student.department}
-                            onChange={(e) => handleStudentEdit(student._id, 'department', e.target.value)}
-                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
-                          />
-                        ) : (
-                          student.department
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                        {editingStudents[student._id] ? (
-                          <select
-                            value={editingStudents[student._id].college || student.college}
-                            onChange={(e) => handleStudentEdit(student._id, 'college', e.target.value)}
-                            className="w-full px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded focus:border-blue-500 focus:outline-none"
-                          >
-                            {colleges.map((college) => (
-                              <option key={college._id} value={college._id}>
-                                {college.name}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          colleges.find(c => c._id === student.college)?.name || student.college
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={student.status}
-                          onChange={(e) => handleStudentAction(student._id, e.target.value)}
-                          className={`px-2 py-1 rounded ${
-                            student.status === 'rejected' ? 'bg-red-900/50 text-red-200' :
-                            student.status === 'approved' ? 'bg-green-900/50 text-green-200' :
-                            'bg-yellow-900/50 text-yellow-200'
-                          } border border-gray-600 focus:outline-none`}
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="approved">Approved</option>
-                          <option value="rejected">Rejected</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                        {new Date(student.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex space-x-2">
-                          {editingStudents[student._id] ? (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-4">
+                {searchResults.length > 0 ? 'Search Results' : 'Student Approvals'}
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {(searchResults.length > 0 ? searchResults : studentApprovals).map((approval) => (
+                      <tr key={approval._id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.studentId}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.department}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.college}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(approval.registrationDate).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${approval.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                              approval.status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                              'bg-yellow-100 text-yellow-800'}`}>
+                            {approval.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-32">
+                          <div className="flex flex-row items-center gap-1.5">
                             <button
-                              onClick={() => handleSaveStudent(student._id)}
-                              className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
+                              onClick={() => handleEditStudent(approval)}
+                              className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded text-xs hover:bg-indigo-100 transition-colors"
                             >
-                              Save
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => setEditingStudents(prev => ({ ...prev, [student._id]: { ...student } }))}
-                              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
-                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
                               Edit
                             </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteStudent(student._id)}
-                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            <button
+                              onClick={() => handleDeleteStudent(approval._id)}
+                              className="inline-flex items-center text-red-600 hover:text-red-900 bg-red-50 px-1.5 py-0.5 rounded text-xs hover:bg-red-100 transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
