@@ -625,4 +625,65 @@ router.post('/escalated/:id/view', authMiddleware, async (req, res) => {
   }
 });
 
+// Get summary reports by block
+router.get('/summary', authMiddleware, async (req, res) => {
+    try {
+        // Get all complaints grouped by block
+        const complaintsByBlock = await Complaint.aggregate([
+            {
+                $match: {
+                    status: { $in: ['verified', 'resolved', 'pending'] }
+                }
+            },
+            {
+                $group: {
+                    _id: '$blockNumber',
+                    totalComplaints: { $sum: 1 },
+                    resolvedComplaints: {
+                        $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] }
+                    },
+                    pendingComplaints: {
+                        $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+                    },
+                    proctorName: { $first: '$proctorName' },
+                    latestUpdate: { $max: '$updatedAt' }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    blockNumber: '$_id',
+                    totalComplaints: 1,
+                    resolvedComplaints: 1,
+                    pendingComplaints: 1,
+                    proctorName: 1,
+                    createdAt: '$latestUpdate',
+                    summary: {
+                        $concat: [
+                            'Total: ', { $toString: '$totalComplaints' },
+                            ', Resolved: ', { $toString: '$resolvedComplaints' },
+                            ', Pending: ', { $toString: '$pendingComplaints' }
+                        ]
+                    }
+                }
+            },
+            {
+                $sort: { blockNumber: 1 }
+            }
+        ]);
+
+        res.json({
+            success: true,
+            data: complaintsByBlock
+        });
+    } catch (error) {
+        console.error('Error fetching summary reports:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch summary reports',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
 module.exports = router;

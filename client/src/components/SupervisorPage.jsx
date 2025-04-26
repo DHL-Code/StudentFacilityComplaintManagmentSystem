@@ -4,6 +4,10 @@ import SupervisorNotificationBell from '../components/SupervisorNotificationBell
 import '../styles/SupervisorStyles.css';
 import { FaSun, FaMoon, FaBars, FaTimes } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 const SupervisorPage = () => {
     const [profile, setProfile] = useState(null);
@@ -35,6 +39,11 @@ const SupervisorPage = () => {
     const [escalatedComplaints, setEscalatedComplaints] = useState([]);
     const [loadingReports, setLoadingReports] = useState(false);
     const [reportsError, setReportsError] = useState(null);
+    const [summaryReports, setSummaryReports] = useState([]);
+    const [loadingSummaryReports, setLoadingSummaryReports] = useState(false);
+    const [summaryReportsError, setSummaryReportsError] = useState(null);
+    const [selectedBlock, setSelectedBlock] = useState('all');
+    const [availableBlocks, setAvailableBlocks] = useState(['all']);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedTheme = localStorage.getItem('theme');
@@ -65,6 +74,8 @@ const SupervisorPage = () => {
             fetchVerifiedComplaints();
         } else if (activeSection === 'reports') {
             fetchEscalatedComplaints();
+        } else if (activeSection === 'summaryReports') {
+            fetchSummaryReports();
         }
     }, [activeSection]);
 
@@ -238,6 +249,78 @@ const SupervisorPage = () => {
             setLoadingReports(false);
         }
     };
+
+    const fetchSummaryReports = async () => {
+        setLoadingSummaryReports(true);
+        setSummaryReportsError(null);
+        try {
+            const token = localStorage.getItem('token');
+            const userData = JSON.parse(localStorage.getItem('user'));
+
+            if (!token || !userData) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await fetch('http://localhost:5000/api/complaints/summary', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || `Failed to fetch summary reports: ${response.status}`);
+            }
+
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to fetch summary reports');
+            }
+
+            // Debug logging
+            console.log('Raw reports data:', data.data);
+            
+            // Extract unique blocks from the reports and sort them
+            const blockNumbers = data.data.map(report => {
+                // Ensure blockNumber is a string and trim any whitespace
+                const block = String(report.blockNumber).trim();
+                console.log('Processing block:', block);
+                return block;
+            }).filter(block => block !== '' && block !== undefined && block !== null);
+
+            console.log('Extracted block numbers:', blockNumbers);
+
+            const uniqueBlocks = ['all', ...new Set(blockNumbers)].sort((a, b) => {
+                if (a === 'all') return -1;
+                if (b === 'all') return 1;
+                return parseInt(a) - parseInt(b);
+            });
+
+            console.log('Unique blocks for dropdown:', uniqueBlocks);
+            
+            setAvailableBlocks(uniqueBlocks);
+            setSummaryReports(data.data);
+        } catch (error) {
+            console.error('Error fetching summary reports:', error);
+            setSummaryReportsError(error.message);
+        } finally {
+            setLoadingSummaryReports(false);
+        }
+    };
+
+    const filteredReports = selectedBlock === 'all' 
+        ? [{
+            proctorName: 'All Proctors',
+            blockNumber: 'All Blocks',
+            totalComplaints: summaryReports.reduce((sum, report) => sum + report.totalComplaints, 0),
+            resolvedComplaints: summaryReports.reduce((sum, report) => sum + report.resolvedComplaints, 0),
+            pendingComplaints: summaryReports.reduce((sum, report) => sum + report.pendingComplaints, 0),
+            summary: `Total: ${summaryReports.reduce((sum, report) => sum + report.totalComplaints, 0)}, 
+                     Resolved: ${summaryReports.reduce((sum, report) => sum + report.resolvedComplaints, 0)}, 
+                     Pending: ${summaryReports.reduce((sum, report) => sum + report.pendingComplaints, 0)}`
+        }]
+        : summaryReports.filter(report => String(report.blockNumber).trim() === selectedBlock);
 
     const handleNavigation = (section) => {
         setActiveSection(section);
@@ -416,6 +499,10 @@ const SupervisorPage = () => {
         window.location.href = '/login';
     };
 
+    const handleBlockChange = (e) => {
+        setSelectedBlock(e.target.value);
+    };
+
     return (
         <div className="supervisor-page">
             <div className="Supervisor-mobile-header">
@@ -459,6 +546,12 @@ const SupervisorPage = () => {
                 >
                     Escalation Reports
                 </button>
+                <button
+                    onClick={() => handleNavigation('summaryReports')}
+                    className={activeSection === 'summaryReports' ? 'active' : ''}
+                >
+                    View Summary Reports
+                </button>
             </div>
 
             <div className="Supervisor-sidebar">
@@ -487,6 +580,12 @@ const SupervisorPage = () => {
                         className={activeSection === 'reports' ? 'active' : ''}
                     >
                         Escalation Reports
+                    </button>
+                    <button
+                        onClick={() => handleNavigation('summaryReports')}
+                        className={activeSection === 'summaryReports' ? 'active' : ''}
+                    >
+                        View Summary Reports
                     </button>
                 </div>
             </div>
@@ -843,6 +942,133 @@ const SupervisorPage = () => {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {activeSection === 'summaryReports' && (
+                        <div className="section summary-reports-section">
+                            <div className="summary-reports-header">
+                                <h2>Summary Reports from Proctors</h2>
+                                <div className="block-filter">
+                                    <label htmlFor="blockSelect">Filter by Block:</label>
+                                    <select 
+                                        id="blockSelect"
+                                        value={selectedBlock}
+                                        onChange={handleBlockChange}
+                                        className="block-select"
+                                    >
+                                        {availableBlocks.map(block => (
+                                            <option key={block} value={block}>
+                                                {block === 'all' ? 'All Blocks' : `Block ${block}`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {loadingSummaryReports && <p className="loading">Loading summary reports...</p>}
+                            {summaryReportsError && <p className="error">Error: {summaryReportsError}</p>}
+
+                            <div className="summary-reports-container">
+                                {filteredReports.length === 0 ? (
+                                    <p>No summary reports found for the selected block.</p>
+                                ) : (
+                                    filteredReports.map(report => (
+                                        <div key={report.blockNumber} className="summary-report-card">
+                                            <div className="report-header">
+                                                <h3>{selectedBlock === 'all' ? 'Summary Report' : `Report from ${report.proctorName}`}</h3>
+                                                <div className="quick-stats">
+                                                    <div className="stat-item">
+                                                        <span className="stat-label">Total</span>
+                                                        <span className="stat-value">{report.totalComplaints}</span>
+                                                    </div>
+                                                    <div className="stat-item">
+                                                        <span className="stat-label">Resolved</span>
+                                                        <span className="stat-value resolved">{report.resolvedComplaints}</span>
+                                                    </div>
+                                                    <div className="stat-item">
+                                                        <span className="stat-label">Pending</span>
+                                                        <span className="stat-value pending">{report.pendingComplaints}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="charts-container">
+                                                <div className="chart-wrapper">
+                                                    <Doughnut
+                                                        data={{
+                                                            labels: ['Resolved', 'Pending'],
+                                                            datasets: [{
+                                                                data: [report.resolvedComplaints, report.pendingComplaints],
+                                                                backgroundColor: ['#4CAF50', '#FFC107'],
+                                                                borderColor: ['#388E3C', '#FFA000'],
+                                                                borderWidth: 1
+                                                            }]
+                                                        }}
+                                                        options={{
+                                                            responsive: true,
+                                                            maintainAspectRatio: false,
+                                                            plugins: {
+                                                                legend: {
+                                                                    position: 'bottom',
+                                                                    labels: {
+                                                                        boxWidth: 12,
+                                                                        padding: 10
+                                                                    }
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className="chart-wrapper">
+                                                    <Bar
+                                                        data={{
+                                                            labels: ['Total', 'Resolved', 'Pending'],
+                                                            datasets: [{
+                                                                label: 'Number of Complaints',
+                                                                data: [
+                                                                    report.totalComplaints,
+                                                                    report.resolvedComplaints,
+                                                                    report.pendingComplaints
+                                                                ],
+                                                                backgroundColor: [
+                                                                    '#2196F3',
+                                                                    '#4CAF50',
+                                                                    '#FFC107'
+                                                                ],
+                                                                borderColor: [
+                                                                    '#1976D2',
+                                                                    '#388E3C',
+                                                                    '#FFA000'
+                                                                ],
+                                                                borderWidth: 1
+                                                            }]
+                                                        }}
+                                                        options={{
+                                                            responsive: true,
+                                                            maintainAspectRatio: false,
+                                                            scales: {
+                                                                y: {
+                                                                    beginAtZero: true,
+                                                                    ticks: {
+                                                                        stepSize: 1
+                                                                    }
+                                                                }
+                                                            },
+                                                            plugins: {
+                                                                legend: {
+                                                                    display: false
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
