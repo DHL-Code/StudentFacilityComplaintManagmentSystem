@@ -146,7 +146,7 @@ router.post('/verify-id', async (req, res) => {
 // Create new student approval
 router.post('/', auth, async (req, res) => {
   try {
-    const { studentId, name, email, password, department, college } = req.body;
+    const { studentId, name, email, department, college } = req.body;
 
     // Check if student ID or email already exists
     const existingStudent = await StudentApproval.findOne({
@@ -159,15 +159,11 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new student approval
+    // Create new student approval without password
     const studentApproval = new StudentApproval({
       studentId,
       name,
       email,
-      password: hashedPassword,
       department,
       college,
       status: 'pending'

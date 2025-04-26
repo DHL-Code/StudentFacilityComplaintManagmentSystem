@@ -92,7 +92,8 @@ const AdminPage = () => {
     email: '',
     department: '',
     college: '',
-    password: ''
+    status: 'pending',
+    registrationDate: new Date().toISOString().slice(0, 16)
   });
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
 
@@ -1444,6 +1445,67 @@ const AdminPage = () => {
     }
   };
 
+  const handleCreateStudent = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    try {
+      // Format the date to be compatible with datetime-local input
+      const formattedDate = new Date(newStudent.registrationDate).toISOString().slice(0, 16);
+
+      const response = await fetch('http://localhost:5000/api/student-approvals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          studentId: newStudent.studentId,
+          name: newStudent.name,
+          email: newStudent.email,
+          department: newStudent.department,
+          college: newStudent.college,
+          status: 'pending',
+          registrationDate: formattedDate
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage('Student approval request created successfully');
+        setNewStudent({
+          studentId: '',
+          name: '',
+          email: '',
+          department: '',
+          college: '',
+          status: 'pending',
+          registrationDate: new Date().toISOString().slice(0, 16)
+        });
+        setShowAddStudentForm(false);
+        
+        // Refresh the student approvals list
+        const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const approvalsData = await approvalsResponse.json();
+        setStudentApprovals(approvalsData);
+      } else {
+        setErrorMessage(data.message || 'Failed to create student approval request');
+      }
+    } catch (error) {
+      console.error('Error creating student approval:', error);
+      setErrorMessage('An error occurred while creating the student approval request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="admin-container">
       <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2675,128 +2737,113 @@ const AdminPage = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-gray-800 p-6 rounded-lg w-[500px]">
                 <h3 className="text-xl font-bold text-white mb-4">Add New Student</h3>
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  try {
-                    const response = await fetch('http://localhost:5000/api/student-approvals', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                      },
-                      body: JSON.stringify(newStudent)
-                    });
-                    if (!response.ok) throw new Error('Failed to add student');
-                    const data = await response.json();
-                    setStudentApprovals(prev => [...prev, data]);
-                    setShowAddStudentForm(false);
-                    setNewStudent({
-                      studentId: '',
-                      name: '',
-                      email: '',
-                      department: '',
-                      college: '',
-                      password: ''
-                    });
-                    setSuccessMessage('Student added successfully');
-                  } catch (error) {
-                    setErrorMessage('Failed to add student');
-                  }
-                }}>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-white mb-1">Student ID</label>
-                      <input
-                        type="text"
-                        value={newStudent.studentId}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, studentId: e.target.value }))}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-white mb-1">Name</label>
-                      <input
-                        type="text"
-                        value={newStudent.name}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-white mb-1">Email</label>
-                      <input
-                        type="email"
-                        value={newStudent.email}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-white mb-1">College</label>
-                      <select
-                        value={newStudent.college}
-                        onChange={async (e) => {
-                          const collegeId = e.target.value;
-                          setNewStudent(prev => ({ ...prev, college: collegeId, department: '' }));
-                          if (collegeId) {
-                            try {
-                              const response = await fetch(`http://localhost:5000/api/departments/by-college/${collegeId}`, {
-                                headers: {
-                                  'Authorization': `Bearer ${localStorage.getItem('token')}`
-                                }
-                              });
-                              if (!response.ok) throw new Error('Failed to fetch departments');
-                              const data = await response.json();
-                              setDepartments(data);
-                            } catch (error) {
-                              console.error('Error fetching departments:', error);
-                              setErrorMessage('Failed to load departments');
-                            }
-                          } else {
-                            setDepartments([]);
+                <form onSubmit={handleCreateStudent} className="space-y-4">
+                  <div>
+                    <label className="block text-white mb-1">Student ID</label>
+                    <input
+                      type="text"
+                      value={newStudent.studentId}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, studentId: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={newStudent.name}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={newStudent.email}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">College</label>
+                    <select
+                      value={newStudent.college}
+                      onChange={async (e) => {
+                        const selectedCollege = e.target.value;
+                        setNewStudent(prev => ({ ...prev, college: selectedCollege, department: '' }));
+                        if (selectedCollege) {
+                          try {
+                            // Get departments using the college name directly
+                            const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(selectedCollege)}/departments`, {
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                              }
+                            });
+                            if (!response.ok) throw new Error('Failed to fetch departments');
+                            const data = await response.json();
+                            setDepartments(data);
+                          } catch (error) {
+                            console.error('Error fetching departments:', error);
+                            setErrorMessage('Failed to load departments');
                           }
-                        }}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        required
-                      >
-                        <option value="">Select College</option>
-                        {colleges.map((college) => (
-                          <option key={college._id} value={college._id}>
-                            {college.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-white mb-1">Department</label>
-                      <select
-                        value={newStudent.department}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, department: e.target.value }))}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        required
-                        disabled={!newStudent.college}
-                      >
-                        <option value="">Select Department</option>
-                        {departments.map((department) => (
-                          <option key={department._id} value={department._id}>
-                            {department.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-white mb-1">Password</label>
-                      <input
-                        type="password"
-                        value={newStudent.password}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, password: e.target.value }))}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        required
-                      />
-                    </div>
+                        } else {
+                          setDepartments([]);
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    >
+                      <option value="">Select College</option>
+                      {colleges.map((college) => (
+                        <option key={college._id} value={college.name}>
+                          {college.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Department</label>
+                    <select
+                      value={newStudent.department}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, department: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                      disabled={!newStudent.college}
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((department) => (
+                        <option key={department._id} value={department._id}>
+                          {department.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Status</label>
+                    <select
+                      value={newStudent.status}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, status: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-white mb-1">Registration Date</label>
+                    <input
+                      type="datetime-local"
+                      value={newStudent.registrationDate}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, registrationDate: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      required
+                    />
                   </div>
                   <div className="flex justify-end space-x-2 mt-6">
                     <button
@@ -2809,7 +2856,8 @@ const AdminPage = () => {
                           email: '',
                           department: '',
                           college: '',
-                          password: ''
+                          status: 'pending',
+                          registrationDate: new Date().toISOString().slice(0, 16)
                         });
                         setDepartments([]);
                       }}
