@@ -7,6 +7,7 @@ const path = require('path');
 const StudentApproval = require('../models/StudentApproval');
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
+const adminAuth = require('../middleware/adminAuth');
 
 // Configure multer for CSV file upload
 const storage = multer.diskStorage({
@@ -141,37 +142,79 @@ router.post('/verify-id', async (req, res) => {
   }
 });
 
-// Create new student approval
-router.post('/', auth, async (req, res) => {
-  try {
-    const { studentId, name, email, department, college } = req.body;
+// Create a new student approval request
+router.post('/', async (req, res) => {
+    try {
+        const { studentId, name, email, department, college } = req.body;
+        
+        // Check if approval request already exists
+        const existingApproval = await StudentApproval.findOne({ studentId });
+        if (existingApproval) {
+            return res.status(400).json({ message: 'Approval request already exists for this student' });
+        }
 
-    // Check if student ID or email already exists
-    const existingStudent = await StudentApproval.findOne({
-      $or: [{ studentId }, { email }]
-    });
+        const approval = new StudentApproval({
+            studentId,
+            name,
+            email,
+            department,
+            college,
+            status: 'pending'
+        });
 
-    if (existingStudent) {
-      return res.status(400).json({ 
-        message: 'Student ID or email already exists' 
-      });
+        await approval.save();
+        res.status(201).json(approval);
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating approval request', error: error.message });
     }
+});
 
-    // Create new student approval without password
-    const studentApproval = new StudentApproval({
-      studentId,
-      name,
-      email,
-      department,
-      college,
-      status: 'pending'
-    });
+// Get approval status for a student
+router.get('/:studentId', async (req, res) => {
+    try {
+        const approval = await StudentApproval.findOne({ studentId: req.params.studentId });
+        if (!approval) {
+            return res.status(404).json({ message: 'Approval request not found' });
+        }
+        res.json(approval);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching approval status', error: error.message });
+    }
+});
 
-    await studentApproval.save();
-    res.status(201).json(studentApproval);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+// Get all pending approvals (admin only)
+router.get('/', adminAuth, async (req, res) => {
+    try {
+        const approvals = await StudentApproval.find({ status: 'pending' });
+        res.json(approvals);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching approvals', error: error.message });
+    }
+});
+
+// Update approval status (admin only)
+router.patch('/:studentId', adminAuth, async (req, res) => {
+    try {
+        const { status, rejectionReason } = req.body;
+        const approval = await StudentApproval.findOne({ studentId: req.params.studentId });
+        
+        if (!approval) {
+            return res.status(404).json({ message: 'Approval request not found' });
+        }
+
+        approval.status = status;
+        if (status === 'approved') {
+            approval.approvalDate = Date.now();
+            approval.approvedBy = req.user._id;
+        } else if (status === 'rejected') {
+            approval.rejectionReason = rejectionReason;
+        }
+
+        await approval.save();
+        res.json(approval);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating approval status', error: error.message });
+    }
 });
 
 module.exports = router; 

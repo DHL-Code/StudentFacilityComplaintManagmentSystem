@@ -276,52 +276,87 @@ const Signup = () => {
     };
 
     const handleSignup = async () => {
-        validateField("fullName", fullName);
-        validateField("email", email);
-        validateField("userId", userId);
-        validateField("department", department);
-        validateField("phoneNumber", phoneNumber);
-        validateField("password", password);
-        validateField("confirmPassword", confirmPassword);
-        validateField("gender", gender);
-        validateField("blockNumber", blockNumber);
-        validateField("dormNumber", dormNumber);
+        // Validate all fields first
+        const fields = {
+            fullName,
+            email,
+            userId,
+            phoneNumber,
+            password,
+            confirmPassword,
+            gender,
+            college,
+            department,
+            blockNumber,
+            dormNumber
+        };
 
+        // Validate each field
+        Object.keys(fields).forEach(field => {
+            validateField(field, fields[field]);
+        });
 
-        if (Object.values(validationErrors).some((error) => error)) {
-            setError("Please fix the errors before submitting.");
+        // Check if there are any validation errors
+        if (Object.values(validationErrors).some(error => error !== "")) {
+            setError("Please fix the validation errors before submitting.");
             return;
         }
 
-        const formData = new FormData();
-        formData.append("fullName", fullName);
-        formData.append("email", email);
-        formData.append("userId", userId);
-        formData.append("college", college); // Already a string
-        formData.append("department", department); // Already a string
-        formData.append("password", password);
-        formData.append("gender", gender);
-        formData.append("blockNumber", blockNumber);
-        formData.append("dormNumber", dormNumber);
-        formData.append("phoneNumber", phoneNumber);
-        if (profilePhoto) {
-            formData.append("profilePhoto", profilePhoto);
-        }
-
         try {
-            const response = await fetch("http://localhost:5000/api/auth/signup", {
-                method: "POST",
-                body: formData,
+            // First create the user
+            const userResponse = await fetch('http://localhost:5000/api/auth/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    fullName,
+                    email,
+                    userId,
+                    phoneNumber,
+                    password,
+                    gender,
+                    college,
+                    department,
+                    blockNumber,
+                    dormNumber,
+                    profilePhoto
+                }),
             });
-            const data = await response.json();
-            if (response.ok) {
-                console.log("Signup successful:", data);
-                navigate("/login");
-            } else {
-                setError(data.message || "Signup failed. Please try again.");
+
+            const userData = await userResponse.json();
+
+            if (!userResponse.ok) {
+                throw new Error(userData.message || 'Failed to create user account');
             }
+
+            // Then create the student approval record
+            const approvalResponse = await fetch('http://localhost:5000/api/student-approvals', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    studentId: userId,
+                    name: fullName,
+                    email,
+                    department,
+                    college
+                }),
+            });
+
+            const approvalData = await approvalResponse.json();
+
+            if (!approvalResponse.ok) {
+                throw new Error(approvalData.message || 'Failed to create approval record');
+            }
+
+            // Show success message
+            setError(null);
+            alert('Account created successfully! Please wait for admin approval before logging in.');
+            navigate('/login');
         } catch (err) {
-            setError("An error occurred. Please try again.");
+            setError(err.message || 'An error occurred during signup');
         }
     };
 

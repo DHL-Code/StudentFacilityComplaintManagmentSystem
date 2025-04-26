@@ -1545,7 +1545,7 @@ const AdminPage = () => {
     }
   };
 
-  const handleEditStudent = (student) => {
+  const handleEditStudent = async (student) => {
     setEditingStudent(student);
     setNewStudent({
       studentId: student.studentId,
@@ -1556,6 +1556,22 @@ const AdminPage = () => {
       status: student.status,
       registrationDate: new Date(student.registrationDate).toISOString().slice(0, 16)
     });
+
+    // Fetch departments for the selected college
+    try {
+      const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(student.college)}/departments`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch departments');
+      const data = await response.json();
+      setDepartments(data);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      setErrorMessage('Failed to load departments');
+    }
+
     setShowAddStudentForm(true);
   };
 
@@ -2958,7 +2974,7 @@ const AdminPage = () => {
                     >
                       <option value="">Select Department</option>
                       {departments.map((department) => (
-                        <option key={department._id} value={department._id}>
+                        <option key={department._id} value={department.name}>
                           {department.name}
                         </option>
                       ))}

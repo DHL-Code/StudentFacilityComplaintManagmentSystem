@@ -15,7 +15,6 @@ const Login = () => {
   const { darkMode } = useTheme();
 
   const handleLogin = async () => {
-
     if (!userId || !password) {
       setError('Please enter both User ID and Password.');
       return;
@@ -36,21 +35,41 @@ const Login = () => {
       return;
     }
 
+    setIsLoading(true);
+    setError('');
 
     try {
+      // For students, first check approval status
+      if (role === 'student') {
+        const approvalResponse = await fetch(`http://localhost:5000/api/student-approvals/${userId}`);
+        const approvalData = await approvalResponse.json();
+
+        if (approvalResponse.ok) {
+          if (approvalData.status === 'pending') {
+            setError('Your account is pending approval. Please wait for admin approval before logging in.');
+            setIsLoading(false);
+            return;
+          } else if (approvalData.status === 'rejected') {
+            setError('Your account has been rejected. Please contact the administrator for more information.');
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Proceed with login if approved or not a student
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId, // Send as-is, let backend handle case conversion
+          userId,
           password
         }),
       });
 
       const data = await response.json();
-
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
@@ -87,6 +106,8 @@ const Login = () => {
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
