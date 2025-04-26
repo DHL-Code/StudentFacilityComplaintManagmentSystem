@@ -19,6 +19,7 @@ const fs = require('fs');
 const adminProfileRoutes = require('./routes/adminProfileRoutes');
 const staffRoutes = require('./routes/staff');
 const studentApprovalRoutes = require('./routes/studentApprovalRoutes');
+const proctorRoutes = require('./routes/proctorRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -91,6 +92,7 @@ app.use('/api/blocks', blockRoutes);
 app.use('/api/dorms', dormRoutes);
 app.use('/api/adminStaff', staffRoutes);
 app.use('/api/student-approvals', studentApprovalRoutes);
+app.use('/api/proctor', proctorRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Error handling middleware

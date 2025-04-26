@@ -1498,3 +1498,11 @@ html {
 .profile-update-modal .modal-btn:hover {
   opacity: 0.9;
 }
+
+.success-message {
+  color: var(--success-color);
+  margin-bottom: 15px;
+  padding: 10px;
+  background: var(--success-bg);
+  border-radius: 5px;
+}

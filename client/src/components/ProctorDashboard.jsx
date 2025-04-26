@@ -13,6 +13,8 @@ function ProctorDashboard() {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [report, setReport] = useState('');
+  const [reportError, setReportError] = useState('');
+  const [reportSuccess, setReportSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [proctorData, setProctorData] = useState(null);
@@ -428,6 +430,57 @@ function ProctorDashboard() {
   const handleCloseProfileUpdateModal = () => {
     setShowProfileUpdateModal(false);
     setProfileUpdateMessage('');
+  };
+
+  const handleWriteReport = async () => {
+    try {
+      if (!report.trim()) {
+        setReportError('Please write a report before submitting');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const userData = JSON.parse(localStorage.getItem('user'));
+
+      console.log('Submitting report with data:', {
+        proctorId: userData.userId,
+        proctorName: proctorData.name,
+        block: proctorData.block,
+        content: report
+      });
+
+      const response = await fetch('http://localhost:5000/api/proctor/submit-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          proctorId: userData.userId,
+          proctorName: proctorData.name,
+          block: proctorData.block,
+          content: report
+        })
+      });
+
+      console.log('Server response status:', response.status);
+      const responseData = await response.json();
+      if (!response.ok) {
+        throw new Error('Failed to submit report');
+      }
+
+      setReportSuccess('Report submitted successfully!');
+      setReport('');
+      setReportError('');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setReportSuccess('');
+      }, 3000);
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      setReportError('Failed to submit report. Please try again.');
+    }
   };
 
   return (
@@ -873,11 +926,17 @@ function ProctorDashboard() {
                   placeholder="Describe the incident in detail..."
                   className="report-textarea"
                 />
+                {reportError && <div className="error-message">{reportError}</div>}
+                {reportSuccess && <div className="success-message">{reportSuccess}</div>}
                 <div className="form-actions">
-                  <button className="submit-btn" onClick={() => handleWriteReport()}>
+                  <button className="submit-btn" onClick={handleWriteReport}>
                     Submit Report
                   </button>
-                  <button className="cancel-btn" onClick={() => setReport('')}>
+                  <button className="cancel-btn" onClick={() => {
+                    setReport('');
+                    setReportError('');
+                    setReportSuccess('');
+                  }}>
                     Clear
                   </button>
                 </div>

@@ -44,6 +44,7 @@ const SupervisorPage = () => {
     const [summaryReportsError, setSummaryReportsError] = useState(null);
     const [selectedBlock, setSelectedBlock] = useState('all');
     const [availableBlocks, setAvailableBlocks] = useState(['all']);
+    const [reports, setReports] = useState([]);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedTheme = localStorage.getItem('theme');
@@ -76,6 +77,8 @@ const SupervisorPage = () => {
             fetchEscalatedComplaints();
         } else if (activeSection === 'summaryReports') {
             fetchSummaryReports();
+        } else if (activeSection === 'viewReports') {
+            fetchProctorReports();
         }
     }, [activeSection]);
 
@@ -306,6 +309,33 @@ const SupervisorPage = () => {
             setSummaryReportsError(error.message);
         } finally {
             setLoadingSummaryReports(false);
+        }
+    };
+
+    const fetchProctorReports = async () => {
+        setLoadingReports(true);
+        setReportsError(null);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/proctor/reports', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to fetch proctor reports');
+            }
+
+            setReports(data.data || []);
+        } catch (error) {
+            console.error('Error fetching proctor reports:', error);
+            setReportsError(error.message);
+        } finally {
+            setLoadingReports(false);
         }
     };
 
@@ -552,6 +582,12 @@ const SupervisorPage = () => {
                 >
                     View Summary Reports
                 </button>
+                <button
+                    onClick={() => handleNavigation('viewReports')}
+                    className={activeSection === 'viewReports' ? 'active' : ''}
+                >
+                    View Reports
+                </button>
             </div>
 
             <div className="Supervisor-sidebar">
@@ -586,6 +622,12 @@ const SupervisorPage = () => {
                         className={activeSection === 'summaryReports' ? 'active' : ''}
                     >
                         View Summary Reports
+                    </button>
+                    <button
+                        onClick={() => handleNavigation('viewReports')}
+                        className={activeSection === 'viewReports' ? 'active' : ''}
+                    >
+                        View Reports
                     </button>
                 </div>
             </div>
@@ -1064,6 +1106,31 @@ const SupervisorPage = () => {
                                                         }}
                                                     />
                                                 </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    {activeSection === 'viewReports' && (
+                        <div className="Supervisor-view-reports-section">
+                            <h2>Proctor Reports</h2>
+                            {loadingReports && <p className="loading">Loading reports...</p>}
+                            {reportsError && <p className="error">Error: {reportsError}</p>}
+                            <div className="Supervisor-reports-list">
+                                {reports.length === 0 ? (
+                                    <p>No reports found.</p>
+                                ) : (
+                                    reports.map(report => (
+                                        <div key={report._id} className="Supervisor-report-card">
+                                            <h3>Report from {report.proctorName}</h3>
+                                            <div className="Supervisor-report-details">
+                                                <p><strong>Block:</strong> {report.block}</p>
+                                                <p><strong>Content:</strong> {report.content}</p>
+                                            </div>
+                                            <div className="Supervisor-report-date">
+                                                Submitted on: {new Date(report.createdAt).toLocaleDateString()}
                                             </div>
                                         </div>
                                     ))
