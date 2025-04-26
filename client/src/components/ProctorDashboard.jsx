@@ -39,6 +39,7 @@ function ProctorDashboard() {
     newPassword: '',
     confirmPassword: ''
   });
+  const [validationErrors, setValidationErrors] = useState({});
   const [showProfileUpdateModal, setShowProfileUpdateModal] = useState(false);
   const [profileUpdateMessage, setProfileUpdateMessage] = useState('');
   const [isUpdateSuccess, setIsUpdateSuccess] = useState(false);
@@ -350,12 +351,57 @@ function ProctorDashboard() {
     });
   };
 
+  // Add password validation function
+  const validatePassword = (password) => {
+    const passwordErrors = [];
+    if (!password) {
+      passwordErrors.push("Password is required.");
+    }
+    if (password.length < 8) {
+      passwordErrors.push("Password should be at least 8 characters long.");
+    }
+    if (!/[A-Z]/.test(password)) {
+      passwordErrors.push("Password should contain at least one uppercase letter.");
+    }
+    if (!/[a-z]/.test(password)) {
+      passwordErrors.push("Password should contain at least one lowercase letter.");
+    }
+    if (!/[0-9]/.test(password)) {
+      passwordErrors.push("Password should contain at least one number.");
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+      passwordErrors.push("Password should contain at least one special character.");
+    }
+    return passwordErrors;
+  };
+
   const handleEditFormChange = (e) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({
       ...prev,
       [name]: value
     }));
+
+    // Validate password fields
+    if (name === 'newPassword') {
+      const passwordErrors = validatePassword(value);
+      setValidationErrors(prev => ({
+        ...prev,
+        newPassword: passwordErrors.length > 0 ? passwordErrors.join(" ") : ""
+      }));
+    } else if (name === 'confirmPassword') {
+      if (value !== editFormData.newPassword) {
+        setValidationErrors(prev => ({
+          ...prev,
+          confirmPassword: "Passwords do not match"
+        }));
+      } else {
+        setValidationErrors(prev => ({
+          ...prev,
+          confirmPassword: ""
+        }));
+      }
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -363,13 +409,19 @@ function ProctorDashboard() {
       // Validate passwords if they are being changed
       if (editFormData.newPassword || editFormData.confirmPassword) {
         if (editFormData.newPassword !== editFormData.confirmPassword) {
-          throw new Error('New passwords do not match');
+          setError("New passwords do not match");
+          return;
         }
-        if (editFormData.newPassword.length < 6) {
-          throw new Error('New password must be at least 6 characters long');
+        
+        const passwordErrors = validatePassword(editFormData.newPassword);
+        if (passwordErrors.length > 0) {
+          setError(passwordErrors.join(" "));
+          return;
         }
+
         if (!editFormData.currentPassword) {
-          throw new Error('Current password is required to change password');
+          setError("Current password is required to change password");
+          return;
         }
       }
 
@@ -392,12 +444,15 @@ function ProctorDashboard() {
         }
       );
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
+        if (response.status === 401) {
+          throw new Error('Your current password is wrong');
+        }
+        throw new Error(responseData.message || 'Failed to update profile');
       }
 
-      const updatedData = await response.json();
       setProctorData(prev => ({
         ...prev,
         name: editFormData.name,
@@ -413,10 +468,10 @@ function ProctorDashboard() {
       setShowProfileUpdateModal(true);
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError(error.message || 'Failed to update profile. Please try again.');
+      setError(error.message);
       
       // Show error modal
-      setProfileUpdateMessage(error.message || 'Failed to update profile. Please try again.');
+      setProfileUpdateMessage(error.message);
       setIsUpdateSuccess(false);
       setShowProfileUpdateModal(true);
     }
@@ -841,7 +896,11 @@ function ProctorDashboard() {
                         value={editFormData.newPassword}
                         onChange={handleEditFormChange}
                         placeholder="Enter new password"
+                        className={validationErrors.newPassword ? "error-input" : ""}
                       />
+                      {validationErrors.newPassword && (
+                        <span className="error-message">{validationErrors.newPassword}</span>
+                      )}
                     </div>
                     <div className="form-group">
                       <label htmlFor="confirmPassword">Confirm New Password</label>
@@ -852,7 +911,11 @@ function ProctorDashboard() {
                         value={editFormData.confirmPassword}
                         onChange={handleEditFormChange}
                         placeholder="Confirm new password"
+                        className={validationErrors.confirmPassword ? "error-input" : ""}
                       />
+                      {validationErrors.confirmPassword && (
+                        <span className="error-message">{validationErrors.confirmPassword}</span>
+                      )}
                     </div>
                   </div>
 
