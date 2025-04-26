@@ -148,18 +148,50 @@ router.get('/', authMiddleware, async (req, res) => {
 // Get verified complaints
 router.get('/verified', authMiddleware, async (req, res) => {
   try {
-    console.log('Fetching verified complaints...');
-    const complaints = await Complaint.find({ status: 'verified' });
-    console.log('Found complaints:', complaints);
-    res.json({
+    const query = {
+      status: 'verified'
+    };
+
+    // Handle block range if provided
+    if (req.query.blockRange) {
+      const blockRange = req.query.blockRange;
+      if (blockRange === 'male') {
+        // For male supervisors: blocks 201-222
+        query.blockNumber = { 
+          $gte: 201, 
+          $lte: 222 
+        };
+      } else if (blockRange === 'female') {
+        // For female supervisors: blocks 223-237
+        query.blockNumber = { 
+          $gte: 223, 
+          $lte: 237 
+        };
+      }
+    }
+
+    console.log('Query for fetching complaints:', query);
+
+    const complaints = await Complaint.find(query)
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name email')
+      .lean();
+
+    // Log the found complaints for debugging
+    console.log('Found complaints:', complaints.map(c => ({
+      blockNumber: c.blockNumber,
+      status: c.status
+    })));
+
+    return res.json({
       success: true,
       data: complaints
     });
   } catch (error) {
-    console.error('Error retrieving verified complaints:', error);
-    res.status(500).json({
+    console.error('Error fetching verified complaints:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Failed to retrieve verified complaints',
+      message: 'Failed to fetch verified complaints',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

@@ -105,7 +105,6 @@ const SupervisorPage = () => {
                 throw new Error('No authentication token or user data found');
             }
 
-            console.log('Fetching profile for staff ID:', userData.userId);
             const response = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -114,37 +113,35 @@ const SupervisorPage = () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('Fetch Profile Error:', errorData);
                 throw new Error(errorData.message || 'Failed to fetch profile');
             }
 
             const data = await response.json();
-            console.log('Fetched staff data:', data);
-
+            
             // Handle profile photo URL
             if (data.profilePhoto) {
-                // Check if the URL already starts with http://localhost:5000/
                 if (data.profilePhoto.startsWith('http://localhost:5000/')) {
                     setCurrentProfilePhoto(data.profilePhoto);
                 } else {
-                    // Extract just the filename from the full path, handling both forward and backward slashes
                     const photoPath = data.profilePhoto.split(/[\\/]/).pop();
                     setCurrentProfilePhoto(`http://localhost:5000/uploads/staff-photos/${photoPath}`);
                 }
             }
 
-            // Map the data to match our profile state structure
+            // Create profile data with proper defaults
             const profileData = {
                 fullName: data.name || '',
                 email: data.email || '',
                 phoneNumber: data.phone || '',
-                gender: data.gender || '',
+                gender: data.gender || 'Not specified',
                 userId: data.staffId || '',
                 createdAt: data.createdAt || new Date().toISOString()
             };
 
+            // Set profile state
             setProfile(profileData);
 
+            // Set form data
             setFormData({
                 fullName: profileData.fullName,
                 email: profileData.email,
@@ -174,38 +171,60 @@ const SupervisorPage = () => {
                 throw new Error('No authentication token found');
             }
 
-            console.log('Fetching verified complaints...');
-            const response = await fetch('http://localhost:5000/api/complaints/verified', {
+            // First fetch the supervisor's profile to get their gender
+            const profileResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!profileResponse.ok) {
+                const errorData = await profileResponse.json();
+                throw new Error(errorData.message || 'Failed to fetch supervisor profile');
+            }
+
+            const profileData = await profileResponse.json();
+            
+            // Check if gender exists and is valid
+            if (!profileData.gender || (profileData.gender !== 'male' && profileData.gender !== 'female')) {
+                throw new Error('Invalid or missing gender in supervisor profile');
+            }
+
+            const supervisorGender = profileData.gender; // No need for toLowerCase() since we validate the value
+
+            console.log('Supervisor gender:', supervisorGender);
+
+            // Send the gender directly as the blockRange parameter
+            const url = `http://localhost:5000/api/complaints/verified?blockRange=${supervisorGender}`;
+            
+            console.log('Request URL:', url);
+
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
 
-            // Log the response status and headers for debugging
-            console.log('Response status:', response.status);
-            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-            const data = await response.json();
-            console.log('Response data:', data);
-
             if (!response.ok) {
-                throw new Error(data.message || `Failed to fetch complaints: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Server error: ${response.status}`);
             }
 
+            const data = await response.json();
+
             if (!data.success) {
-                throw new Error(data.message || 'Failed to fetch complaints');
+                throw new Error(data.message || 'Failed to fetch verified complaints');
             }
 
             if (!Array.isArray(data.data)) {
-                console.error('Received non-array data:', data.data);
                 throw new Error('Invalid response format: expected an array of complaints');
             }
 
-            if (data.data.length === 0) {
-                console.log('No verified complaints found');
-                setComplaintError('No verified complaints found');
-            }
+            console.log('Received complaints:', data.data.map(c => ({
+                blockNumber: c.blockNumber,
+                status: c.status
+            })));
 
             setComplaints(data.data);
         } catch (error) {
@@ -661,7 +680,6 @@ const SupervisorPage = () => {
                                                 alt="Profile"
                                                 className="profile-photo"
                                                 onError={(e) => {
-                                                    console.error('Failed to load profile photo:', currentProfilePhoto);
                                                     e.target.style.display = 'none';
                                                     setError('Failed to load profile photo');
                                                 }}
@@ -683,7 +701,19 @@ const SupervisorPage = () => {
                                         </div>
                                         <div className="detail-item">
                                             <span className="detail-label">Gender:</span>
-                                            <span className="detail-value">{profile.gender}</span>
+                                            <span className="detail-value">
+                                                {profile.gender === 'male' ? 'Male' : 
+                                                 profile.gender === 'female' ? 'Female' : 
+                                                 'Not specified'}
+                                            </span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <span className="detail-label">Assigned Blocks:</span>
+                                            <span className="detail-value">
+                                                {profile.gender === 'male' ? '201-222' : 
+                                                 profile.gender === 'female' ? '223-237' : 
+                                                 'Not assigned'}
+                                            </span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="detail-label">Account Created:</span>

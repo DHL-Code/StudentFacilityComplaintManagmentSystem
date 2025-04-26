@@ -318,7 +318,8 @@ router.get('/staff/:staffId', async (req, res) => {
       role: staff.role,
       profilePhoto: staff.profilePhoto,
       block: staff.block,
-      createdAt: staff.createdAt
+      createdAt: staff.createdAt,
+      gender: staff.gender
     };
 
     console.log('Found staff data:', staffData);
@@ -386,7 +387,8 @@ router.put('/staff/:staffId', upload.single('profilePhoto'), async (req, res) =>
       role: staff.role,
       profilePhoto: staff.profilePhoto,
       block: staff.block,
-      createdAt: staff.createdAt
+      createdAt: staff.createdAt,
+      gender: staff.gender
     };
 
     res.json(staffData);
