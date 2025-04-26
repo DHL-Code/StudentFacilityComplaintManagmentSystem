@@ -300,6 +300,12 @@ const AdminPage = () => {
     setLoading(true);
     setErrorMessage('');
 
+    // Validate form before submission
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('name', newStaff.name);
@@ -312,6 +318,7 @@ const AdminPage = () => {
         const selectedBlock = blocks.find(b => b._id === newStaff.block);
         if (!selectedBlock) {
           setErrorMessage('Please select a valid block');
+          setLoading(false);
           return;
         }
         formData.append('block', selectedBlock.number);
@@ -321,12 +328,15 @@ const AdminPage = () => {
         formData.append('profilePhoto', newStaff.profilePhoto);
       }
 
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/adminStaff/create-staff', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData
       });
 
-      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create staff account');
@@ -335,11 +345,24 @@ const AdminPage = () => {
       const data = await response.json();
       setSuccessMessage(data.message);
 
-      // Update staffAccounts with the new staff member
-      setStaffAccounts(prev => [...prev, data.staff]);
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+
+      // Reset form while preserving the role
+      setNewStaff({
+        name: '',
+        email: '',
+        phone: '',
+        role: newStaff.role, // Preserve the role
+        password: '',
+        block: '', // Clear the block selection
+        profilePhoto: null
+      });
+      setProfilePreview(null);
 
       // Refresh blocks list
-      const token = localStorage.getItem('token');
       const blocksResponse = await fetch('http://localhost:5000/api/blocks', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -353,22 +376,9 @@ const AdminPage = () => {
       const blocksData = await blocksResponse.json();
       setBlocks(blocksData);
 
-      // Reset form while preserving the role and blocks state
-      setNewStaff({
-        name: '',
-        email: '',
-        phone: '',
-        role: newStaff.role, // Preserve the role
-        password: '',
-        block: '', // Clear the block selection
-        profilePhoto: null
-      });
-      setProfilePreview(null);
-
-      // Force a re-render of the form
-      setActiveTab(prev => prev);
     } catch (error) {
-      setErrorMessage(error.message);
+      console.error('Error creating staff:', error);
+      setErrorMessage(error.message || 'Failed to create staff account');
     } finally {
       setLoading(false);
     }
@@ -988,6 +998,14 @@ const AdminPage = () => {
     setLoading(true);
     setBlockErrorMessage('');
 
+    // Validate block number
+    const blockNumber = parseInt(newBlock.number);
+    if (isNaN(blockNumber) || blockNumber < 201 || blockNumber > 237) {
+      setBlockErrorMessage('Block number must be between 201 and 237');
+      setLoading(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/blocks', {
@@ -999,17 +1017,25 @@ const AdminPage = () => {
         body: JSON.stringify(newBlock),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create block');
-      }
-
       const data = await response.json();
-      setBlocks([...blocks, data]);
-      setNewBlock({ number: '' });
-      setSuccessMessage('Block created successfully');
+
+      if (response.ok) {
+        setSuccessMessage(data.message);
+        setNewBlock({ number: '' });
+        // Fetch blocks again to update the list
+        const blocksResponse = await fetch('http://localhost:5000/api/blocks', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const blocksData = await blocksResponse.json();
+        setBlocks(blocksData);
+      } else {
+        setBlockErrorMessage(data.message || 'Failed to create block');
+      }
     } catch (error) {
-      setBlockErrorMessage(error.message);
+      console.error('Error creating block:', error);
+      setBlockErrorMessage('An error occurred while creating the block. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1093,6 +1119,26 @@ const AdminPage = () => {
     setLoading(true);
     setDormErrorMessage('');
 
+    // Validate dorm number format and range
+    const dormNumber = newDorm.number;
+    const floor = dormNumber.charAt(0);
+    const roomNumber = parseInt(dormNumber.substring(1));
+
+    let isValid = false;
+    if (floor === '0' && roomNumber >= 1 && roomNumber <= 18) {
+      isValid = true; // Ground floor (001-018)
+    } else if (floor === '1' && roomNumber >= 1 && roomNumber <= 18) {
+      isValid = true; // 2nd floor (101-118)
+    } else if (floor === '2' && roomNumber >= 1 && roomNumber <= 18) {
+      isValid = true; // 3rd floor (201-218)
+    }
+
+    if (!isValid) {
+      setDormErrorMessage('Invalid dorm number. Must be in format: 001-018 (ground floor), 101-118 (2nd floor), or 201-218 (3rd floor)');
+      setLoading(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/dorms', {
@@ -1104,17 +1150,25 @@ const AdminPage = () => {
         body: JSON.stringify(newDorm),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create dorm');
-      }
-
       const data = await response.json();
-      setDorms([...dorms, data]);
-      setNewDorm({ number: '', block: '' });
-      setSuccessMessage('Dorm created successfully');
+
+      if (response.ok) {
+        setSuccessMessage(data.message);
+        setNewDorm({ number: '', block: '' });
+        // Fetch dorms again to update the list
+        const dormsResponse = await fetch('http://localhost:5000/api/dorms', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const dormsData = await dormsResponse.json();
+        setDorms(dormsData);
+      } else {
+        setDormErrorMessage(data.message || 'Failed to create dorm');
+      }
     } catch (error) {
-      setDormErrorMessage(error.message);
+      console.error('Error creating dorm:', error);
+      setDormErrorMessage('An error occurred while creating the dorm. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1224,30 +1278,38 @@ const AdminPage = () => {
   const validateForm = () => {
     const errors = {};
 
+    // Name validation
     if (!newStaff.name.trim()) {
       errors.name = 'Name is required';
     }
 
+    // Email validation
     if (!newStaff.email.trim()) {
       errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(newStaff.email)) {
-      errors.email = 'Email is invalid';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newStaff.email)) {
+      errors.email = 'Please enter a valid email address';
     }
 
+    // Phone validation
     if (!newStaff.phone.trim()) {
-      errors.phone = 'Phone is required';
+      errors.phone = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(newStaff.phone)) {
+      errors.phone = 'Phone number must be exactly 10 digits';
     }
 
-    if (!newStaff.role) {
-      errors.role = 'Role is required';
-    }
-
+    // Password validation
     if (!newStaff.password) {
       errors.password = 'Password is required';
     } else if (newStaff.password.length < 6) {
       errors.password = 'Password must be at least 6 characters';
     }
 
+    // Role validation
+    if (!newStaff.role) {
+      errors.role = 'Role is required';
+    }
+
+    // Block validation for proctors
     if (newStaff.role === 'proctor' && !newStaff.block) {
       errors.block = 'Block is required for proctors';
     }
@@ -1914,6 +1976,8 @@ const AdminPage = () => {
                             type="password"
                             value={passwordForm.currentPassword}
                             onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                            autoComplete="current-password"
+                            placeholder="Enter current password"
                             style={{
                               width: '100%',
                               background: 'transparent',
@@ -1934,6 +1998,8 @@ const AdminPage = () => {
                             type="password"
                             value={passwordForm.newPassword}
                             onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                            autoComplete="new-password"
+                            placeholder="Enter new password"
                             style={{
                               width: '100%',
                               background: 'transparent',
@@ -1952,6 +2018,8 @@ const AdminPage = () => {
                             type="password"
                             value={passwordForm.confirmPassword}
                             onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                            autoComplete="new-password"
+                            placeholder="Confirm new password"
                             style={{
                               width: '100%',
                               background: 'transparent',
@@ -2013,15 +2081,67 @@ const AdminPage = () => {
       {activeTab === 'create-staff' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Create Staff Account</h2>
-          <form onSubmit={handleCreateStaff} className="staff-form">
-            <div className="photo-upload">
-              <div className="profile-preview" onClick={() => document.getElementById('staffPhoto').click()}>
+          
+          {successMessage && (
+            <div className="success-message" style={{ 
+              color: 'green', 
+              backgroundColor: '#2a2a2a',
+              padding: '10px',
+              marginBottom: '10px',
+              borderRadius: '4px'
+            }}>
+              {successMessage}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="error-message" style={{ 
+              color: 'red', 
+              backgroundColor: '#2a2a2a',
+              padding: '10px',
+              marginBottom: '10px',
+              borderRadius: '4px'
+            }}>
+              {errorMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleCreateStaff} className="staff-form" style={{
+            backgroundColor: '#2a2a2a',
+            padding: '20px',
+            borderRadius: '8px'
+          }}>
+            <div className="photo-upload" style={{ marginBottom: '20px' }}>
+              <div 
+                className="profile-preview" 
+                onClick={() => document.getElementById('staffPhoto').click()}
+                style={{
+                  width: '150px',
+                  height: '150px',
+                  border: '2px dashed #444',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  overflow: 'hidden'
+                }}
+              >
                 {profilePreview ? (
-                  <img src={profilePreview} alt="Preview" />
+                  <img 
+                    src={profilePreview} 
+                    alt="Preview" 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
                 ) : (
-                  <div className="upload-placeholder" style={{ color: 'white' }}>
-                    <span>+</span>
-                    <p>Upload Photo</p>
+                  <div className="upload-placeholder" style={{ color: 'white', textAlign: 'center' }}>
+                    <span style={{ fontSize: '24px' }}>+</span>
+                    <p style={{ margin: '5px 0 0 0' }}>Upload Photo</p>
                   </div>
                 )}
               </div>
@@ -2034,33 +2154,51 @@ const AdminPage = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label style={{ color: 'white' }}>Full Name</label>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Full Name</label>
               <input
                 type="text"
                 value={newStaff.name}
                 onChange={e => setNewStaff({ ...newStaff, name: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: '1px solid #444',
+                  backgroundColor: '#1a1a1a',
+                  color: 'white'
+                }}
                 required
               />
+              {formErrors.name && (
+                <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.name}</span>
+              )}
             </div>
 
-            <div className="form-group">
-              <label style={{ color: 'white' }}>Email</label>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Email</label>
               <input
                 type="email"
                 value={newStaff.email}
                 onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
                 onBlur={handleEmailBlur}
-                className={validationErrors.email ? 'error' : ''}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: `1px solid ${formErrors.email ? 'red' : '#444'}`,
+                  backgroundColor: '#1a1a1a',
+                  color: 'white'
+                }}
                 placeholder="Enter email"
               />
-              {validationErrors.email && (
-                <span className="error-message">{validationErrors.email}</span>
+              {formErrors.email && (
+                <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.email}</span>
               )}
             </div>
 
-            <div className="form-group">
-              <label style={{ color: 'white' }}>Phone Number</label>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Phone Number</label>
               <input
                 type="tel"
                 value={newStaff.phone}
@@ -2069,37 +2207,59 @@ const AdminPage = () => {
                   setNewStaff({ ...newStaff, phone: value });
                 }}
                 onBlur={handlePhoneBlur}
-                className={validationErrors.phone ? 'error' : ''}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: `1px solid ${formErrors.phone ? 'red' : '#444'}`,
+                  backgroundColor: '#1a1a1a',
+                  color: 'white'
+                }}
                 maxLength="10"
                 pattern="[0-9]*"
                 inputMode="numeric"
                 placeholder="Enter phone number"
               />
-              {validationErrors.phone && (
-                <span className="error-message">{validationErrors.phone}</span>
+              {formErrors.phone && (
+                <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.phone}</span>
               )}
             </div>
 
-            <div className="form-group">
-              <label style={{ color: 'white' }}>Password</label>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Password</label>
               <input
                 type="password"
                 value={newStaff.password}
                 onChange={e => setNewStaff({ ...newStaff, password: e.target.value })}
                 onBlur={handlePasswordBlur}
-                className={validationErrors.password ? 'error' : ''}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: `1px solid ${formErrors.password ? 'red' : '#444'}`,
+                  backgroundColor: '#1a1a1a',
+                  color: 'white'
+                }}
                 placeholder="Enter password"
               />
-              {validationErrors.password && (
-                <span className="error-message">{validationErrors.password}</span>
+              {formErrors.password && (
+                <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.password}</span>
               )}
             </div>
 
-            <div className="form-group">
-              <label style={{ color: 'white' }}>Role</label>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Role</label>
               <select
                 value={newStaff.role}
                 onChange={e => setNewStaff({ ...newStaff, role: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: '1px solid #444',
+                  backgroundColor: '#1a1a1a',
+                  color: 'white'
+                }}
               >
                 <option value="proctor">Proctor</option>
                 <option value="supervisor">Supervisor</option>
@@ -2108,11 +2268,19 @@ const AdminPage = () => {
             </div>
 
             {newStaff.role === 'proctor' && (
-              <div className="form-group">
-                <label style={{ color: 'white' }}>Block</label>
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Block</label>
                 <select
                   value={newStaff.block}
                   onChange={e => setNewStaff(prev => ({ ...prev, block: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: `1px solid ${formErrors.block ? 'red' : '#444'}`,
+                    backgroundColor: '#1a1a1a',
+                    color: 'white'
+                  }}
                   required
                 >
                   <option value="">Select Block</option>
@@ -2122,12 +2290,24 @@ const AdminPage = () => {
                     </option>
                   ))}
                 </select>
+                {formErrors.block && (
+                  <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.block}</span>
+                )}
               </div>
             )}
 
             <button
               type="submit"
-              style={{ background: 'blue', color: 'white' }}
+              style={{ 
+                background: '#4a4a4a',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                width: '100%',
+                marginTop: '20px'
+              }}
               disabled={loading}
             >
               {loading ? 'Creating Account...' : 'Create Account'}
@@ -2824,48 +3004,50 @@ const AdminPage = () => {
                 padding: '10px'
               }}>
                 {dorms.length > 0 ? (
-                  dorms.map((dorm) => (
-                    <div key={dorm._id} className="list-item" style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '10px',
-                      borderBottom: '1px solid #444',
-                      color: 'white'
-                    }}>
-                      <span>
-                        Dorm {dorm.number} in Block {blocks.find(b => b._id === dorm.block)?.number}
-                      </span>
-                      <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
-                        <button
-                          onClick={() => handleEditDorm(dorm)}
-                          style={{
-                            background: '#007bff',
-                            color: 'white',
-                            border: 'none',
-                            padding: '5px 10px',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDorm(dorm._id)}
-                          style={{
-                            background: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            padding: '5px 10px',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Delete
-                        </button>
+                  dorms.map((dorm) => {
+                    return (
+                      <div key={dorm._id} className="list-item" style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '10px',
+                        borderBottom: '1px solid #444',
+                        color: 'white'
+                      }}>
+                        <span>
+                          Dorm {dorm.number} in Block {dorm.block?.number || 'Unknown'}
+                        </span>
+                        <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            onClick={() => handleEditDorm(dorm)}
+                            style={{
+                              background: '#007bff',
+                              color: 'white',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDorm(dorm._id)}
+                            style={{
+                              background: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
                     No dorms found.

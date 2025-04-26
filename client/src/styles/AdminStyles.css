@@ -2,128 +2,170 @@
 
 /* Base Styles */
 .admin-container {
-  background: #1a1a1a;
-  color: #fff;
   min-height: 100vh;
-  padding: 2rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Header Styles */
 .admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: #2a2a2a;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
+.admin-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
+  animation: shimmer 20s infinite linear;
+}
+
+@keyframes shimmer {
+  0% { transform: rotate(45deg) translateX(-50%); }
+  100% { transform: rotate(45deg) translateX(50%); }
+}
+
+/* Navigation Styles */
 .admin-nav {
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
   padding: 1rem;
-  background: #2a2a2a;
-  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-nav button {
-  background: #3a3a3a;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
   border: none;
   padding: 0.8rem 1.5rem;
+  color: white;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-nav button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: 0.5s;
+}
+
+.admin-nav button:hover::before {
+  left: 100%;
 }
 
 .admin-nav button:hover {
-  background: #4a4a4a;
+  background: rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* Section Styling */
+.admin-nav button.active {
+  background: linear-gradient(45deg, #4e54c8, #8f94fb);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Section Styles */
 .section {
-  background: #2a2a2a;
   padding: 2rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  margin: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease;
 }
 
-.subsection {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: #363636;
-  border-radius: 8px;
+.section:hover {
+  transform: translateY(-5px);
 }
 
-/* Forms */
-.staff-form,
-.admin-form,
-.college-form,
-.department-form {
+/* Form Styles */
+.staff-form {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  position: relative;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #8f94fb;
   font-weight: 500;
-  color: #ccc;
 }
 
 .form-group input,
-.form-group select,
-.form-group textarea {
+.form-group select {
+  width: 100%;
   padding: 0.8rem;
-  border: 1px solid #444;
-  border-radius: 6px;
-  background: #3a3a3a;
-  color: #fff;
-  transition: border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.3s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+  border-color: #4e54c8;
+  box-shadow: 0 0 0 3px rgba(78, 84, 200, 0.2);
 }
 
-/* Photo Upload */
+/* Profile Photo Upload */
 .photo-upload {
-  position: relative;
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.photo-upload:hover {
-  transform: scale(1.05);
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
 }
 
 .profile-preview {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.profile-preview:hover {
+  transform: scale(1.05);
+}
+
+.profile-preview img {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #3a3a3a;
+  object-fit: cover;
 }
 
 .upload-placeholder {
@@ -131,107 +173,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #666;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.upload-placeholder span {
-  font-size: 2rem;
-}
-
-/* Tables */
-.responsive-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.responsive-table th,
-.responsive-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #444;
-}
-
-.responsive-table th {
-  background: #3a3a3a;
-  font-weight: 600;
-}
-
-/* Cards */
-.info-card {
-  background: #3a3a3a;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  transition: transform 0.3s ease;
-}
-
-.info-card:hover {
-  transform: translateY(-3px);
-}
-
-.stats-card {
-  background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin: 1rem 0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Buttons */
-.btn-primary {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  background: #0056b3;
-  transform: translateY(-2px);
-}
-
-.btn-danger {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-danger:hover {
-  background: #bb2d3b;
-  transform: translateY(-2px);
-}
-
-/* Messages */
-.success-message {
-  background: #d4edda;
-  color: #155724;
-  padding: 1rem;
-  border-radius: 6px;
-  margin: 1rem 0;
-  animation: slideIn 0.3s ease;
-}
-
-.error-message {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 1rem;
-  border-radius: 6px;
-  margin: 1rem 0;
-  animation: shake 0.4s ease;
-}
-
+/* Animations */
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -239,17 +189,259 @@
   }
 }
 
-@keyframes shake {
-  0%,
-  100% {
+.section {
+  animation: slideIn 0.5s ease forwards;
+}
+
+/* Hover Effects */
+button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.9; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.9; }
+}
+
+/* Student Approvals Specific Styles */
+.student-approvals-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.approvals-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.search-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-input {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px #4e54c8;
+}
+
+.search-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(45deg, #4e54c8, #8f94fb);
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 25px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-button:hover {
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 4px 15px rgba(78, 84, 200, 0.4);
+}
+
+.actions-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.add-student-button {
+  background: linear-gradient(45deg, #00b09b, #96c93d);
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 30px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-student-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
+}
+
+/* Table Enhancements */
+.approvals-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  margin: 2rem 0;
+}
+
+.approvals-table th {
+  background: linear-gradient(45deg, #4e54c8, #8f94fb);
+  padding: 1.2rem;
+  text-align: left;
+  color: white;
+}
+
+.approvals-table td {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: flex-start;
+}
+
+.action-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.edit-button {
+  background: rgba(78, 84, 200, 0.2);
+  color: #8f94fb;
+}
+
+.delete-button {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+}
+
+.modal-content {
+  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  padding: 2rem;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+  animation: modalEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Message Popups */
+.message-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: slideInRight 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
     transform: translateX(0);
   }
-  25% {
-    transform: translateX(-10px);
-  }
-  75% {
-    transform: translateX(10px);
-  }
+}
+
+.success-message {
+  background: rgba(40, 167, 69, 0.9);
+  border-left: 5px solid #28a745;
+}
+
+.error-message {
+  background: rgba(220, 53, 69, 0.9);
+  border-left: 5px solid #dc3545;
 }
 
 /* Responsive Design */
@@ -257,14 +449,242 @@
   .admin-nav {
     flex-wrap: wrap;
   }
-
-  .staff-form,
-  .admin-form {
+  
+  .staff-form {
     grid-template-columns: 1fr;
   }
+  
+  .section {
+    margin: 1rem;
+    padding: 1rem;
+  }
+}
 
-  .responsive-table {
+/* Mobile Responsive Additions */
+@media (max-width: 768px) {
+  /* Header adjustments */
+  .admin-header {
+    padding: 1rem;
+  }
+  
+  .admin-header h1 {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+  }
+
+  /* Navigation adjustments */
+  .admin-nav {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .admin-nav button {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  /* Section adjustments */
+  .section {
+    margin: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  /* Form adjustments */
+  .staff-form {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  /* Table adjustments */
+  table {
     display: block;
     overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  th, td {
+    padding: 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  /* Profile section adjustments */
+  .profile-card {
+    padding: 1rem;
+  }
+
+  .profile-card > div {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-photo-container {
+    margin-bottom: 1rem;
+  }
+
+  /* Modal adjustments */
+  .modal-content {
+    width: 95%;
+    padding: 1rem;
+  }
+
+  /* Hide less important columns on mobile */
+  td:nth-child(4),
+  th:nth-child(4), /* Department */
+  td:nth-child(5),
+  th:nth-child(5) { /* College */
+    display: none;
+  }
+
+  .student-approvals-section {
+    padding: 1rem;
+  }
+  
+  .actions-row {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .add-student-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .approvals-table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .table-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .action-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .approvals-table th,
+  .approvals-table td {
+    padding: 0.8rem;
+    min-width: 120px;
+  }
+
+}
+
+@media (max-width: 480px) {
+  /* Further adjustments for small phones */
+  .admin-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .section {
+    margin: 0.5rem;
+    padding: 0.8rem;
+  }
+
+  .profile-card > div {
+    flex-direction: column;
+  }
+
+  .profile-card input {
+    width: 100%;
+  }
+
+  .search-container {
+    max-width: 100%;
+  }
+  
+  .search-button {
+    position: relative;
+    width: 100%;
+    margin-top: 1rem;
+    transform: none;
+    right: auto;
+    top: auto;
+  }
+  
+  .search-input {
+    padding: 0.8rem 1rem;
+  }
+
+  /* Table adjustments */
+  th, td {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  /* Form elements */
+  button {
+    padding: 0.7rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  /* Notification bell positioning */
+  .notification-bell {
+    right: 10px;
+    top: 10px;
+  }
+
+  /* Adjust feedback cards */
+  .feedback-card {
+    padding: 1rem;
+  }
+
+  .feedback-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* College/Department lists */
+  .colleges-list, .departments-list {
+    max-height: 200px;
+  }
+}
+
+/* Touch-friendly elements */
+@media (pointer: coarse) {
+  button, input[type="checkbox"], .profile-preview {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  .admin-nav button {
+    padding: 1rem;
+  }
+
+  /* Disable hover effects on touch devices */
+  .admin-nav button:hover {
+    transform: none;
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Orientation-specific adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+  .admin-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .admin-nav button {
+    width: auto;
+    padding: 0.8rem;
   }
 }
