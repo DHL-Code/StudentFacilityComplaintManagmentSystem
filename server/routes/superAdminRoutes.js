@@ -89,12 +89,17 @@ async function generateAdminId() {
 router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => {
   try {
     console.log('Received create-staff request');
-    const { name, email, phone, role, password, block } = req.body;
-    console.log('Request body:', { name, email, phone, role, block });
+    const { name, email, phone, role, password, block, gender } = req.body;
+    console.log('Request body:', { name, email, phone, role, block, gender });
 
     // Validate required fields
     if (!name || !email || !phone || !role || !password) {
       return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Validate gender for supervisors
+    if (role === 'supervisor' && !gender) {
+      return res.status(400).json({ error: 'Gender is required for supervisors' });
     }
 
     // Validate block field for proctors
@@ -169,6 +174,7 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
           role,
           password: hashedPassword,
           profilePhoto: req.file ? req.file.path : null,
+          gender: gender
         });
         break;
       case 'dean':

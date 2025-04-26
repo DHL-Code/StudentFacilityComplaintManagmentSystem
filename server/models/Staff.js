@@ -93,7 +93,12 @@ const proctorSchema = new mongoose.Schema({
 // Supervisor Schema
 const supervisorSchema = new mongoose.Schema({
   ...staffSchema.obj,
-  role: { type: String, enum: ['supervisor'], required: true }
+  role: { type: String, enum: ['supervisor'], required: true },
+  gender: {
+    type: String,
+    enum: ['male', 'female'],
+    required: true
+  }
 });
 
 // Dean Schema

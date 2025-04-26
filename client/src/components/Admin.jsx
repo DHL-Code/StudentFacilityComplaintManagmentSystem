@@ -20,7 +20,8 @@ const AdminPage = () => {
     role: 'proctor',
     password: '',
     profilePhoto: null,
-    block: ''
+    block: '',
+    gender: '' // Add gender field
   });
   const [newAdmin, setNewAdmin] = useState({
     name: '',
@@ -270,7 +271,7 @@ const AdminPage = () => {
   const generateStaffId = (role) => {
     const prefixMap = {
       proctor: 'P',
-      supervisor: 'S',
+      supervisor: 'V',
       dean: 'D'
     };
     const prefix = prefixMap[role] || 'X';
@@ -322,6 +323,8 @@ const AdminPage = () => {
           return;
         }
         formData.append('block', selectedBlock.number);
+      } else if (newStaff.role === 'supervisor') {
+        formData.append('gender', newStaff.gender);
       }
 
       if (newStaff.profilePhoto) {
@@ -2293,6 +2296,29 @@ const AdminPage = () => {
                 {formErrors.block && (
                   <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.block}</span>
                 )}
+              </div>
+            )}
+
+            {newStaff.role === 'supervisor' && (
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Gender</label>
+                <select
+                  value={newStaff.gender}
+                  onChange={e => setNewStaff({ ...newStaff, gender: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #444',
+                    backgroundColor: '#1a1a1a',
+                    color: 'white'
+                  }}
+                  required
+                >
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
               </div>
             )}
 

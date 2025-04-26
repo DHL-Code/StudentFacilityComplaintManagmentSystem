@@ -76,7 +76,7 @@ async function findLastStaffId(role) {
 const generateStaffId = async (role) => {
   const prefix = {
     proctor: 'P',
-    supervisor: 'S',
+    supervisor: 'V',
     dean: 'D'
   }[role] || 'X';
   
@@ -102,6 +102,11 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
     // Validate required fields
     if (!name || !email || !phone || !role || !password) {
       return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Validate gender for supervisors
+    if (role === 'supervisor' && !req.body.gender) {
+      return res.status(400).json({ error: 'Gender is required for supervisors' });
     }
 
     // Validate block for proctors
@@ -136,46 +141,55 @@ router.post('/create-staff', upload.single('profilePhoto'), async (req, res) => 
 
     // Create new staff based on role
     let newStaff;
-    switch (role) {
-      case 'proctor':
-        newStaff = new Proctor({
-          name,
-          email,
-          phone,
-          role,
-          password: hashedPassword,
-          staffId,
-          block,
-          profilePhoto: req.file ? req.file.filename : undefined
-        });
-        break;
-      case 'supervisor':
-        newStaff = new Supervisor({
-          name,
-          email,
-          phone,
-          role,
-          password: hashedPassword,
-          staffId,
-          profilePhoto: req.file ? req.file.filename : undefined
-        });
-        break;
-      case 'dean':
-        newStaff = new Dean({
-          name,
-          email,
-          phone,
-          role,
-          password: hashedPassword,
-          staffId,
-          profilePhoto: req.file ? req.file.filename : undefined
-        });
-        break;
-      default:
-        return res.status(400).json({ error: 'Invalid role' });
-    }
+    try {
+      switch (role) {
+        case 'proctor':
+          newStaff = new Proctor({
+            name,
+            email,
+            phone,
+            role,
+            password: hashedPassword,
+            staffId,
+            block,
+            profilePhoto: req.file ? req.file.filename : undefined
+          });
+          break;
+        case 'supervisor':
+          newStaff = new Supervisor({
+            name,
+            email,
+            phone,
+            role,
+            password: hashedPassword,
+            staffId,
+            profilePhoto: req.file ? req.file.filename : undefined,
+            gender: req.body.gender
+          });
+          break;
+        case 'dean':
+          newStaff = new Dean({
+            name,
+            email,
+            phone,
+            role,
+            password: hashedPassword,
+            staffId,
+            profilePhoto: req.file ? req.file.filename : undefined
+          });
+          break;
+        default:
+          return res.status(400).json({ error: 'Invalid role' });
+      }
 
-    await newStaff.save();
+      await newStaff.save();
+    } catch (error) {
+      console.error('Error creating staff:', error);
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({ error: error.message });
+      }
+      throw error;
+    }
 
     // Send email with credentials
     const mailOptions = {
