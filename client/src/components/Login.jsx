@@ -163,8 +163,15 @@ const Login = () => {
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
 
-          <div className="signup-link">
-            Don't have an account? <Link to="/signup">Sign up</Link>
+          <div className="login-options">
+            {role === 'student' && (
+              <div className="signup-link">
+                Don't have an account? <Link to="/signup">Sign up</Link>
+              </div>
+            )}
+            <div className="forgot-password-link">
+              <Link to="/ForgotPassword">Forgot Password?</Link>
+            </div>
           </div>
         </form>
       </div>

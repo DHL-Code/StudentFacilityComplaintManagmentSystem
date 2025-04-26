@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 import '../styles/Home.css';
@@ -9,12 +9,10 @@ import Image3 from '../assets/wolkite4.jpg';
 import Image4 from '../assets/comp.jpg';
 import Image5 from '../assets/comp1.jpg';
 import Image6 from '../assets/comp2.jpg';
-import { FiArrowRight, FiCheckCircle, FiUsers, FiShield, FiTrendingUp, FiClock, FiMoon, FiSun, FiCamera } from 'react-icons/fi';
+import { FiArrowRight, FiCheckCircle, FiUsers, FiShield, FiTrendingUp, FiClock, FiMoon, FiSun } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
-import Webcam from 'react-webcam';
-import Quagga from 'quagga';
 
 const Home = () => {
   const { darkMode } = useTheme();
@@ -28,10 +26,6 @@ const Home = () => {
   }); */
 
   const [currentImage, setCurrentImage] = useState(0);
-  const [showScanner, setShowScanner] = useState(false);
-  const [scannedCode, setScannedCode] = useState('');
-  const webcamRef = useRef(null);
-  const scannerContainerRef = useRef(null);
   const images = [Image1, Image2, Image3, Image4, Image5, Image6];
 
   useEffect(() => {
@@ -41,69 +35,6 @@ const Home = () => {
 
     return () => clearInterval(imageInterval); // Cleanup on unmount
   }, [images.length]); // Add images.length as dependency
-
-  useEffect(() => {
-    if (showScanner && scannerContainerRef.current) {
-      const videoElement = scannerContainerRef.current.querySelector('video');
-      if (videoElement) {
-        Quagga.init({
-          inputStream: {
-            name: "Live",
-            type: "LiveStream",
-            target: videoElement,
-            constraints: {
-              width: 1280,
-              height: 720,
-              facingMode: "environment"
-            },
-            mime: "video/webm"
-          },
-          decoder: {
-            readers: ["code_128_reader"], // Focus only on Code 128 which handles alphanumeric better
-            debug: {
-              drawBoundingBox: true,
-              drawPattern: true,
-              showPattern: true
-            }
-          },
-          locate: true,
-          numOfWorkers: 4,
-          multiple: false,
-          halfSample: true,
-          patchSize: "medium",
-          resultFunction: function (result) {
-            if (result.codeResult && result.codeResult.code) {
-              const code = result.codeResult.code;
-              setScannedCode(code);
-              console.log('Barcode detected:', code);
-              console.log('Code format:', result.codeResult.format);
-              Quagga.stop();
-              setShowScanner(false);
-            }
-          }
-        }, function (err) {
-          if (err) {
-            console.error(err);
-            return;
-          }
-          Quagga.start();
-        });
-
-        // Add error handling
-        Quagga.onProcessed((result) => {
-          if (result && result.codeResult && result.codeResult.error) {
-            console.log('Scanning error:', result.codeResult.error);
-          }
-        });
-      }
-    }
-
-    return () => {
-      if (showScanner) {
-        Quagga.stop();
-      }
-    };
-  }, [showScanner]);
 
   const [activeFeature, setActiveFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -414,36 +345,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Add Barcode Scanner Tab */}
-      <div className="scanner-tab">
-        <button
-          className={`scanner-button ${darkMode ? 'dark' : ''}`}
-          onClick={() => setShowScanner(!showScanner)}
-        >
-          <FiCamera /> Barcode Scanner
-        </button>
-
-        {showScanner && (
-          <div className="scanner-container" ref={scannerContainerRef}>
-            <Webcam
-              ref={webcamRef}
-              style={{ width: '100%', maxWidth: '640px' }}
-              videoConstraints={{
-                facingMode: "environment",
-                width: 640,
-                height: 480
-              }}
-            />
-          </div>
-        )}
-
-        {scannedCode && (
-          <div className="scanned-result">
-            <p>Scanned Code: {scannedCode}</p>
-          </div>
-        )}
-      </div>
 
       {isVisible && (
         <motion.button
