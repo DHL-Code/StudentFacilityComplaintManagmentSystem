@@ -173,15 +173,14 @@ const NotificationBell = ({ userId }) => {
 
     const markAllAsRead = async () => {
         try {
+            // Mark all regular notifications as read
             const response = await fetch(
                 'http://localhost:5000/api/notifications/read-all',
                 {
                     method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Content-Type': 'application/json'
                     },
-                    credentials: 'include'
                 }
             );
 
@@ -189,18 +188,31 @@ const NotificationBell = ({ userId }) => {
                 throw new Error('Failed to mark all notifications as read');
             }
 
-            // Update local state regardless of server response
+            // Mark all complaint notifications as viewed by student
+            const complaintsToMark = notifications
+                .filter(n => n.type === 'complaint_status')
+                .map(n => n.complaintId);
+
+            if (complaintsToMark.length > 0) {
+                await Promise.all(
+                    complaintsToMark.map(complaintId =>
+                        fetch(`http://localhost:5000/api/complaints/${complaintId}/view-student`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                            },
+                        })
+                    )
+                );
+            }
+
+            // Update local state
             setNotifications(prev =>
                 prev.map(n => ({ ...n, isRead: true }))
             );
             setUnreadCount(0);
         } catch (err) {
             console.error('Error marking all notifications as read:', err);
-            // Still update the UI to show notifications as read
-            setNotifications(prev =>
-                prev.map(n => ({ ...n, isRead: true }))
-            );
-            setUnreadCount(0);
         }
     };
 
@@ -236,16 +248,7 @@ const NotificationBell = ({ userId }) => {
                 <div className="notification-dropdown">
                     <div className="notification-header">
                         <h3>Notifications</h3>
-                        {notifications.length > 0 && (
-                            <button
-                                className="mark-all-read"
-                                onClick={markAllAsRead}
-                            >
-                                Mark all as read
-                            </button>
-                        )}
                     </div>
-
                     {isLoading ? (
                         <div className="notification-loading">Loading...</div>
                     ) : error ? (
