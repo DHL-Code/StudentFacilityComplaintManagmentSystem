@@ -711,6 +711,15 @@ const Dashboard = () => {
                                     <option value="Electricity">Electricity</option>
                                     <option value="Toilet Problem">Toilet Problem</option>
                                     <option value="Water Pipe Issue">Water Pipe Issue</option>
+                                    <option value="Bed">Bed</option>
+                                    <option value="Locker">Locker</option>
+                                    <option value="Pillow">Pillow</option>
+                                    <option value="Furniture">Furniture</option>
+                                    <option value="Cheapwood">Cheapwood</option>
+                                    <option value="Bulb">Bulb</option>
+                                    <option value="Socket">Socket</option>
+                                    <option value="Mattress">Mattress</option>
+                                    <option value="Other">Other</option>
                                 </select>
                             </label>
                             <label>

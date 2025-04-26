@@ -115,10 +115,7 @@ const ContactUs = () => {
 
                     <div className="quick-links">
                         <p>Quick Links</p>
-                        <Link to="/privacy">Privacy Policy</Link>
                         <Link to="/TermsOfService">Terms of Service</Link>
-                        <Link to="/faq">FAQs</Link>
-                        <Link to="/help">Help Center</Link>
                     </div>
                 </footer>
             </div>

@@ -48,9 +48,9 @@ const NotificationBell = ({ userId }) => {
                 complaintsResponse.json()
             ]);
 
-            // Convert complaints to notification format and filter out viewed ones
+            // Convert complaints to notification format and filter out viewed ones and pending complaints
             const complaintNotifications = complaintsData
-                .filter(complaint => !complaint.viewedByStudent)
+                .filter(complaint => !complaint.viewedByStudent && complaint.status !== 'pending')
                 .map(complaint => ({
                     _id: complaint._id,
                     message: `Complaint: ${complaint.complaintType} - ${complaint.specificInfo} (Status: ${complaint.status || 'Pending'})`,
