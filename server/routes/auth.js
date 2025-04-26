@@ -44,7 +44,6 @@ const storage = multer.diskStorage({
   //Signup
   router.post('/signup', upload.single('profilePhoto'), async (req, res) => {
     try {
-
         const { userId } = req.body;
         
         // Check if user is trying to register as non-student
@@ -57,9 +56,7 @@ const storage = multer.diskStorage({
         // Destructure from req.body
         const { fullName, email, phoneNumber, password, gender, college, department, blockNumber, dormNumber } = req.body;
 
-
         const finalUserId = userId || 'S' + Math.floor(10000 + Math.random() * 90000);
-
 
         // Create new user WITH PLAIN TEXT PASSWORD
         const newUser = new User({
@@ -73,13 +70,31 @@ const storage = multer.diskStorage({
             department,
             blockNumber,
             dormNumber,
-            profilePhoto: req.file ? req.file.path : null
+            profilePhoto: req.file ? `uploads/profile_photos/${req.file.filename}` : null
+        });
+
+        // Log the file information for debugging
+        console.log('File upload info:', {
+            file: req.file,
+            profilePhoto: newUser.profilePhoto
         });
 
         // The pre-save hook will automatically hash this password before saving
         await newUser.save();
 
-        res.status(201).json({ message: 'User created successfully' });
+        // Log the saved user for debugging
+        console.log('Saved user:', {
+            userId: newUser.userId,
+            profilePhoto: newUser.profilePhoto
+        });
+
+        res.status(201).json({ 
+            message: 'User created successfully',
+            user: {
+                userId: newUser.userId,
+                profilePhoto: newUser.profilePhoto
+            }
+        });
     } catch (error) {
         console.error('Signup error:', error);
         res.status(500).json({ message: error.message || 'Server error during registration' });
@@ -176,7 +191,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         if (user.profilePhoto) {
-            user.profilePhoto = `http://localhost:5000/${user.profilePhoto}`;
+            user.profilePhoto = `http://localhost:5000/${user.profilePhoto.replace(/\\/g, '/')}`;
         }
         res.json(user);
     } catch (error) {
@@ -202,29 +217,33 @@ router.put('/profile', authMiddleware, upload.single('profilePhoto'), async (req
       user.gender = req.body.gender || user.gender;
       user.dormNumber = req.body.dormNumber || user.dormNumber;
       user.blockNumber = req.body.blockNumber || user.blockNumber;
+      
       // Handle profile photo upload
       if (req.file) {
-          user.profilePhoto = `/uploads/profile_photos/${req.file.filename}`;
+          user.profilePhoto = `uploads/profile_photos/${req.file.filename}`;
       }
 
       // Handle password change
       if (req.body.currentPassword && req.body.newPassword) {
-        const isMatch = await user.matchPassword(req.body.currentPassword);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Current password is incorrect' });
-        }
-        user.password = req.body.newPassword; // Store the *plain text* new password.  The model must hash this on save.
-    }
+          const isMatch = await user.matchPassword(req.body.currentPassword);
+          if (!isMatch) {
+              return res.status(400).json({ message: 'Current password is incorrect' });
+          }
+          user.password = req.body.newPassword;
+      }
 
-    const updatedUser = await user.save();
+      const updatedUser = await user.save();
 
-    // Return user data without password
-    const userData = updatedUser.toObject();
-    delete userData.password;
+      // Return user data without password
+      const userData = updatedUser.toObject();
+      delete userData.password;
 
-    res.json({ user: userData });
+      // Update the profile photo URL in the response
+      if (userData.profilePhoto) {
+          userData.profilePhoto = `http://localhost:5000/${userData.profilePhoto.replace(/\\/g, '/')}`;
+      }
 
-
+      res.json({ user: userData });
   } catch (error) {
       console.error(error);
       res.status(500).json({

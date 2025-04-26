@@ -309,25 +309,28 @@ const Signup = () => {
         }
 
         try {
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('fullName', fullName);
+            formData.append('email', email);
+            formData.append('userId', userId);
+            formData.append('phoneNumber', phoneNumber);
+            formData.append('password', password);
+            formData.append('gender', gender);
+            formData.append('college', college);
+            formData.append('department', department);
+            formData.append('blockNumber', blockNumber);
+            formData.append('dormNumber', dormNumber);
+            
+            // Only append profilePhoto if it exists
+            if (profilePhoto) {
+                formData.append('profilePhoto', profilePhoto);
+            }
+
             // First create the user
             const userResponse = await fetch('http://localhost:5000/api/auth/signup', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    fullName,
-                    email,
-                    userId,
-                    phoneNumber,
-                    password,
-                    gender,
-                    college,
-                    department,
-                    blockNumber,
-                    dormNumber,
-                    profilePhoto
-                }),
+                body: formData
             });
 
             const userData = await userResponse.json();
@@ -351,18 +354,29 @@ const Signup = () => {
                 }),
             });
 
-            const approvalData = await approvalResponse.json();
-
             if (!approvalResponse.ok) {
-                throw new Error(approvalData.message || 'Failed to create approval record');
+                throw new Error('Failed to create approval record');
             }
 
-            // Show success message
+            // Show success message with approval information
             setError(null);
-            alert('Account created successfully! Please wait for admin approval before logging in.');
+            alert(`
+                Account created successfully!
+                
+                Important Information:
+                1. Please wait for admin approval before logging in.
+                2. You will receive an email notification at ${email} once your account is approved.
+                3. Check your email regularly for updates on your approval status.
+                4. If you don't receive an email within 24 hours, please contact the admin office.
+                
+                Thank you for your patience!
+            `);
+
+            // Navigate to login after showing the message
             navigate('/login');
-        } catch (err) {
-            setError(err.message || 'An error occurred during signup');
+        } catch (error) {
+            console.error('Signup error:', error);
+            setError(error.message || 'An error occurred during signup');
         }
     };
 
