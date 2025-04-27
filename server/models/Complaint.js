@@ -20,7 +20,7 @@ const complaintSchema = new mongoose.Schema({
     default: 'pending'
   },
   isUrgent: { type: Boolean, default: false },
-
+  hiddenByStudent: { type: Boolean, default: false },
   escalationReason: { type: String },
   escalatedAt: { type: Date },
   file: { type: String },

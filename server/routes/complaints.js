@@ -118,33 +118,33 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
   }
 });
 
-// Get all complaints (for admin or user)
+// Get complaints
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    // Create query object
-    const query = {};
-
-    // If userId query parameter is provided, filter by that user
+    let query = {};
+    
+    // If userId is provided, only show non-hidden complaints for that user
     if (req.query.userId) {
-      query.userId = req.query.userId;
+      query = {
+        userId: req.query.userId,
+        hiddenByStudent: false
+      };
     }
-
-    // If blockNumber query parameter is provided, filter by that block
+    
+    // If blockNumber is provided (for proctors), show all complaints for that block
     if (req.query.blockNumber) {
-      query.blockNumber = req.query.blockNumber;
+      query = {
+        blockNumber: req.query.blockNumber
+      };
     }
 
-    // If the user is a proctor/admin, you might want to add additional filters
     const complaints = await Complaint.find(query).sort({ createdAt: -1 });
-    res.status(200).json(complaints);
+    res.json(complaints);
   } catch (error) {
-    console.error('Error fetching complaints:', error);
-    res.status(500).json({
-      error: error.message,
-      message: 'Failed to fetch complaints'
-    });
+    res.status(500).json({ message: error.message });
   }
 });
+
 // Get verified complaints
 router.get('/verified', async (req, res) => {
     try {
@@ -446,21 +446,14 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Complaint not found' });
     }
 
-    // Delete the associated file if it exists
-    if (complaint.file) {
-      const filePath = path.join(__dirname, '..', complaint.file);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    // Instead of deleting, mark as hidden by student
+    complaint.hiddenByStudent = true;
+    await complaint.save();
 
-    // Delete the complaint from the database
-    await Complaint.findByIdAndDelete(req.params.id);
-
-    res.status(200).json({ message: 'Complaint deleted successfully' });
+    res.status(200).json({ message: 'Complaint hidden successfully' });
   } catch (error) {
-    console.error('Error deleting complaint:', error);
-    res.status(500).json({ message: 'Error deleting complaint' });
+    console.error('Error hiding complaint:', error);
+    res.status(500).json({ message: 'Error hiding complaint' });
   }
 });
 

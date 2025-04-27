@@ -450,46 +450,89 @@
 }
 
 .Supervisor-complaint-card {
-  background-color: var(--bg-primary);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #4CAF50;
+}
+
+.Supervisor-complaint-card.resolved {
+  border-left-color: #2196F3;
+  background-color: #f5f5f5;
+}
+
+.Supervisor-complaint-card .status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.Supervisor-complaint-card .status.pending {
+  background-color: #FFC107;
+  color: #000;
+}
+
+.Supervisor-complaint-card .status.verified {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.Supervisor-complaint-card .status.resolved {
+  background-color: #2196F3;
+  color: white;
+}
+
+.Supervisor-complaint-actions {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  border: 1px solid var(--border-color);
-  width: 100%;
-  max-width: 350px;
-  margin: 0 auto;
+  gap: 10px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
 }
 
-.Supervisor-complaint-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.Supervisor-complaint-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
 }
 
-.Supervisor-complaint-header,
-.report-header {
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
+.Supervisor-complaint-actions .resolve-btn {
+  background-color: #4CAF50;
+  color: white;
 }
 
-.Supervisor-complaint-details,
-.report-details {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.Supervisor-complaint-actions .resolve-btn:hover {
+  background-color: #45a049;
 }
 
-.Supervisor-complaint-actions,
-.report-actions {
-  margin-top: 1.5rem;
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
+.Supervisor-complaint-actions .escalate-btn {
+  background-color: #FF9800;
+  color: white;
+}
+
+.Supervisor-complaint-actions .escalate-btn:hover {
+  background-color: #f57c00;
+}
+
+.Supervisor-complaint-actions .delete-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.Supervisor-complaint-actions .delete-btn:hover {
+  background-color: #d32f2f;
+}
+
+.urgent-tag {
+  color: #f44336;
+  font-weight: bold;
+  margin-top: 5px;
 }
 
 /* Responsive Card Styles */

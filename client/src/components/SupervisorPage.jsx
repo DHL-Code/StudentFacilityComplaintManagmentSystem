@@ -659,9 +659,13 @@ const SupervisorPage = () => {
                 throw new Error(data.message || 'Failed to resolve complaint');
             }
 
-            // Update the complaints list by removing the resolved complaint
+            // Update the complaints list by updating the status of the resolved complaint
             setComplaints(prevComplaints =>
-                prevComplaints.filter(complaint => complaint._id !== complaintId)
+                prevComplaints.map(complaint => 
+                    complaint._id === complaintId 
+                        ? { ...complaint, status: 'resolved', resolvedAt: new Date() }
+                        : complaint
+                )
             );
 
             // Show success message
@@ -709,8 +713,14 @@ const SupervisorPage = () => {
                 throw new Error(data.message || 'Failed to escalate complaint');
             }
 
-            // Remove the escalated complaint from the list
-            setComplaints(complaints.filter(c => c._id !== complaintId));
+            // Update the complaints list by updating the status of the escalated complaint
+            setComplaints(prevComplaints =>
+                prevComplaints.map(complaint => 
+                    complaint._id === complaintId 
+                        ? { ...complaint, status: 'escalated', escalationReason: escalationReason, escalatedAt: new Date() }
+                        : complaint
+                )
+            );
             setShowEscalationModal(false);
             setEscalationReason('');
 
@@ -734,6 +744,37 @@ const SupervisorPage = () => {
 
     const handleBlockChange = (e) => {
         setSelectedBlock(e.target.value);
+    };
+
+    const handleDeleteComplaint = async (complaintId) => {
+        if (!window.confirm('Are you sure you want to delete this complaint? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5000/api/complaints/${complaintId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete complaint');
+            }
+
+            // Remove the deleted complaint from the list
+            setComplaints(prevComplaints =>
+                prevComplaints.filter(complaint => complaint._id !== complaintId)
+            );
+
+            alert('Complaint deleted successfully');
+        } catch (error) {
+            console.error('Error deleting complaint:', error);
+            setComplaintError(error.message);
+            alert('Failed to delete complaint: ' + error.message);
+        }
     };
 
     const ValidationModal = () => {
@@ -1094,7 +1135,7 @@ const SupervisorPage = () => {
 
                             <div className="Supervisor-complaints-grid">
                                 {complaints.map(complaint => (
-                                    <div key={complaint._id} className="Supervisor-complaint-card">
+                                    <div key={complaint._id} className={`Supervisor-complaint-card ${complaint.status.toLowerCase()}`}>
                                         <div className="Supervisor-complaint-header">
                                             <h3>{complaint.complaintType}</h3>
                                             <span className={`status ${complaint.status.toLowerCase()}`}>
@@ -1108,22 +1149,35 @@ const SupervisorPage = () => {
                                             <p><strong>Dorm:</strong> {complaint.dormNumber}</p>
                                             <p><strong>Date:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
                                             {complaint.isUrgent && <p className="urgent-tag">URGENT</p>}
+                                            {complaint.status === 'resolved' && (
+                                                <p><strong>Resolved On:</strong> {new Date(complaint.resolvedAt).toLocaleDateString()}</p>
+                                            )}
                                         </div>
                                         <div className="Supervisor-complaint-actions">
+                                            {complaint.status !== 'resolved' && (
+                                                <>
+                                                    <button
+                                                        className="resolve-btn"
+                                                        onClick={() => handleResolveComplaint(complaint._id)}
+                                                    >
+                                                        Mark as Resolved
+                                                    </button>
+                                                    <button
+                                                        className="escalate-btn"
+                                                        onClick={() => {
+                                                            setSelectedComplaint(complaint);
+                                                            setShowEscalationModal(true);
+                                                        }}
+                                                    >
+                                                        Escalate to Dean
+                                                    </button>
+                                                </>
+                                            )}
                                             <button
-                                                className="resolve-btn"
-                                                onClick={() => handleResolveComplaint(complaint._id)}
+                                                className="delete-btn"
+                                                onClick={() => handleDeleteComplaint(complaint._id)}
                                             >
-                                                Mark as Resolved
-                                            </button>
-                                            <button
-                                                className="escalate-btn"
-                                                onClick={() => {
-                                                    setSelectedComplaint(complaint);
-                                                    setShowEscalationModal(true);
-                                                }}
-                                            >
-                                                Escalate to Dean
+                                                Delete Complaint
                                             </button>
                                         </div>
                                     </div>
