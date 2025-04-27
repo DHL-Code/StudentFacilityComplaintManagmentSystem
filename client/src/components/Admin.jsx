@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import NotificationBell from '../components/NotificationBell';
+import AdminNotificationBell from '../components/AdminNotificationBell';
 import '../styles/AdminStyles.css';
 import { AlertCircle } from 'lucide-react';
 import MessagePopup from './MessagePopup';
@@ -137,6 +137,8 @@ const AdminPage = () => {
   useEffect(() => {
     if (activeTab === 'feedback') {
       fetchFeedback();
+    } else if (activeTab === 'summary-reports') {
+      fetchSummaryReports();
     }
   }, [activeTab]);
 
@@ -1898,7 +1900,7 @@ const AdminPage = () => {
         <h1>Admin Dashboard</h1>
         <div className="nav-actions">
           <div className="nav-right">
-            <NotificationBell userId={userData?.userId} />
+            <AdminNotificationBell userId={userData?.userId} />
             <button className="dark-mode-toggle" onClick={toggleDarkMode}>
               <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
               {darkMode ? ' Light Mode' : ' Dark Mode'}
@@ -1931,6 +1933,9 @@ const AdminPage = () => {
         </button>
         <button onClick={() => setActiveTab('blocks-dorms')}>
           Blocks & Dorms
+        </button>
+        <button onClick={() => setActiveTab('summary-reports')}>
+          Summary Reports
         </button>
       </nav>
 
@@ -3509,7 +3514,7 @@ const AdminPage = () => {
       )}
 
       {/* Add Summary Reports Section */}
-      {showSummaryReports && (
+      {activeTab === 'summary-reports' && (
         <div className="admin-summary-reports-section">
           <div className="admin-summary-reports-header">
             <h2>Summary Reports</h2>
@@ -3593,34 +3598,7 @@ const AdminPage = () => {
                           <Cell fill="#4CAF50" />
                           <Cell fill="#FFC107" />
                         </Pie>
-                        <Tooltip />
-                        <Legend />
                       </PieChart>
-                    </div>
-
-                    <div className="chart-wrapper">
-                      <BarChart
-                        width={300}
-                        height={300}
-                        data={[
-                          { name: 'Total', value: report.totalComplaints },
-                          { name: 'Resolved', value: report.resolvedComplaints },
-                          { name: 'Pending', value: report.pendingComplaints }
-                        ]}
-                        margin={{
-                          top: 5,
-                          right: 30,
-                          left: 20,
-                          bottom: 5,
-                        }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="value" fill="#2196F3" />
-                      </BarChart>
                     </div>
                   </div>
                 </div>
@@ -3629,16 +3607,6 @@ const AdminPage = () => {
           </div>
         </div>
       )}
-
-      {/* Add View Summary Report Button */}
-      <div className="admin-actions">
-        <button 
-          className="view-summary-reports-btn"
-          onClick={handleViewSummaryReports}
-        >
-          View Summary Reports
-        </button>
-      </div>
     </div>
   );
 };
