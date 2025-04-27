@@ -146,55 +146,45 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 // Get verified complaints
-router.get('/verified', authMiddleware, async (req, res) => {
-  try {
-    const query = {
-      status: 'verified'
-    };
+router.get('/verified', async (req, res) => {
+    try {
+        const { blockRange } = req.query;
+        
+        // Define block ranges based on gender
+        const blockRanges = {
+            male: { $gte: 201, $lte: 222 },
+            female: { $gte: 223, $lte: 237 }
+        };
 
-    // Handle block range if provided
-    if (req.query.blockRange) {
-      const blockRange = req.query.blockRange;
-      if (blockRange === 'male') {
-        // For male supervisors: blocks 201-222
-        query.blockNumber = { 
-          $gte: 201, 
-          $lte: 222 
-        };
-      } else if (blockRange === 'female') {
-        // For female supervisors: blocks 223-237
-        query.blockNumber = { 
-          $gte: 223, 
-          $lte: 237 
-        };
-      }
+        // Validate blockRange parameter
+        if (!blockRange || !['male', 'female'].includes(blockRange)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid block range parameter. Must be either "male" or "female"'
+            });
+        }
+
+        // Get the appropriate block range
+        const blockQuery = blockRanges[blockRange];
+
+        // Find verified complaints within the specified block range
+        const complaints = await Complaint.find({
+            status: 'verified',
+            blockNumber: blockQuery
+        }).sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            data: complaints
+        });
+    } catch (error) {
+        console.error('Error fetching verified complaints:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch verified complaints',
+            error: error.message
+        });
     }
-
-    console.log('Query for fetching complaints:', query);
-
-    const complaints = await Complaint.find(query)
-      .sort({ createdAt: -1 })
-      .populate('userId', 'name email')
-      .lean();
-
-    // Log the found complaints for debugging
-    console.log('Found complaints:', complaints.map(c => ({
-      blockNumber: c.blockNumber,
-      status: c.status
-    })));
-
-    return res.json({
-      success: true,
-      data: complaints
-    });
-  } catch (error) {
-    console.error('Error fetching verified complaints:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch verified complaints',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
 });
 
 // Update complaint verification to include status update

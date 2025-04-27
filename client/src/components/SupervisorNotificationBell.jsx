@@ -21,24 +21,63 @@ const SupervisorNotificationBell = ({ userId }) => {
 	}, [userId]);
 
 	const fetchNotifications = async () => {
-		setIsLoading(true);
-		setError(null);
 		try {
-			const response = await fetch('http://localhost:5000/api/complaints', {
+			const token = localStorage.getItem('token');
+			const userData = JSON.parse(localStorage.getItem('user'));
+
+			if (!token || !userData) {
+				throw new Error('No authentication token found');
+			}
+
+			// First fetch the supervisor's profile to get their gender
+			const profileResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
 				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('token')}`,
+					'Authorization': `Bearer ${token}`,
 				},
 			});
 
-			if (!response.ok) {
-				throw new Error('Failed to fetch complaints');
+			if (!profileResponse.ok) {
+				const errorData = await profileResponse.json();
+				throw new Error(errorData.message || 'Failed to fetch supervisor profile');
 			}
 
-			const complaintsData = await response.json();
+			const profileData = await profileResponse.json();
+			
+			// Check if gender exists and is valid
+			if (!profileData.gender || (profileData.gender !== 'male' && profileData.gender !== 'female')) {
+				throw new Error('Invalid or missing gender in supervisor profile');
+			}
 
-			// Convert complaints to notification format, only showing verified complaints
-			const verifiedComplaints = complaintsData
-				.filter(complaint => complaint.status === 'verified' && !complaint.viewedBySupervisor)
+			const supervisorGender = profileData.gender;
+
+			// Send the gender directly as the blockRange parameter
+			const url = `http://localhost:5000/api/complaints/verified?blockRange=${supervisorGender}`;
+			
+			const response = await fetch(url, {
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || `Server error: ${response.status}`);
+			}
+
+			const data = await response.json();
+
+			if (!data.success) {
+				throw new Error(data.message || 'Failed to fetch verified complaints');
+			}
+
+			if (!Array.isArray(data.data)) {
+				throw new Error('Invalid response format: expected an array of complaints');
+			}
+
+			// Convert complaints to notification format
+			const notifications = data.data
+				.filter(complaint => !complaint.viewedBySupervisor)
 				.map(complaint => ({
 					_id: complaint._id,
 					message: `Verified Complaint: ${complaint.complaintType} - ${complaint.specificInfo}`,
@@ -52,11 +91,11 @@ const SupervisorNotificationBell = ({ userId }) => {
 					blockNumber: complaint.blockNumber
 				}));
 
-			setNotifications(verifiedComplaints);
-			setUnreadCount(verifiedComplaints.length);
-		} catch (err) {
-			console.error('Error fetching notifications:', err);
-			setError(err.message);
+			setNotifications(notifications);
+			setUnreadCount(notifications.length);
+		} catch (error) {
+			console.error('Error fetching verified complaints:', error);
+			setError(error.message);
 		} finally {
 			setIsLoading(false);
 		}
