@@ -3,7 +3,7 @@ import NotificationBell from '../components/NotificationBell';
 import '../styles/AdminStyles.css';
 import { AlertCircle } from 'lucide-react';
 import MessagePopup from './MessagePopup';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
@@ -103,6 +103,14 @@ const AdminPage = () => {
   const [editingStudentData, setEditingStudentData] = useState(null);
   const [userData, setUserData] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
+
+  const [summaryReports, setSummaryReports] = useState([]);
+  const [loadingSummaryReports, setLoadingSummaryReports] = useState(false);
+  const [summaryReportsError, setSummaryReportsError] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('all');
+  const [selectedBlock, setSelectedBlock] = useState('all');
+  const [availableBlocks, setAvailableBlocks] = useState(['all']);
+  const [showSummaryReports, setShowSummaryReports] = useState(false);
 
   // Fetch colleges on component mount, added error state
   useEffect(() => {
@@ -1809,6 +1817,79 @@ const AdminPage = () => {
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.body.classList.toggle('dark-mode');
+  };
+
+  const fetchSummaryReports = async () => {
+    setLoadingSummaryReports(true);
+    setSummaryReportsError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/complaints/summary?role=${selectedRole}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `Failed to fetch summary reports: ${response.status}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch summary reports');
+      }
+
+      // Extract unique blocks from the reports and sort them
+      const blockNumbers = data.data.map(report => {
+        const block = String(report.blockNumber).trim();
+        return block;
+      }).filter(block => block !== '' && block !== undefined && block !== null);
+
+      const uniqueBlocks = ['all', ...new Set(blockNumbers)].sort((a, b) => {
+        if (a === 'all') return -1;
+        if (b === 'all') return 1;
+        return parseInt(a) - parseInt(b);
+      });
+
+      setAvailableBlocks(uniqueBlocks);
+      setSummaryReports(data.data);
+    } catch (error) {
+      console.error('Error fetching summary reports:', error);
+      setSummaryReportsError(error.message);
+    } finally {
+      setLoadingSummaryReports(false);
+    }
+  };
+
+  const handleRoleChange = (e) => {
+    setSelectedRole(e.target.value);
+    fetchSummaryReports();
+  };
+
+  const handleBlockChange = (e) => {
+    setSelectedBlock(e.target.value);
+  };
+
+  // Filter reports based on selected role and block
+  const filteredReports = selectedBlock === 'all' 
+    ? [{
+      name: 'All Staff',
+      role: selectedRole === 'all' ? 'All Roles' : selectedRole,
+      blockNumber: 'All Blocks',
+      totalComplaints: summaryReports.reduce((sum, report) => sum + report.totalComplaints, 0),
+      resolvedComplaints: summaryReports.reduce((sum, report) => sum + report.resolvedComplaints, 0),
+      pendingComplaints: summaryReports.reduce((sum, report) => sum + report.pendingComplaints, 0),
+      summary: `Total: ${summaryReports.reduce((sum, report) => sum + report.totalComplaints, 0)}, 
+               Resolved: ${summaryReports.reduce((sum, report) => sum + report.resolvedComplaints, 0)}, 
+               Pending: ${summaryReports.reduce((sum, report) => sum + report.pendingComplaints, 0)}`
+    }]
+    : summaryReports.filter(report => String(report.blockNumber).trim() === selectedBlock);
+
+  const handleViewSummaryReports = () => {
+    setShowSummaryReports(true);
+    fetchSummaryReports();
   };
 
   return (
@@ -3583,6 +3664,138 @@ const AdminPage = () => {
           )}
         </div>
       )}
+
+      {/* Add Summary Reports Section */}
+      {showSummaryReports && (
+        <div className="admin-summary-reports-section">
+          <div className="admin-summary-reports-header">
+            <h2>Summary Reports</h2>
+            <div className="admin-filters">
+              <div className="admin-role-filter">
+                <label htmlFor="roleSelect">Filter by Role:</label>
+                <select 
+                  id="roleSelect"
+                  value={selectedRole}
+                  onChange={handleRoleChange}
+                  className="role-select"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="proctor">Proctors</option>
+                  <option value="supervisor">Supervisors</option>
+                  <option value="dean">Deans</option>
+                </select>
+              </div>
+              <div className="admin-block-filter">
+                <label htmlFor="blockSelect">Filter by Block:</label>
+                <select 
+                  id="blockSelect"
+                  value={selectedBlock}
+                  onChange={handleBlockChange}
+                  className="block-select"
+                >
+                  {availableBlocks.map(block => (
+                    <option key={block} value={block}>
+                      {block === 'all' ? 'All Blocks' : `Block ${block}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {loadingSummaryReports && <p className="loading">Loading summary reports...</p>}
+          {summaryReportsError && <p className="error">Error: {summaryReportsError}</p>}
+
+          <div className="admin-summary-reports-container">
+            {filteredReports.length === 0 ? (
+              <p>No summary reports found for the selected filters.</p>
+            ) : (
+              filteredReports.map(report => (
+                <div key={report.blockNumber} className="admin-summary-report-card">
+                  <div className="report-header">
+                    <h3>{selectedBlock === 'all' ? 'Summary Report' : `Report from ${report.name}`}</h3>
+                    <p className="role-label">{report.role}</p>
+                  </div>
+                  <div className="quick-stats">
+                    <div className="stat-item">
+                      <span className="stat-label">Total</span>
+                      <span className="stat-value">{report.totalComplaints}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Resolved</span>
+                      <span className="stat-value resolved">{report.resolvedComplaints}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Pending</span>
+                      <span className="stat-value pending">{report.pendingComplaints}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="charts-container">
+                    <div className="chart-wrapper">
+                      <PieChart width={300} height={300}>
+                        <Pie
+                          data={[
+                            { name: 'Resolved', value: report.resolvedComplaints },
+                            { name: 'Pending', value: report.pendingComplaints }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          <Cell fill="#4CAF50" />
+                          <Cell fill="#FFC107" />
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </div>
+
+                    <div className="chart-wrapper">
+                      <BarChart
+                        width={300}
+                        height={300}
+                        data={[
+                          { name: 'Total', value: report.totalComplaints },
+                          { name: 'Resolved', value: report.resolvedComplaints },
+                          { name: 'Pending', value: report.pendingComplaints }
+                        ]}
+                        margin={{
+                          top: 5,
+                          right: 30,
+                          left: 20,
+                          bottom: 5,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="value" fill="#2196F3" />
+                      </BarChart>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Add View Summary Report Button */}
+      <div className="admin-actions">
+        <button 
+          className="view-summary-reports-btn"
+          onClick={handleViewSummaryReports}
+        >
+          View Summary Reports
+        </button>
+      </div>
     </div>
   );
 };
