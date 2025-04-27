@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '../context/ThemeContext';
 import Navbar from './Navbar';
 import Home from './Home';
@@ -19,8 +19,29 @@ import NotificationBell from './NotificationBell';
 import TermsOfService from './TermsOfService';
 import { NotificationProvider } from '../contexts/NotificationContext';
 
-function App() {
+// Protected Route Component
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const token = localStorage.getItem('token');
+  const userData = localStorage.getItem('user');
 
+  if (!token || !userData) {
+    return <Navigate to="/Login" replace />;
+  }
+
+  try {
+    const user = JSON.parse(userData);
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+      return <Navigate to="/Login" replace />;
+    }
+    return children;
+  } catch (error) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return <Navigate to="/Login" replace />;
+  }
+};
+
+function App() {
   return (
     <ThemeProvider>
       <NotificationProvider>
@@ -30,16 +51,37 @@ function App() {
             <Route path="/Signup" element={<Signup />} />
             <Route path="/Login" element={<Login />} />
             <Route path="/ContactUs" element={<ContactUs />} />
-            <Route path="/StudentAccount" element={<StudentAccount />} />
-            <Route path="/ProctorDashboard" element={<ProctorDashboard />} />
             <Route path="/ForgotPassword" element={<ForgotPassword />} />
             <Route path="/ResetPassword" element={<ResetPassword />} />
             <Route path="/OTPVerification" element={<OTPVerification />} />
-            <Route path="/NotificationBell" element={<NotificationBell />} />
-            <Route path="/SupervisorPage" element={<SupervisorPage />} />
-            <Route path="/DeanPage" element={<DeanPage />} />
-            <Route path="/Admin" element={<Admin />} />
             <Route path="/TermsOfService" element={<TermsOfService />} />
+            
+            {/* Protected Routes */}
+            <Route path="/StudentAccount" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentAccount />
+              </ProtectedRoute>
+            } />
+            <Route path="/ProctorDashboard" element={
+              <ProtectedRoute allowedRoles={['proctor']}>
+                <ProctorDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/SupervisorPage" element={
+              <ProtectedRoute allowedRoles={['supervisor']}>
+                <SupervisorPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/DeanPage" element={
+              <ProtectedRoute allowedRoles={['dean']}>
+                <DeanPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/Admin" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Admin />
+              </ProtectedRoute>
+            } />
           </Routes>
         </Router>
       </NotificationProvider>

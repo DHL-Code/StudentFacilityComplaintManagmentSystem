@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -13,6 +13,44 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { darkMode } = useTheme();
+
+  // Check for existing session on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    
+    if (token && userData) {
+      try {
+        const user = JSON.parse(userData);
+        // Redirect based on user role
+        switch (user.role) {
+          case 'student':
+            navigate('/StudentAccount');
+            break;
+          case 'proctor':
+            navigate('/ProctorDashboard');
+            break;
+          case 'dean':
+            navigate('/DeanPage');
+            break;
+          case 'supervisor':
+            navigate('/SupervisorPage');
+            break;
+          case 'admin':
+            navigate('/Admin');
+            break;
+          default:
+            // Clear invalid session data
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+        }
+      } catch (error) {
+        // Clear invalid session data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    }
+  }, [navigate]);
 
   const roleGuidance = {
     student: "Student ID starts with S",
