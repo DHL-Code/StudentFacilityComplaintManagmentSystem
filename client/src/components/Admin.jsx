@@ -97,6 +97,8 @@ const AdminPage = () => {
   });
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [editingStudentId, setEditingStudentId] = useState(null);
+  const [editingStudentData, setEditingStudentData] = useState(null);
 
   // Fetch colleges on component mount, added error state
   useEffect(() => {
@@ -1321,7 +1323,23 @@ const AdminPage = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Fetch student approvals
+  // Add this new function to reorder student IDs
+  const reorderStudentIds = (students) => {
+    // Sort students by their current ID to maintain order
+    const sortedStudents = [...students].sort((a, b) => {
+      const numA = parseInt(a.studentId.replace('s', ''));
+      const numB = parseInt(b.studentId.replace('s', ''));
+      return numA - numB;
+    });
+
+    // Reassign IDs sequentially
+    return sortedStudents.map((student, index) => ({
+      ...student,
+      studentId: `s${String(index + 1).padStart(3, '0')}`
+    }));
+  };
+
+  // Modify the fetchStudentApprovals function
   useEffect(() => {
     const fetchStudentApprovals = async () => {
       try {
@@ -1334,7 +1352,9 @@ const AdminPage = () => {
           throw new Error('Failed to fetch student approvals');
         }
         const data = await response.json();
-        setStudentApprovals(data);
+        // Reorder the IDs when fetching
+        const reorderedData = reorderStudentIds(data);
+        setStudentApprovals(reorderedData);
       } catch (error) {
         console.error('Error fetching student approvals:', error);
       }
@@ -1344,6 +1364,123 @@ const AdminPage = () => {
       fetchStudentApprovals();
     }
   }, [activeTab]);
+
+  // Modify the handleDeleteStudent function
+  const handleDeleteStudent = async (studentId) => {
+    if (!window.confirm('Are you sure you want to delete this student approval?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/student-approvals/${studentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete student approval');
+      }
+
+      // Remove the student and reorder the remaining ones
+      const updatedStudents = studentApprovals.filter(student => student._id !== studentId);
+      const reorderedStudents = reorderStudentIds(updatedStudents);
+      
+      // Update the database with new IDs
+      await Promise.all(reorderedStudents.map(async (student) => {
+        const updateResponse = await fetch(`http://localhost:5000/api/student-approvals/${student._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ studentId: student.studentId })
+        });
+        if (!updateResponse.ok) {
+          throw new Error('Failed to update student ID');
+        }
+      }));
+
+      setStudentApprovals(reorderedStudents);
+    } catch (error) {
+      console.error('Error deleting student approval:', error);
+    }
+  };
+
+  // Modify the handleCreateStudent function
+  const handleCreateStudent = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    try {
+      // Check if email already exists
+      const existingEmail = studentApprovals.find(s => s.email === newStudent.email);
+      if (existingEmail) {
+        setErrorMessage('Email already exists. Please use a different email.');
+        setLoading(false);
+        return;
+      }
+
+      // Format the date to be compatible with datetime-local input
+      const formattedDate = new Date(newStudent.registrationDate).toISOString().slice(0, 16);
+
+      // Generate the next sequential ID
+      const nextId = `s${String(studentApprovals.length + 1).padStart(3, '0')}`;
+
+      const response = await fetch('http://localhost:5000/api/student-approvals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          studentId: nextId,
+          name: newStudent.name,
+          email: newStudent.email,
+          department: newStudent.department,
+          college: newStudent.college,
+          status: 'pending',
+          registrationDate: formattedDate
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage('Student approval request created successfully');
+        setNewStudent({
+          studentId: '',
+          name: '',
+          email: '',
+          department: '',
+          college: '',
+          status: 'pending',
+          registrationDate: new Date().toISOString().slice(0, 16)
+        });
+        setShowAddStudentForm(false);
+        
+        // Refresh the student approvals list
+        const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const approvalsData = await approvalsResponse.json();
+        const reorderedData = reorderStudentIds(approvalsData);
+        setStudentApprovals(reorderedData);
+      } else {
+        setErrorMessage(data.message || 'Failed to create student approval request');
+      }
+    } catch (error) {
+      console.error('Error creating student approval:', error);
+      setErrorMessage('An error occurred while creating the student approval request');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle CSV file upload
   const handleCsvUpload = async (e) => {
@@ -1434,37 +1571,6 @@ const AdminPage = () => {
     }
   };
 
-  // Handle student deletion
-  const handleDeleteStudent = async (studentId) => {
-    if (!window.confirm('Are you sure you want to delete this student approval?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:5000/api/student-approvals/${studentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete student approval');
-      }
-
-      // Refresh student approvals list
-      const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const approvalsData = await approvalsResponse.json();
-      setStudentApprovals(approvalsData);
-    } catch (error) {
-      console.error('Error deleting student approval:', error);
-    }
-  };
-
   // Add these new handler functions
   const handleStudentEdit = (studentId, field, value) => {
     setEditingStudents(prev => ({
@@ -1531,84 +1637,6 @@ const AdminPage = () => {
       setFilteredApprovals(filtered);
     }
   }, [searchQuery, studentApprovals]);
-
-  // Update handleCreateStudent to check for uniqueness
-  const handleCreateStudent = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setSuccessMessage('');
-    setErrorMessage('');
-
-    try {
-      // Check if studentId already exists
-      const existingId = studentApprovals.find(s => s.studentId === newStudent.studentId);
-      if (existingId) {
-        setErrorMessage('Student ID already exists. Please use a different ID.');
-        setLoading(false);
-        return;
-      }
-
-      // Check if email already exists
-      const existingEmail = studentApprovals.find(s => s.email === newStudent.email);
-      if (existingEmail) {
-        setErrorMessage('Email already exists. Please use a different email.');
-        setLoading(false);
-        return;
-      }
-
-      // Format the date to be compatible with datetime-local input
-      const formattedDate = new Date(newStudent.registrationDate).toISOString().slice(0, 16);
-
-      const response = await fetch('http://localhost:5000/api/student-approvals', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          studentId: newStudent.studentId,
-          name: newStudent.name,
-          email: newStudent.email,
-          department: newStudent.department,
-          college: newStudent.college,
-          status: 'pending',
-          registrationDate: formattedDate
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccessMessage('Student approval request created successfully');
-        setNewStudent({
-          studentId: '',
-          name: '',
-          email: '',
-          department: '',
-          college: '',
-          status: 'pending',
-          registrationDate: new Date().toISOString().slice(0, 16)
-        });
-        setShowAddStudentForm(false);
-        
-        // Refresh the student approvals list
-        const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const approvalsData = await approvalsResponse.json();
-        setStudentApprovals(approvalsData);
-      } else {
-        setErrorMessage(data.message || 'Failed to create student approval request');
-      }
-    } catch (error) {
-      console.error('Error creating student approval:', error);
-      setErrorMessage('An error occurred while creating the student approval request');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleEditStudent = async (student) => {
     setEditingStudent(student);
@@ -1729,24 +1757,55 @@ const AdminPage = () => {
     }
   };
 
+  // Add this new function for handling inline edit
+  const handleInlineEdit = (student) => {
+    setEditingStudentId(student._id);
+    setEditingStudentData({
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+      department: student.department,
+      college: student.college,
+      status: student.status,
+      registrationDate: student.registrationDate
+    });
+  };
+
+  const handleInlineSave = async (studentId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/student-approvals/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(editingStudentData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update student');
+      }
+
+      // Update the student in the list
+      setStudentApprovals(prev => prev.map(student => 
+        student._id === studentId 
+          ? { ...student, ...editingStudentData }
+          : student
+      ));
+
+      setEditingStudentId(null);
+      setEditingStudentData(null);
+      setSuccessMessage('Student updated successfully');
+    } catch (error) {
+      console.error('Error updating student:', error);
+      setErrorMessage('Failed to update student');
+    }
+  };
+
   return (
     <div className="admin-container">
-      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="admin-header">
         <h1 style={{ color: 'white' }}>System Administration Dashboard</h1>
-        <button
-          onClick={handleLogout}
-          style={{
-            background: '#dc3545',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginRight: '20px'
-          }}
-        >
-          Logout
-        </button>
       </div>
 
       <nav className="admin-nav">
@@ -1771,8 +1830,22 @@ const AdminPage = () => {
         <button onClick={() => setActiveTab('blocks-dorms')}>
           Blocks & Dorms
         </button>
-        {/* Add NotificationBell */}
-        <NotificationBell userId={adminData?.adminId} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginLeft: 'auto' }}>
+          <NotificationBell userId={adminData?.adminId} />
+          <button
+            onClick={handleLogout}
+            style={{
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </nav>
 
       {/* Profile Section */}
@@ -2172,6 +2245,7 @@ const AdminPage = () => {
                   color: 'white'
                 }}
                 required
+                placeholder="Enter Full Name"
               />
               {formErrors.name && (
                 <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.name}</span>
@@ -3320,42 +3394,146 @@ const AdminPage = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredApprovals.map((approval) => (
                       <tr key={approval._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.studentId}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.department}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{approval.college}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(approval.registrationDate).toLocaleString()}
+                          {editingStudentId === approval._id ? (
+                            <input
+                              type="text"
+                              value={editingStudentData.studentId}
+                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, studentId: e.target.value }))}
+                              className="w-full px-2 py-1 border rounded"
+                            />
+                          ) : (
+                            approval.studentId
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {editingStudentId === approval._id ? (
+                            <input
+                              type="text"
+                              value={editingStudentData.name}
+                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, name: e.target.value }))}
+                              className="w-full px-2 py-1 border rounded"
+                            />
+                          ) : (
+                            approval.name
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {editingStudentId === approval._id ? (
+                            <input
+                              type="email"
+                              value={editingStudentData.email}
+                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, email: e.target.value }))}
+                              className="w-full px-2 py-1 border rounded"
+                            />
+                          ) : (
+                            approval.email
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {editingStudentId === approval._id ? (
+                            <input
+                              type="text"
+                              value={editingStudentData.department}
+                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, department: e.target.value }))}
+                              className="w-full px-2 py-1 border rounded"
+                            />
+                          ) : (
+                            approval.department
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {editingStudentId === approval._id ? (
+                            <input
+                              type="text"
+                              value={editingStudentData.college}
+                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, college: e.target.value }))}
+                              className="w-full px-2 py-1 border rounded"
+                            />
+                          ) : (
+                            approval.college
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {editingStudentId === approval._id ? (
+                            <input
+                              type="datetime-local"
+                              value={editingStudentData.registrationDate}
+                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, registrationDate: e.target.value }))}
+                              className="w-full px-2 py-1 border rounded"
+                            />
+                          ) : (
+                            new Date(approval.registrationDate).toLocaleString()
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            ${approval.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                              approval.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                              'bg-yellow-100 text-yellow-800'}`}>
-                            {approval.status}
-                          </span>
+                          {editingStudentId === approval._id ? (
+                            <select
+                              value={editingStudentData.status}
+                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, status: e.target.value }))}
+                              className="w-full px-2 py-1 border rounded"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="approved">Approved</option>
+                              <option value="rejected">Rejected</option>
+                            </select>
+                          ) : (
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                              ${approval.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                approval.status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                                'bg-yellow-100 text-yellow-800'}`}>
+                              {approval.status}
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-32">
                           <div className="flex flex-row items-center gap-1.5">
-                            <button
-                              onClick={() => handleEditStudent(approval)}
-                              className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded text-xs hover:bg-indigo-100 transition-colors"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStudent(approval._id)}
-                              className="inline-flex items-center text-red-600 hover:text-red-900 bg-red-50 px-1.5 py-0.5 rounded text-xs hover:bg-red-100 transition-colors"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Delete
-                            </button>
+                            {editingStudentId === approval._id ? (
+                              <>
+                                <button
+                                  onClick={() => handleInlineSave(approval._id)}
+                                  className="inline-flex items-center text-green-600 hover:text-green-900 bg-green-50 px-1.5 py-0.5 rounded text-xs hover:bg-green-100 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingStudentId(null);
+                                    setEditingStudentData(null);
+                                  }}
+                                  className="inline-flex items-center text-gray-600 hover:text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded text-xs hover:bg-gray-100 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleInlineEdit(approval)}
+                                  className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded text-xs hover:bg-indigo-100 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteStudent(approval._id)}
+                                  className="inline-flex items-center text-red-600 hover:text-red-900 bg-red-50 px-1.5 py-0.5 rounded text-xs hover:bg-red-100 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  Delete
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
