@@ -3,6 +3,7 @@ const express = require('express');
 const User = require('../models/User');
 const { Proctor, Supervisor, Dean } = require('../models/Staff');
 const Admin = require('../models/Admin');
+const StudentApproval = require('../models/StudentApproval');
 const authMiddleware = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
 const multer = require('multer'); // Import multer
@@ -114,7 +115,6 @@ router.post('/login', async (req, res) => {
       let user = null;
       let userType = null;
       
-  
       // Determine user type and find in appropriate collection
       switch(prefix) {
         case 'A': // Admin
@@ -134,7 +134,24 @@ router.post('/login', async (req, res) => {
           userType = 'dean';
           break;
         case 'S': // Student
-          user = await User.findOne({ userId: upperUserId });
+          // First check if student is pre-approved
+          const preApprovedStudent = await StudentApproval.findOne({ 
+            studentId: upperUserId,
+            status: 'approved'
+          });
+          
+          if (preApprovedStudent) {
+            // If pre-approved, check if they have created an account
+            user = await User.findOne({ userId: upperUserId });
+            if (!user) {
+              return res.status(401).json({ 
+                message: 'Account not created yet. Please sign up first.' 
+              });
+            }
+          } else {
+            // If not pre-approved, check regular user collection
+            user = await User.findOne({ userId: upperUserId });
+          }
           userType = 'student';
           break;
         default:

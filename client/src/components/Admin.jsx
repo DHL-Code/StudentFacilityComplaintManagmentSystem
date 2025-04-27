@@ -1927,227 +1927,70 @@ const AdminPage = () => {
                         {adminData.name.charAt(0)}
                       </div>
                     )}
-                    <button
-                      onClick={() => document.getElementById('profilePhotoInput').click()}
-                      style={{
-                        position: 'absolute',
-                        bottom: '10px',
-                        right: '10px',
-                        background: '#4a4a4a',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '30px',
-                        height: '30px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <span style={{ fontSize: '20px' }}>+</span>
-                    </button>
-                    <input
-                      type="file"
-                      id="profilePhotoInput"
-                      accept="image/*"
-                      onChange={handleProfilePhotoChange}
-                      style={{ display: 'none' }}
-                    />
                   </div>
-                  <div>
-                    <h3 style={{ color: 'white', margin: '0 0 5px 0' }}>{adminData.name}</h3>
-                    <p style={{ color: '#aaa', margin: '0 0 5px 0' }}>{adminData.role}</p>
-                    <p style={{ color: '#aaa', margin: '0' }}>ID: {adminData.adminId}</p>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ color: 'white', margin: '0 0 10px 0' }}>{adminData.name}</h3>
+                    <p style={{ color: '#aaa', margin: '0' }}>{adminData.role}</p>
                   </div>
                 </div>
 
-                <div style={{ marginTop: '20px' }}>
-                  <h4 style={{ color: 'white', marginBottom: '10px' }}>Account Information</h4>
+                <div style={{
+                  backgroundColor: '#333',
+                  borderRadius: '8px',
+                  padding: '20px'
+                }}>
+                  <h5 style={{ color: '#aaa', margin: '0 0 10px 0' }}>Personal Information</h5>
                   <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '20px'
-                  }}>
-                    <div style={{
-                      backgroundColor: '#3a3a3a',
-                      padding: '15px',
-                      borderRadius: '8px'
-                    }}>
-                      <h5 style={{ color: '#aaa', margin: '0 0 10px 0' }}>Personal Information</h5>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginBottom: '10px',
-                        paddingBottom: '10px',
-                        borderBottom: '1px solid #444'
-                      }}>
-                        <span style={{ color: '#aaa' }}>Name:</span>
-                        <input
-                          type="text"
-                          value={adminData.name}
-                          onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid #444',
-                            color: 'white',
-                            padding: '5px',
-                            borderRadius: '4px'
-                          }}
-                        />
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginBottom: '10px',
-                        paddingBottom: '10px',
-                        borderBottom: '1px solid #444'
-                      }}>
-                        <span style={{ color: '#aaa' }}>Email:</span>
-                        <input
-                          type="email"
-                          value={adminData.email}
-                          onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid #444',
-                            color: 'white',
-                            padding: '5px',
-                            borderRadius: '4px'
-                          }}
-                        />
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginBottom: '10px',
-                        paddingBottom: '10px',
-                        borderBottom: '1px solid #444'
-                      }}>
-                        <span style={{ color: '#aaa' }}>Phone:</span>
-                        <input
-                          type="tel"
-                          value={adminData.phone}
-                          onChange={(e) => setAdminData({ ...adminData, phone: e.target.value })}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid #444',
-                            color: 'white',
-                            padding: '5px',
-                            borderRadius: '4px'
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{
-                      backgroundColor: '#3a3a3a',
-                      padding: '15px',
-                      borderRadius: '8px'
-                    }}>
-                      <h5 style={{ color: '#aaa', margin: '0 0 10px 0' }}>Account Security</h5>
-                      <form onSubmit={handlePasswordChange}>
-                        <div style={{
-                          marginBottom: '10px',
-                          paddingBottom: '10px',
-                          borderBottom: '1px solid #444'
-                        }}>
-                          <label style={{ color: '#aaa', display: 'block', marginBottom: '5px' }}>Current Password</label>
-                          <input
-                            type="password"
-                            value={passwordForm.currentPassword}
-                            onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                            autoComplete="current-password"
-                            placeholder="Enter current password"
-                            style={{
-                              width: '100%',
-                              background: 'transparent',
-                              border: '1px solid #444',
-                              color: 'white',
-                              padding: '5px',
-                              borderRadius: '4px'
-                            }}
-                          />
-                        </div>
-                        <div style={{
-                          marginBottom: '10px',
-                          paddingBottom: '10px',
-                          borderBottom: '1px solid #444'
-                        }}>
-                          <label style={{ color: '#aaa', display: 'block', marginBottom: '5px' }}>New Password</label>
-                          <input
-                            type="password"
-                            value={passwordForm.newPassword}
-                            onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                            autoComplete="new-password"
-                            placeholder="Enter new password"
-                            style={{
-                              width: '100%',
-                              background: 'transparent',
-                              border: '1px solid #444',
-                              color: 'white',
-                              padding: '5px',
-                              borderRadius: '4px'
-                            }}
-                          />
-                        </div>
-                        <div style={{
-                          marginBottom: '10px'
-                        }}>
-                          <label style={{ color: '#aaa', display: 'block', marginBottom: '5px' }}>Confirm New Password</label>
-                          <input
-                            type="password"
-                            value={passwordForm.confirmPassword}
-                            onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                            autoComplete="new-password"
-                            placeholder="Confirm new password"
-                            style={{
-                              width: '100%',
-                              background: 'transparent',
-                              border: '1px solid #444',
-                              color: 'white',
-                              padding: '5px',
-                              borderRadius: '4px'
-                            }}
-                          />
-                        </div>
-                        <button
-                          type="submit"
-                          style={{
-                            width: '100%',
-                            background: '#4a4a4a',
-                            color: 'white',
-                            border: 'none',
-                            padding: '10px',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Change Password
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-
-                  <div style={{
-                    marginTop: '20px',
                     display: 'flex',
-                    justifyContent: 'flex-end',
-                    gap: '10px'
+                    justifyContent: 'space-between',
+                    marginBottom: '10px',
+                    paddingBottom: '10px',
+                    borderBottom: '1px solid #444'
                   }}>
-                    <button
-                      onClick={handleSaveProfile}
-                      style={{
-                        background: '#4a4a4a',
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px 20px',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Save Changes
-                    </button>
+                    <span style={{ color: '#aaa' }}>Name:</span>
+                    <span style={{ color: 'white' }}>{adminData.name}</span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '10px',
+                    paddingBottom: '10px',
+                    borderBottom: '1px solid #444'
+                  }}>
+                    <span style={{ color: '#aaa' }}>Email:</span>
+                    <span style={{ color: 'white' }}>{adminData.email}</span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '10px',
+                    paddingBottom: '10px',
+                    borderBottom: '1px solid #444'
+                  }}>
+                    <span style={{ color: '#aaa' }}>Phone:</span>
+                    <span style={{ color: 'white' }}>{adminData.phone}</span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '10px',
+                    paddingBottom: '10px',
+                    borderBottom: '1px solid #444'
+                  }}>
+                    <span style={{ color: '#aaa' }}>Admin ID:</span>
+                    <span style={{ color: 'white' }}>{adminData.adminId}</span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '10px',
+                    paddingBottom: '10px',
+                    borderBottom: '1px solid #444'
+                  }}>
+                    <span style={{ color: '#aaa' }}>Member Since:</span>
+                    <span style={{ color: 'white' }}>
+                      {new Date(adminData.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               </div>
