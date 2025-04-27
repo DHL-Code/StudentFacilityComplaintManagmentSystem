@@ -81,36 +81,14 @@ const NotificationBell = ({ userId }) => {
             setIsOpen(false);
 
             try {
-                // Fetch profile data first
-                const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:5000/api/auth/profile', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch profile');
-                }
-
-                const profileData = await response.json();
-                // Store profile data in localStorage
-                localStorage.setItem('userProfile', JSON.stringify(profileData));
-
                 // Mark the complaint as viewed by student
-                const markViewedResponse = await fetch(`http://localhost:5000/api/complaints/${notification.complaintId}/view-student`, {
+                const token = localStorage.getItem('token');
+                await fetch(`http://localhost:5000/api/complaints/${notification.complaintId}/view-student`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
                 });
-
-                if (!markViewedResponse.ok) {
-                    throw new Error('Failed to mark complaint as viewed');
-                }
-
-                // Mark the notification as read in the database
-                await markAsRead(notification._id);
 
                 // Remove the clicked notification from the list
                 setNotifications(prevNotifications =>
@@ -125,6 +103,27 @@ const NotificationBell = ({ userId }) => {
                 console.error('Error:', error);
                 // If there's an error, still navigate but show an error message
                 window.location.href = '/StudentAccount?section=complaintStatus';
+            }
+        } else if (notification.type === 'feedback_submitted') {
+            // Close the notification dropdown
+            setIsOpen(false);
+
+            try {
+                // Mark the notification as read
+                await markAsRead(notification._id);
+
+                // Remove the clicked notification from the list
+                setNotifications(prevNotifications =>
+                    prevNotifications.filter(n => n._id !== notification._id)
+                );
+                // Update unread count
+                setUnreadCount(prev => prev - 1);
+
+                // Navigate to the feedback section
+                window.location.href = '/Admin?section=feedback';
+            } catch (error) {
+                console.error('Error:', error);
+                window.location.href = '/Admin?section=feedback';
             }
         } else {
             // For regular notifications

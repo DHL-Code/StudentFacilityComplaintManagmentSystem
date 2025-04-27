@@ -706,3 +706,95 @@ button:hover {
     padding: 0.8rem;
   }
 }
+
+.admin-add-student-btn {
+  margin-right: 1rem;
+}
+
+.admin-cancel-student-btn {
+  margin-left: 1rem;
+}
+
+.admin-student-form-buttons {
+  margin-top: 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.admin-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #2c3e50;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-top-nav h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dark-mode-toggle,
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
+.dark-mode-toggle {
+  background-color: #34495e;
+  color: white;
+}
+
+.dark-mode-toggle:hover {
+  background-color: #2c3e50;
+}
+
+.logout-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.logout-btn:hover {
+  background-color: #c0392b;
+}
+
+/* Dark mode styles */
+.dark-mode .admin-top-nav {
+  background-color: #1a1a1a;
+}
+
+.dark-mode .dark-mode-toggle {
+  background-color: #2c2c2c;
+}
+
+.dark-mode .dark-mode-toggle:hover {
+  background-color: #3c3c3c;
+}
