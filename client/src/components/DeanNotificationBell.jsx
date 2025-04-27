@@ -78,7 +78,7 @@ const DeanNotificationBell = () => {
       await fetchNotifications();
       
       // Navigate to the complaints section
-      navigate('/dean/complaints');
+      window.location.href = '/DeanPage?section=complaints';
     } catch (error) {
       console.error('Error marking complaint as viewed:', error);
     }
