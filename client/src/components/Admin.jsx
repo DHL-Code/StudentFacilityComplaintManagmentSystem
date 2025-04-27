@@ -6,6 +6,7 @@ import MessagePopup from './MessagePopup';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { useLocation } from 'react-router-dom';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('account-approvals');
@@ -112,6 +113,15 @@ const AdminPage = () => {
   const [availableBlocks, setAvailableBlocks] = useState(['all']);
   const [showSummaryReports, setShowSummaryReports] = useState(false);
 
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check for navigation state and set active tab
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
+
   // Fetch colleges on component mount, added error state
   useEffect(() => {
     const fetchColleges = async () => {
@@ -146,12 +156,43 @@ const AdminPage = () => {
     setFeedbackLoading(true);
     setFeedbackError('');
     try {
-      const response = await fetch('http://localhost:5000/api/feedback');
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/feedback', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch feedback');
       }
       const data = await response.json();
+      console.log('Fetched feedback data:', data);
       setFeedback(data);
+      
+      // Mark unviewed feedback as viewed
+      const unviewedFeedback = data.filter(f => !f.viewedByAdmin);
+      console.log('Unviewed feedback:', unviewedFeedback);
+      
+      for (const feedback of unviewedFeedback) {
+        try {
+          console.log('Marking feedback as viewed:', feedback._id);
+          const viewResponse = await fetch(`http://localhost:5000/api/feedback/${feedback._id}/view`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          
+          if (!viewResponse.ok) {
+            throw new Error('Failed to mark feedback as viewed');
+          }
+          
+          const viewData = await viewResponse.json();
+          console.log('Feedback marked as viewed:', viewData);
+        } catch (error) {
+          console.error('Error marking feedback as viewed:', error);
+        }
+      }
     } catch (error) {
       console.error('Error fetching feedback:', error);
       setFeedbackError('Failed to load feedback data. Please try again later.');
@@ -2668,6 +2709,11 @@ const AdminPage = () => {
                       <div className="feedback-date" style={{ color: '#aaa' }}>
                         {new Date(item.createdAt).toLocaleDateString()}
                       </div>
+                      {item.viewedByAdmin && (
+                        <div style={{ color: '#4CAF50', fontSize: '14px' }}>
+                          Viewed {new Date(item.viewedAt).toLocaleDateString()}
+                        </div>
+                      )}
                       <button
                         onClick={() => handleDeleteFeedback(item._id)}
                         style={{

@@ -21,6 +21,13 @@ const feedbackSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    viewedByAdmin: {
+        type: Boolean,
+        default: false
+    },
+    viewedAt: {
+        type: Date
+    }
 });
 
 const Feedback = mongoose.model('Feedback', feedbackSchema);

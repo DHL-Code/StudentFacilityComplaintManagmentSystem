@@ -52,6 +52,8 @@ const Dashboard = () => {
         college: profile?.college || ''
     });
 
+    const [feedbackStatus, setFeedbackStatus] = useState([]);
+
     const handleNavigation = (section) => {
         setActiveSection(section);
         setIsNavActive(false);
@@ -611,6 +613,32 @@ const Dashboard = () => {
         }
     }, []);
 
+    const fetchFeedbackStatus = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/feedback', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch feedback status');
+            }
+            const data = await response.json();
+            // Filter feedback for current student
+            const studentFeedback = data.filter(f => f.userId === profile?.userId);
+            setFeedbackStatus(studentFeedback);
+        } catch (error) {
+            console.error('Error fetching feedback status:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (profile?.userId) {
+            fetchFeedbackStatus();
+        }
+    }, [profile?.userId]);
+
     return (
         <div className="student-dashboard">
             <div className="student-sidebar">
@@ -998,7 +1026,7 @@ const Dashboard = () => {
                     >
                         <h2 className="student-feedback-title">Provide Feedback</h2>
                         <form onSubmit={handleFeedbackSubmit} className="student-feedback-form">
-                            <div className="student-star-rating" style={{ gap: '18px' }}> {/* Added gap here */}
+                            <div className="student-star-rating" style={{ gap: '18px' }}>
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <motion.button
                                         key={star}
