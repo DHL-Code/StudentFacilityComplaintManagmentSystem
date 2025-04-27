@@ -106,36 +106,44 @@ const DeanPage = () => {
   };
 
   const getChartData = () => {
+    // Debug: Log filtered reports before chart data generation
+    console.log('Filtered Reports for Charts:', filteredReports);
+
     const labels = filteredReports.map(report => 
       selectedBlock === 'all' ? 'All Blocks' : `Block ${report.blockNumber}`
     );
 
-    return {
+    const chartData = {
       labels,
       datasets: [
         {
-          label: 'Total Complaints',
+          label: 'Total Escalated Complaints',
           data: filteredReports.map(report => report.totalComplaints),
           backgroundColor: 'rgba(54, 162, 235, 0.8)',
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 1
         },
         {
-          label: 'Resolved',
+          label: 'Resolved Complaints',
           data: filteredReports.map(report => report.resolvedComplaints),
           backgroundColor: 'rgba(75, 192, 192, 0.8)',
           borderColor: 'rgba(75, 192, 192, 1)',
           borderWidth: 1
         },
         {
-          label: 'Pending',
+          label: 'Pending (Escalated to Dean)',
           data: filteredReports.map(report => report.pendingComplaints),
-          backgroundColor: 'rgba(255, 206, 86, 0.8)',
-          borderColor: 'rgba(255, 206, 86, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.8)',
+          borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 1
         }
       ]
     };
+
+    // Debug: Log final chart data
+    console.log('Chart Data:', chartData);
+
+    return chartData;
   };
 
   const getDoughnutData = () => {
@@ -143,18 +151,21 @@ const DeanPage = () => {
     const resolved = filteredReports.reduce((sum, report) => sum + report.resolvedComplaints, 0);
     const pending = filteredReports.reduce((sum, report) => sum + report.pendingComplaints, 0);
 
+    // Debug: Log doughnut data calculations
+    console.log('Doughnut Data Calculations:', { total, resolved, pending });
+
     return {
-      labels: ['Resolved', 'Pending'],
+      labels: ['Resolved Complaints', 'Pending (Escalated to Dean)'],
       datasets: [
         {
           data: [resolved, pending],
           backgroundColor: [
             'rgba(75, 192, 192, 0.8)',
-            'rgba(255, 206, 86, 0.8)'
+            'rgba(255, 99, 132, 0.8)'
           ],
           borderColor: [
             'rgba(75, 192, 192, 1)',
-            'rgba(255, 206, 86, 1)'
+            'rgba(255, 99, 132, 1)'
           ],
           borderWidth: 1
         }
@@ -237,32 +248,6 @@ const DeanPage = () => {
     fetchDeanData();
   }, []);
 
-  useEffect(() => {
-    if (activeTab === 'complaints') {
-      fetchEscalatedComplaints();
-    } else if (activeTab === 'summaryReports') {
-      fetchEscalatedComplaints();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab === 'summaryReports') {
-      // Get the current user's ID
-      const userData = JSON.parse(localStorage.getItem('user'));
-      const staffId = userData?.staffId || userData?.userId || userData?.id;
-
-      if (staffId) {
-        // Filter complaints that were resolved by this dean
-        const deanResolvedComplaints = complaints.filter(complaint => 
-          complaint.status === 'resolved' && 
-          complaint.resolvedBy === staffId
-        );
-        console.log('Resolved complaints in useEffect:', deanResolvedComplaints); // Debug log
-        setResolvedComplaints(deanResolvedComplaints);
-      }
-    }
-  }, [activeTab, complaints]);
-
   const fetchEscalatedComplaints = async () => {
     setLoadingComplaints(true);
     setComplaintError(null);
@@ -271,7 +256,6 @@ const DeanPage = () => {
       const userData = JSON.parse(localStorage.getItem('user'));
       const staffId = userData?.staffId || userData?.userId || userData?.id;
 
-      // Fetch escalated complaints
       const response = await fetch('http://localhost:5000/api/complaints/escalated', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -288,53 +272,85 @@ const DeanPage = () => {
         throw new Error(data.message || 'Failed to fetch complaints');
       }
 
-      console.log('Fetched complaints:', data.data); // Debug log
+      // Debug: Log raw data
+      console.log('Raw escalated complaints data:', data.data);
 
       // Set all complaints
       setComplaints(data.data);
       
-      // If we're on the summary reports tab, update resolved complaints
-      if (activeTab === 'summaryReports') {
-        const resolvedComplaints = data.data.filter(complaint => 
-          complaint.status === 'resolved' && 
-          complaint.resolvedBy === staffId
-        );
-        console.log('Filtered resolved complaints:', resolvedComplaints); // Debug log
-        setResolvedComplaints(resolvedComplaints);
-      }
-    } catch (error) {
-      console.error('Error fetching complaints:', error);
-      setComplaintError(error.message);
-    } finally {
-      setLoadingComplaints(false);
-    }
-  };
+      // Filter resolved complaints for the current dean (for the resolved list)
+      const resolvedComplaints = data.data.filter(complaint => 
+        complaint.status === 'resolved' && 
+        complaint.resolvedBy === staffId
+      );
+      
+      // Debug: Log resolved complaints
+      console.log('Resolved complaints:', resolvedComplaints);
 
-  const fetchSummaryReports = async () => {
-    setLoadingSummaryReports(true);
-    setSummaryReportsError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/complaints/summary', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // Group complaints by block for summary
+      const blockStats = {};
+      
+      // First pass: Initialize block stats
+      data.data.forEach(complaint => {
+        const block = complaint.blockNumber;
+        if (!blockStats[block]) {
+          blockStats[block] = {
+            total: 0,
+            resolved: 0,
+            pending: 0
+          };
         }
       });
 
-      const data = await response.json();
+      // Second pass: Count complaints
+      data.data.forEach(complaint => {
+        const block = complaint.blockNumber;
+        
+        // Count total complaints
+        blockStats[block].total++;
 
-      if (!response.ok) {
-        throw new Error(data.message || `Failed to fetch summary reports: ${response.status}`);
-      }
+        // Debug: Log complaint status
+        console.log(`Complaint ${complaint._id} in block ${block}:`, {
+          status: complaint.status,
+          resolvedBy: complaint.resolvedBy
+        });
 
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch summary reports');
-      }
+        // Count resolved complaints
+        if (complaint.status === 'resolved') {
+          blockStats[block].resolved++;
+        }
 
-      // Extract unique blocks from the reports and sort them
-      const blockNumbers = data.data.map(report => {
-        const block = String(report.blockNumber).trim();
+        // Count pending complaints (escalated to dean)
+        if (complaint.status === 'Escalated to dean') {
+          blockStats[block].pending++;
+        }
+      });
+
+      // Debug: Log block stats
+      console.log('Block Statistics:', blockStats);
+
+      // Convert block stats to array format for summary reports
+      const summaryData = Object.entries(blockStats).map(([blockNumber, stats]) => {
+        const report = {
+          blockNumber,
+          totalComplaints: stats.total,
+          resolvedComplaints: stats.resolved,
+          pendingComplaints: stats.pending
+        };
+        // Debug: Log each report
+        console.log(`Report for block ${blockNumber}:`, report);
+        return report;
+      });
+
+      // Debug: Log final summary data
+      console.log('Final Summary Data:', summaryData);
+
+      setSummaryReports(summaryData);
+      setResolvedComplaints(resolvedComplaints);
+
+      // Update available blocks
+      const blockNumbers = data.data.map(complaint => {
+        const block = String(complaint.blockNumber).trim();
         return block;
       }).filter(block => block !== '' && block !== undefined && block !== null);
 
@@ -345,14 +361,19 @@ const DeanPage = () => {
       });
 
       setAvailableBlocks(uniqueBlocks);
-      setSummaryReports(data.data);
     } catch (error) {
-      console.error('Error fetching summary reports:', error);
-      setSummaryReportsError(error.message);
+      console.error('Error fetching complaints:', error);
+      setComplaintError(error.message);
     } finally {
-      setLoadingSummaryReports(false);
+      setLoadingComplaints(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === 'complaints' || activeTab === 'summaryReports') {
+      fetchEscalatedComplaints();
+    }
+  }, [activeTab]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -530,8 +551,7 @@ const DeanPage = () => {
 
   const filteredReports = selectedBlock === 'all' 
     ? [{
-        proctorName: 'All Proctors',
-        blockNumber: 'All Blocks',
+        blockNumber: 'all',
         totalComplaints: summaryReports.reduce((sum, report) => sum + report.totalComplaints, 0),
         resolvedComplaints: summaryReports.reduce((sum, report) => sum + report.resolvedComplaints, 0),
         pendingComplaints: summaryReports.reduce((sum, report) => sum + report.pendingComplaints, 0),
@@ -797,77 +817,91 @@ const DeanPage = () => {
           )}
 
           {activeTab === 'summaryReports' && (
-            <div className="dean-section dean-tasks-section">
-              <div className="dean-tasks-header">
-                <h2>Dean's Tasks Overview</h2>
-                <div className="dean-time-filter">
-                  <label htmlFor="timeSelect">Time Period:</label>
+            <div className="dean-section dean-summary-reports-section">
+              <div className="dean-summary-reports-header">
+                <h2>Summary Reports</h2>
+                <div className="dean-block-filter">
+                  <label htmlFor="blockSelect">Filter by Block:</label>
                   <select 
-                    id="timeSelect"
+                    id="blockSelect"
                     value={selectedBlock}
                     onChange={handleBlockChange}
-                    className="dean-time-select"
+                    className="dean-block-select"
                   >
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
+                    {availableBlocks.map(block => (
+                      <option key={block} value={block}>
+                        {block === 'all' ? 'All Blocks' : `Block ${block}`}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              {loadingComplaints && <p className="dean-loading">Loading tasks...</p>}
-              {complaintError && <p className="dean-error">Error: {complaintError}</p>}
+              {loadingSummaryReports && <p className="dean-loading">Loading summary reports...</p>}
+              {summaryReportsError && <p className="dean-error">Error: {summaryReportsError}</p>}
 
-              <div className="dean-tasks-container">
-                <div className="dean-task-card">
-                  <div className="dean-task-header">
-                    <h3>Resolved Complaints</h3>
-                    <div className="dean-task-stats">
-                      <div className="dean-stat-item">
-                        <span className="dean-stat-label">Total Resolved</span>
-                        <span className="dean-stat-value dean-resolved">{resolvedComplaints.length}</span>
-                      </div>
-                      <div className="dean-stat-item">
-                        <span className="dean-stat-label">Today</span>
-                        <span className="dean-stat-value">
-                          {resolvedComplaints.filter(c => 
-                            new Date(c.resolvedAt).toDateString() === new Date().toDateString()
-                          ).length}
-                        </span>
-                      </div>
-                      <div className="dean-stat-item">
-                        <span className="dean-stat-label">This Week</span>
-                        <span className="dean-stat-value">
-                          {resolvedComplaints.filter(c => {
-                            const complaintDate = new Date(c.resolvedAt);
-                            const today = new Date();
-                            const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
-                            return complaintDate >= weekStart;
-                          }).length}
-                        </span>
-                      </div>
+              {!loadingSummaryReports && !summaryReportsError && (
+                <>
+                  <div className="dean-charts-container">
+                    <div className="chart-wrapper">
+                      <Bar 
+                        data={getChartData()} 
+                        options={chartOptions}
+                        ref={null}
+                      />
+                    </div>
+                    <div className="chart-wrapper">
+                      <Doughnut 
+                        data={getDoughnutData()} 
+                        options={doughnutOptions}
+                        ref={null}
+                      />
                     </div>
                   </div>
-                  <div className="dean-task-details">
-                    <p>Recent Resolutions:</p>
-                    {resolvedComplaints.length === 0 ? (
-                      <p className="dean-no-resolutions">No resolved complaints yet</p>
+
+                  <div className="dean-summary-reports-container">
+                    {filteredReports.length === 0 ? (
+                      <p>No summary reports found for the selected block.</p>
                     ) : (
-                      <ul className="dean-activity-list">
-                        {resolvedComplaints.slice(0, 5).map(complaint => (
-                          <li key={complaint._id} className="dean-activity-item">
-                            <span className="dean-activity-type">{complaint.complaintType}</span>
-                            <span className="dean-activity-status" data-status="Resolved">Resolved</span>
-                            <span className="dean-activity-time">
-                              {new Date(complaint.resolvedAt).toLocaleString()}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      filteredReports.map(report => (
+                        <div key={report.blockNumber} className="dean-summary-report-card">
+                          <div className="dean-report-header">
+                            <h3>{selectedBlock === 'all' ? 'Summary Report' : `Report from Block ${report.blockNumber}`}</h3>
+                            <div className="dean-quick-stats">
+                              <div className="dean-stat-item">
+                                <span className="dean-stat-label">Total</span>
+                                <span className="dean-stat-value">{report.totalComplaints}</span>
+                              </div>
+                              <div className="dean-stat-item">
+                                <span className="dean-stat-label">Resolved</span>
+                                <span className="dean-stat-value dean-resolved">{report.resolvedComplaints}</span>
+                              </div>
+                              <div className="dean-stat-item">
+                                <span className="dean-stat-label">Pending</span>
+                                <span className="dean-stat-value dean-pending">{report.pendingComplaints}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="dean-resolved-list">
+                            <h4>Recently Resolved Complaints</h4>
+                            {resolvedComplaints
+                              .filter(c => c.blockNumber === report.blockNumber)
+                              .slice(0, 5)
+                              .map(complaint => (
+                                <div key={complaint._id} className="dean-resolved-item">
+                                  <span className="dean-complaint-type">{complaint.complaintType}</span>
+                                  <span className="dean-resolved-date">
+                                    {new Date(complaint.resolvedAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
           )}
         </div>
