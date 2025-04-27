@@ -35,6 +35,9 @@ const DeanPage = () => {
   const [summaryReportsError, setSummaryReportsError] = useState(null);
   const [selectedBlock, setSelectedBlock] = useState('all');
   const [availableBlocks, setAvailableBlocks] = useState(['all']);
+  const [resolvedComplaints, setResolvedComplaints] = useState([]);
+  const [loadingResolved, setLoadingResolved] = useState(false);
+  const [resolvedError, setResolvedError] = useState(null);
 
   const chartOptions = {
     responsive: true,
@@ -230,15 +233,37 @@ const DeanPage = () => {
     if (activeTab === 'complaints') {
       fetchEscalatedComplaints();
     } else if (activeTab === 'summaryReports') {
-      fetchSummaryReports();
+      fetchEscalatedComplaints();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'summaryReports') {
+      // Get the current user's ID
+      const userData = JSON.parse(localStorage.getItem('user'));
+      const staffId = userData?.staffId || userData?.userId || userData?.id;
+
+      if (staffId) {
+        // Filter complaints that were resolved by this dean
+        const deanResolvedComplaints = complaints.filter(complaint => 
+          complaint.status === 'resolved' && 
+          complaint.resolvedBy === staffId
+        );
+        console.log('Resolved complaints in useEffect:', deanResolvedComplaints); // Debug log
+        setResolvedComplaints(deanResolvedComplaints);
+      }
+    }
+  }, [activeTab, complaints]);
 
   const fetchEscalatedComplaints = async () => {
     setLoadingComplaints(true);
     setComplaintError(null);
     try {
       const token = localStorage.getItem('token');
+      const userData = JSON.parse(localStorage.getItem('user'));
+      const staffId = userData?.staffId || userData?.userId || userData?.id;
+
+      // Fetch escalated complaints
       const response = await fetch('http://localhost:5000/api/complaints/escalated', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -255,9 +280,22 @@ const DeanPage = () => {
         throw new Error(data.message || 'Failed to fetch complaints');
       }
 
+      console.log('Fetched complaints:', data.data); // Debug log
+
+      // Set all complaints
       setComplaints(data.data);
+      
+      // If we're on the summary reports tab, update resolved complaints
+      if (activeTab === 'summaryReports') {
+        const resolvedComplaints = data.data.filter(complaint => 
+          complaint.status === 'resolved' && 
+          complaint.resolvedBy === staffId
+        );
+        console.log('Filtered resolved complaints:', resolvedComplaints); // Debug log
+        setResolvedComplaints(resolvedComplaints);
+      }
     } catch (error) {
-      console.error('Error fetching escalated complaints:', error);
+      console.error('Error fetching complaints:', error);
       setComplaintError(error.message);
     } finally {
       setLoadingComplaints(false);
@@ -423,6 +461,9 @@ const DeanPage = () => {
   const handleResolveComplaint = async (complaintId) => {
     try {
       const token = localStorage.getItem('token');
+      const userData = JSON.parse(localStorage.getItem('user'));
+      const staffId = userData?.staffId || userData?.userId || userData?.id;
+
       const response = await fetch(`http://localhost:5000/api/complaints/escalated/${complaintId}/resolve`, {
         method: 'PUT',
         headers: {
@@ -441,8 +482,9 @@ const DeanPage = () => {
         throw new Error(data.message || 'Failed to resolve complaint');
       }
 
-      // Refresh complaints list
+      // Update the complaints list
       await fetchEscalatedComplaints();
+      
       alert('Complaint resolved successfully');
     } catch (error) {
       console.error('Error resolving complaint:', error);
@@ -514,7 +556,7 @@ const DeanPage = () => {
             className={`dean-nav-btn ${activeTab === 'summaryReports' ? 'active' : ''}`}
             onClick={() => setActiveTab('summaryReports')}
           >
-            View Summary Reports
+            Summary Report
           </button>
         </div>
 
@@ -719,64 +761,76 @@ const DeanPage = () => {
           )}
 
           {activeTab === 'summaryReports' && (
-            <div className="dean-section dean-summary-reports-section">
-              <div className="dean-summary-reports-header">
-                <h2>Summary Reports from Proctors</h2>
-                <div className="dean-block-filter">
-                  <label htmlFor="blockSelect">Filter by Block:</label>
+            <div className="dean-section dean-tasks-section">
+              <div className="dean-tasks-header">
+                <h2>Dean's Tasks Overview</h2>
+                <div className="dean-time-filter">
+                  <label htmlFor="timeSelect">Time Period:</label>
                   <select 
-                    id="blockSelect"
+                    id="timeSelect"
                     value={selectedBlock}
                     onChange={handleBlockChange}
-                    className="dean-block-select"
+                    className="dean-time-select"
                   >
-                    {availableBlocks.map(block => (
-                      <option key={block} value={block}>
-                        {block === 'all' ? 'All Blocks' : `Block ${block}`}
-                      </option>
-                    ))}
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
                   </select>
                 </div>
               </div>
 
-              {loadingSummaryReports && <p className="dean-loading">Loading summary reports...</p>}
-              {summaryReportsError && <p className="dean-error">Error: {summaryReportsError}</p>}
+              {loadingComplaints && <p className="dean-loading">Loading tasks...</p>}
+              {complaintError && <p className="dean-error">Error: {complaintError}</p>}
 
-              <div className="dean-charts-container">
-                <div className="dean-chart-wrapper">
-                  <Bar options={chartOptions} data={getChartData()} />
-                </div>
-                <div className="dean-chart-wrapper">
-                  <Doughnut options={doughnutOptions} data={getDoughnutData()} />
-                </div>
-              </div>
-
-              <div className="dean-summary-reports-container">
-                {filteredReports.length === 0 ? (
-                  <p>No summary reports found for the selected block.</p>
-                ) : (
-                  filteredReports.map(report => (
-                    <div key={report.blockNumber} className="dean-summary-report-card">
-                      <div className="dean-report-header">
-                        <h3>{selectedBlock === 'all' ? 'Summary Report' : `Report from ${report.proctorName}`}</h3>
-                        <div className="dean-quick-stats">
-                          <div className="dean-stat-item">
-                            <span className="dean-stat-label">Total</span>
-                            <span className="dean-stat-value">{report.totalComplaints}</span>
-                          </div>
-                          <div className="dean-stat-item">
-                            <span className="dean-stat-label">Resolved</span>
-                            <span className="dean-stat-value dean-resolved">{report.resolvedComplaints}</span>
-                          </div>
-                          <div className="dean-stat-item">
-                            <span className="dean-stat-label">Pending</span>
-                            <span className="dean-stat-value dean-pending">{report.pendingComplaints}</span>
-                          </div>
-                        </div>
+              <div className="dean-tasks-container">
+                <div className="dean-task-card">
+                  <div className="dean-task-header">
+                    <h3>Resolved Complaints</h3>
+                    <div className="dean-task-stats">
+                      <div className="dean-stat-item">
+                        <span className="dean-stat-label">Total Resolved</span>
+                        <span className="dean-stat-value dean-resolved">{resolvedComplaints.length}</span>
+                      </div>
+                      <div className="dean-stat-item">
+                        <span className="dean-stat-label">Today</span>
+                        <span className="dean-stat-value">
+                          {resolvedComplaints.filter(c => 
+                            new Date(c.resolvedAt).toDateString() === new Date().toDateString()
+                          ).length}
+                        </span>
+                      </div>
+                      <div className="dean-stat-item">
+                        <span className="dean-stat-label">This Week</span>
+                        <span className="dean-stat-value">
+                          {resolvedComplaints.filter(c => {
+                            const complaintDate = new Date(c.resolvedAt);
+                            const today = new Date();
+                            const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
+                            return complaintDate >= weekStart;
+                          }).length}
+                        </span>
                       </div>
                     </div>
-                  ))
-                )}
+                  </div>
+                  <div className="dean-task-details">
+                    <p>Recent Resolutions:</p>
+                    {resolvedComplaints.length === 0 ? (
+                      <p className="dean-no-resolutions">No resolved complaints yet</p>
+                    ) : (
+                      <ul className="dean-activity-list">
+                        {resolvedComplaints.slice(0, 5).map(complaint => (
+                          <li key={complaint._id} className="dean-activity-item">
+                            <span className="dean-activity-type">{complaint.complaintType}</span>
+                            <span className="dean-activity-status" data-status="Resolved">Resolved</span>
+                            <span className="dean-activity-time">
+                              {new Date(complaint.resolvedAt).toLocaleString()}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}

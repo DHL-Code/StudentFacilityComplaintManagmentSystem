@@ -409,12 +409,17 @@ router.put('/escalated/:id/resolve', authMiddleware, async (req, res) => {
     // Update escalated complaint status
     escalatedComplaint.status = 'resolved';
     escalatedComplaint.resolvedAt = new Date();
+    escalatedComplaint.resolvedBy = req.user.userId; // Add the dean's ID who resolved the complaint
     await escalatedComplaint.save();
 
     // Update original complaint status
     await Complaint.findByIdAndUpdate(
       escalatedComplaint.originalComplaintId,
-      { status: 'resolved', resolvedAt: new Date() }
+      { 
+        status: 'resolved', 
+        resolvedAt: new Date(),
+        resolvedBy: req.user.userId // Add the dean's ID who resolved the complaint
+      }
     );
 
     res.json({

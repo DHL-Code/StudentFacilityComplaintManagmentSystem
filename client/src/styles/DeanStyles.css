@@ -650,3 +650,185 @@
         padding: 1rem;
     }
 }
+
+/* Dean's Tasks Section Styles */
+.dean-tasks-section {
+    padding: 1.5rem;
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dean-tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dean-tasks-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.dean-time-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dean-time-select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-width: 150px;
+}
+
+.dean-tasks-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.dean-task-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.dean-task-card:hover {
+    transform: translateY(-5px);
+}
+
+.dean-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dean-task-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.dean-task-stats {
+    display: flex;
+    gap: 1.5rem;
+    background: var(--bg-color);
+    padding: 0.75rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dean-task-details {
+    margin-top: 1rem;
+}
+
+.dean-activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dean-activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dean-activity-item:last-child {
+    border-bottom: none;
+}
+
+.dean-activity-type {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.dean-activity-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.dean-activity-status[data-status="Resolved"] {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+}
+
+.dean-activity-status[data-status="Pending"] {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #FFC107;
+}
+
+.dean-activity-time {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.dean-achievement-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dean-achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dean-achievement-item:last-child {
+    border-bottom: none;
+}
+
+.dean-achievement-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+    border-radius: 50%;
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments for tasks section */
+@media (max-width: 768px) {
+    .dean-tasks-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dean-task-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dean-task-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .dean-activity-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
