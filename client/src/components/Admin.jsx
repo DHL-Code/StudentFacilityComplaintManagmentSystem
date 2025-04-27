@@ -4,6 +4,8 @@ import '../styles/AdminStyles.css';
 import { AlertCircle } from 'lucide-react';
 import MessagePopup from './MessagePopup';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSun, faMoon, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('account-approvals');
@@ -99,6 +101,8 @@ const AdminPage = () => {
   const [editingStudent, setEditingStudent] = useState(null);
   const [editingStudentId, setEditingStudentId] = useState(null);
   const [editingStudentData, setEditingStudentData] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
 
   // Fetch colleges on component mount, added error state
   useEffect(() => {
@@ -1802,10 +1806,27 @@ const AdminPage = () => {
     }
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.body.classList.toggle('dark-mode');
+  };
+
   return (
-    <div className="admin-container">
-      <div className="admin-header">
-        <h1 style={{ color: 'white' }}>System Administration Dashboard</h1>
+    <div className="admin-dashboard">
+      <div className="admin-top-nav">
+        <h1>Admin Dashboard</h1>
+        <div className="nav-actions">
+          <div className="nav-right">
+            <NotificationBell userId={userData?.userId} />
+            <button className="dark-mode-toggle" onClick={toggleDarkMode}>
+              <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+              {darkMode ? ' Light Mode' : ' Dark Mode'}
+            </button>
+            <button className="logout-btn" onClick={handleLogout}>
+              <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+            </button>
+          </div>
+        </div>
       </div>
 
       <nav className="admin-nav">
@@ -1830,22 +1851,6 @@ const AdminPage = () => {
         <button onClick={() => setActiveTab('blocks-dorms')}>
           Blocks & Dorms
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginLeft: 'auto' }}>
-          <NotificationBell userId={adminData?.adminId} />
-          <button
-            onClick={handleLogout}
-            style={{
-              background: '#dc3545',
-              color: 'white',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Logout
-          </button>
-        </div>
       </nav>
 
       {/* Profile Section */}
@@ -3285,7 +3290,13 @@ const AdminPage = () => {
                       required
                     />
                   </div>
-                  <div className="flex justify-end space-x-2 mt-6">
+                  <div className="admin-student-form-buttons">
+                    <button
+                      type="submit"
+                      className="admin-add-student-btn px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Add Student
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -3301,15 +3312,9 @@ const AdminPage = () => {
                         });
                         setDepartments([]);
                       }}
-                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                      className="admin-cancel-student-btn px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
                     >
                       Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Add Student
                     </button>
                   </div>
                 </form>

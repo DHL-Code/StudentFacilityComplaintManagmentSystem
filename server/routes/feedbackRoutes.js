@@ -3,6 +3,8 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const Feedback = require('../models/Feedback');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
+const { createNotification } = require('../services/notificationService');
 
 router.post('/submit', authMiddleware, async (req, res) => {
   try {
@@ -20,6 +22,18 @@ router.post('/submit', authMiddleware, async (req, res) => {
     });
 
     await feedback.save();
+
+    // Create notification for admin
+    await createNotification({
+      recipientId: 'admin', // This will be received by all admins
+      recipientType: 'admin',
+      senderId: user.userId,
+      senderType: 'student',
+      type: 'feedback_submitted',
+      message: `New feedback submitted by student ${user.userId}`,
+      relatedEntityId: feedback._id
+    });
+
     res.status(201).json({ message: 'Feedback submitted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
