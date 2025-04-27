@@ -130,12 +130,12 @@ const Login = () => {
           
           <div className="form-group">
             <label htmlFor="role">Account Type</label>
-            <div className="select-wrapper">
+            <div className={`select-wrapper ${!darkMode ? 'light-mode-select-wrapper' : ''}`}>
               <select
                 id="role"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="form-control"
+                className={`form-control ${!darkMode ? 'light-mode-select' : ''}`}
               >
                 <option value="student">Student</option>
                 <option value="proctor">Proctor</option>
@@ -155,7 +155,7 @@ const Login = () => {
               placeholder="Enter your user ID"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="form-control"
+              className={`form-control ${!darkMode ? 'light-mode-input' : ''}`}
             />
           </div>
 
@@ -167,11 +167,15 @@ const Login = () => {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="form-control"
+              className={`form-control ${!darkMode ? 'light-mode-input' : ''}`}
             />
           </div>
 
-          <button type="submit" className="login-button" disabled={isLoading}>
+          <button 
+            type="submit" 
+            className={`login-button ${!darkMode ? 'light-theme-btn' : ''}`} 
+            disabled={isLoading}
+          >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
 
