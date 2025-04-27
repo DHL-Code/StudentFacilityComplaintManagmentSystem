@@ -52,7 +52,7 @@ function App() {
             <Route path="/Login" element={<Login />} />
             <Route path="/ContactUs" element={<ContactUs />} />
             <Route path="/ForgotPassword" element={<ForgotPassword />} />
-            <Route path="/ResetPassword" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/OTPVerification" element={<OTPVerification />} />
             <Route path="/TermsOfService" element={<TermsOfService />} />
             
