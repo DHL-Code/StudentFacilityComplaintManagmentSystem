@@ -3487,12 +3487,12 @@ const AdminPage = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-32">
-                          <div className="flex flex-row items-center gap-1.5">
+                          <div className="table-actions">
                             {editingStudentId === approval._id ? (
                               <>
                                 <button
                                   onClick={() => handleInlineSave(approval._id)}
-                                  className="inline-flex items-center text-green-600 hover:text-green-900 bg-green-50 px-1.5 py-0.5 rounded text-xs hover:bg-green-100 transition-colors"
+                                  className="student-edit-btn"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -3504,7 +3504,7 @@ const AdminPage = () => {
                                     setEditingStudentId(null);
                                     setEditingStudentData(null);
                                   }}
-                                  className="inline-flex items-center text-gray-600 hover:text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded text-xs hover:bg-gray-100 transition-colors"
+                                  className="student-delete-btn"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -3516,7 +3516,7 @@ const AdminPage = () => {
                               <>
                                 <button
                                   onClick={() => handleInlineEdit(approval)}
-                                  className="inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded text-xs hover:bg-indigo-100 transition-colors"
+                                  className="student-edit-btn"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -3525,7 +3525,7 @@ const AdminPage = () => {
                                 </button>
                                 <button
                                   onClick={() => handleDeleteStudent(approval._id)}
-                                  className="inline-flex items-center text-red-600 hover:text-red-900 bg-red-50 px-1.5 py-0.5 rounded text-xs hover:bg-red-100 transition-colors"
+                                  className="student-delete-btn"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
