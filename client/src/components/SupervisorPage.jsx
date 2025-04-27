@@ -246,6 +246,28 @@ const SupervisorPage = () => {
                 throw new Error('No authentication token found');
             }
 
+            // First fetch the supervisor's profile to get their gender
+            const profileResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!profileResponse.ok) {
+                const errorData = await profileResponse.json();
+                throw new Error(errorData.message || 'Failed to fetch supervisor profile');
+            }
+
+            const profileData = await profileResponse.json();
+            
+            // Check if gender exists and is valid
+            if (!profileData.gender || (profileData.gender !== 'male' && profileData.gender !== 'female')) {
+                throw new Error('Invalid or missing gender in supervisor profile');
+            }
+
+            const supervisorGender = profileData.gender;
+
+            // Fetch all escalated complaints
             const response = await fetch('http://localhost:5000/api/complaints/escalated', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -263,7 +285,19 @@ const SupervisorPage = () => {
                 throw new Error(data.message || 'Failed to fetch escalated complaints');
             }
 
-            setEscalatedComplaints(data.data);
+            // Filter escalated complaints based on supervisor's gender
+            const genderFilteredEscalations = data.data.filter(complaint => {
+                const blockNumber = parseInt(complaint.blockNumber);
+                if (supervisorGender === 'female') {
+                    // Female blocks are from 224 to 237
+                    return blockNumber >= 224 && blockNumber <= 237;
+                } else {
+                    // Male blocks are from 201 to 223
+                    return blockNumber >= 201 && blockNumber <= 223;
+                }
+            });
+
+            setEscalatedComplaints(genderFilteredEscalations);
         } catch (error) {
             console.error('Error fetching escalated complaints:', error);
             setReportsError(error.message);
