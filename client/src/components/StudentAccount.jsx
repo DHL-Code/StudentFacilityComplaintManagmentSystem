@@ -636,7 +636,7 @@ const Dashboard = () => {
                         <FontAwesomeIcon icon={faSignOutAlt} /> Logout
                     </button>
                     {/* Add NotificationBell */}
-                    <NotificationBell userId={profile?.userId} />
+                    <NotificationBell userId={profile?.userId} className="notification-bell"/>
                 </div>
             </div>
 
@@ -659,7 +659,7 @@ const Dashboard = () => {
                             <FontAwesomeIcon icon={faSignOutAlt} /> Logout
                         </button>
                         {/* Add NotificationBell */}
-                        <NotificationBell userId={profile?.userId} />
+                        <NotificationBell userId={profile?.userId} className='notification-bell' />
                     </div>
 
                 </div>
@@ -670,7 +670,7 @@ const Dashboard = () => {
                     <button onClick={() => handleNavigation('editProfile')}>Edit Profile</button>
                     <button onClick={() => handleNavigation('complaintStatus')}>Complaint Status</button>
                     <button onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</button>
-                    <NotificationBell userId={profile?.userId} />
+                    <NotificationBell userId={profile?.userId} className='notification-bell'/>
                 </div>
 
                 {activeSection === 'complaintForm' && (
