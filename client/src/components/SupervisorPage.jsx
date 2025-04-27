@@ -53,6 +53,14 @@ const SupervisorPage = () => {
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    const [validationErrors, setValidationErrors] = useState({
+        newPassword: '',
+        confirmNewPassword: ''
+    });
+
+    const [showValidationModal, setShowValidationModal] = useState(false);
+    const [validationModalMessage, setValidationModalMessage] = useState('');
+
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
@@ -496,10 +504,81 @@ const SupervisorPage = () => {
         }
     };
 
+    // Add password validation function
+    const validatePassword = (password) => {
+        const passwordErrors = [];
+        if (!password) {
+            passwordErrors.push("Password is required.");
+        }
+        if (password.length < 8) {
+            passwordErrors.push("Password should be at least 8 characters long.");
+        }
+        if (!/[A-Z]/.test(password)) {
+            passwordErrors.push("Password should contain at least one uppercase letter.");
+        }
+        if (!/[a-z]/.test(password)) {
+            passwordErrors.push("Password should contain at least one lowercase letter.");
+        }
+        if (!/[0-9]/.test(password)) {
+            passwordErrors.push("Password should contain at least one number.");
+        }
+        if (!/[!@#$%^&*]/.test(password)) {
+            passwordErrors.push("Password should contain at least one special character.");
+        }
+        return passwordErrors;
+    };
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+
+        // Validate password fields
+        if (name === 'newPassword') {
+            const passwordErrors = validatePassword(value);
+            setValidationErrors(prev => ({
+                ...prev,
+                newPassword: passwordErrors.length > 0 ? passwordErrors.join(" ") : ""
+            }));
+        } else if (name === 'confirmNewPassword') {
+            if (value !== formData.newPassword) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    confirmNewPassword: "Passwords do not match"
+                }));
+            } else {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    confirmNewPassword: ""
+                }));
+            }
+        }
+    };
+
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        // Validate passwords if they are being changed
+        if (formData.currentPassword || formData.newPassword || formData.confirmNewPassword) {
+            if (formData.newPassword !== formData.confirmNewPassword) {
+                setValidationModalMessage("New passwords don't match");
+                setShowValidationModal(true);
+                setLoading(false);
+                return;
+            }
+            
+            const passwordErrors = validatePassword(formData.newPassword);
+            if (passwordErrors.length > 0) {
+                setValidationModalMessage(passwordErrors.join("\n"));
+                setShowValidationModal(true);
+                setLoading(false);
+                return;
+            }
+        }
 
         try {
             const token = localStorage.getItem('token');
@@ -534,9 +613,14 @@ const SupervisorPage = () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Update Profile Error:', errorData);
-                throw new Error(errorData.message || 'Update failed');
+                if (response.status === 401) {
+                    setValidationModalMessage("Current password is incorrect");
+                } else {
+                    const errorData = await response.json();
+                    setValidationModalMessage(errorData.message || 'Update failed');
+                }
+                setShowValidationModal(true);
+                return;
             }
 
             const data = await response.json();
@@ -547,7 +631,8 @@ const SupervisorPage = () => {
             await fetchProfile();
         } catch (err) {
             console.error('Error updating profile:', err);
-            setError(err.message);
+            setValidationModalMessage(err.message);
+            setShowValidationModal(true);
         } finally {
             setLoading(false);
         }
@@ -649,6 +734,27 @@ const SupervisorPage = () => {
 
     const handleBlockChange = (e) => {
         setSelectedBlock(e.target.value);
+    };
+
+    const ValidationModal = () => {
+        if (!showValidationModal) return null;
+
+        return (
+            <div className="modal-overlay">
+                <div className="modal-content">
+                    <h3>Validation Error</h3>
+                    <p>{validationModalMessage}</p>
+                    <div className="modal-actions">
+                        <button 
+                            className="modal-button"
+                            onClick={() => setShowValidationModal(false)}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -928,8 +1034,9 @@ const SupervisorPage = () => {
                                             Current Password:
                                             <input
                                                 type="password"
+                                                name="currentPassword"
                                                 value={formData.currentPassword}
-                                                onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                                                onChange={handlePasswordChange}
                                                 placeholder="Enter current password"
                                             />
                                         </label>
@@ -940,11 +1047,16 @@ const SupervisorPage = () => {
                                             New Password:
                                             <input
                                                 type="password"
+                                                name="newPassword"
                                                 value={formData.newPassword}
-                                                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                                                onChange={handlePasswordChange}
                                                 placeholder="Enter new password"
+                                                className={validationErrors.newPassword ? "error-input" : ""}
                                             />
                                         </label>
+                                        {validationErrors.newPassword && (
+                                            <span className="error-message">{validationErrors.newPassword}</span>
+                                        )}
                                     </div>
 
                                     <div className="form-group">
@@ -952,11 +1064,16 @@ const SupervisorPage = () => {
                                             Confirm New Password:
                                             <input
                                                 type="password"
+                                                name="confirmNewPassword"
                                                 value={formData.confirmNewPassword}
-                                                onChange={(e) => setFormData({ ...formData, confirmNewPassword: e.target.value })}
+                                                onChange={handlePasswordChange}
                                                 placeholder="Confirm new password"
+                                                className={validationErrors.confirmNewPassword ? "error-input" : ""}
                                             />
                                         </label>
+                                        {validationErrors.confirmNewPassword && (
+                                            <span className="error-message">{validationErrors.confirmNewPassword}</span>
+                                        )}
                                     </div>
                                 </div>
 
@@ -1269,6 +1386,7 @@ const SupervisorPage = () => {
                     )}
                 </div>
             </div>
+            <ValidationModal />
         </div>
     );
 };
