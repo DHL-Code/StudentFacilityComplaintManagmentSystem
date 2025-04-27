@@ -480,3 +480,173 @@
 .dean-upload-text {
   font-size: 0.875rem;
 }
+
+/* Summary Reports Section Styles */
+.dean-summary-reports-section {
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dean-summary-reports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dean-summary-reports-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.dean-block-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dean-block-select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-width: 150px;
+}
+
+.dean-summary-reports-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.dean-summary-report-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.dean-summary-report-card:hover {
+    transform: translateY(-5px);
+}
+
+.dean-report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dean-report-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.dean-quick-stats {
+    display: flex;
+    gap: 1.5rem;
+    background: var(--bg-color);
+    padding: 0.75rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dean-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.dean-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.dean-stat-value {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.dean-stat-value.dean-resolved {
+    color: #4CAF50;
+}
+
+.dean-stat-value.dean-pending {
+    color: #FFC107;
+}
+
+/* Responsive adjustments for summary reports */
+@media (max-width: 768px) {
+    .dean-summary-reports-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dean-report-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dean-quick-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* Charts Container Styles */
+.dean-charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dean-chart-wrapper {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.dean-chart-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode adjustments for charts */
+.dean-container.dark-mode .dean-chart-wrapper {
+    background: var(--bg-secondary);
+}
+
+.dean-container.dark-mode .dean-charts-container {
+    background: var(--bg-secondary);
+}
+
+/* Responsive adjustments for charts */
+@media (max-width: 768px) {
+    .dean-charts-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .dean-chart-wrapper {
+        padding: 1rem;
+    }
+}

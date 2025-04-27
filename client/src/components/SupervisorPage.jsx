@@ -283,6 +283,28 @@ const SupervisorPage = () => {
                 throw new Error('No authentication token found');
             }
 
+            // First fetch the supervisor's profile to get their gender
+            const profileResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!profileResponse.ok) {
+                const errorData = await profileResponse.json();
+                throw new Error(errorData.message || 'Failed to fetch supervisor profile');
+            }
+
+            const profileData = await profileResponse.json();
+            
+            // Check if gender exists and is valid
+            if (!profileData.gender || (profileData.gender !== 'male' && profileData.gender !== 'female')) {
+                throw new Error('Invalid or missing gender in supervisor profile');
+            }
+
+            const supervisorGender = profileData.gender;
+
+            // Fetch all summary reports
             const response = await fetch('http://localhost:5000/api/complaints/summary', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -300,18 +322,23 @@ const SupervisorPage = () => {
                 throw new Error(data.message || 'Failed to fetch summary reports');
             }
 
-            // Debug logging
-            console.log('Raw reports data:', data.data);
-            
-            // Extract unique blocks from the reports and sort them
-            const blockNumbers = data.data.map(report => {
-                // Ensure blockNumber is a string and trim any whitespace
+            // Filter reports based on supervisor's gender
+            const filteredReports = data.data.filter(report => {
+                const blockNumber = parseInt(report.blockNumber);
+                if (supervisorGender === 'female') {
+                    // Female blocks are from 224 to 237
+                    return blockNumber >= 224 && blockNumber <= 237;
+                } else {
+                    // Male blocks are from 201 to 223
+                    return blockNumber >= 201 && blockNumber <= 223;
+                }
+            });
+
+            // Extract unique blocks from the filtered reports and sort them
+            const blockNumbers = filteredReports.map(report => {
                 const block = String(report.blockNumber).trim();
-                console.log('Processing block:', block);
                 return block;
             }).filter(block => block !== '' && block !== undefined && block !== null);
-
-            console.log('Extracted block numbers:', blockNumbers);
 
             const uniqueBlocks = ['all', ...new Set(blockNumbers)].sort((a, b) => {
                 if (a === 'all') return -1;
@@ -319,10 +346,8 @@ const SupervisorPage = () => {
                 return parseInt(a) - parseInt(b);
             });
 
-            console.log('Unique blocks for dropdown:', uniqueBlocks);
-            
             setAvailableBlocks(uniqueBlocks);
-            setSummaryReports(data.data);
+            setSummaryReports(filteredReports);
         } catch (error) {
             console.error('Error fetching summary reports:', error);
             setSummaryReportsError(error.message);
@@ -336,6 +361,34 @@ const SupervisorPage = () => {
         setReportsError(null);
         try {
             const token = localStorage.getItem('token');
+            const userData = JSON.parse(localStorage.getItem('user'));
+
+            if (!token || !userData) {
+                throw new Error('No authentication token found');
+            }
+
+            // First fetch the supervisor's profile to get their gender
+            const profileResponse = await fetch(`http://localhost:5000/api/admin/staff/${userData.userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!profileResponse.ok) {
+                const errorData = await profileResponse.json();
+                throw new Error(errorData.message || 'Failed to fetch supervisor profile');
+            }
+
+            const profileData = await profileResponse.json();
+            
+            // Check if gender exists and is valid
+            if (!profileData.gender || (profileData.gender !== 'male' && profileData.gender !== 'female')) {
+                throw new Error('Invalid or missing gender in supervisor profile');
+            }
+
+            const supervisorGender = profileData.gender;
+
+            // Fetch all proctor reports
             const response = await fetch('http://localhost:5000/api/proctor/reports', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -349,7 +402,19 @@ const SupervisorPage = () => {
                 throw new Error(data.message || 'Failed to fetch proctor reports');
             }
 
-            setReports(data.data || []);
+            // Filter reports based on supervisor's gender
+            const genderFilteredReports = data.data.filter(report => {
+                const blockNumber = parseInt(report.block);
+                if (supervisorGender === 'female') {
+                    // Female blocks are from 224 to 237
+                    return blockNumber >= 224 && blockNumber <= 237;
+                } else {
+                    // Male blocks are from 201 to 223
+                    return blockNumber >= 201 && blockNumber <= 223;
+                }
+            });
+
+            setReports(genderFilteredReports || []);
         } catch (error) {
             console.error('Error fetching proctor reports:', error);
             setReportsError(error.message);

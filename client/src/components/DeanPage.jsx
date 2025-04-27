@@ -1,8 +1,12 @@
 // DeanPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import DeanNotificationBell from '../components/DeanNotificationBell';
 import '../styles/DeanStyles.css';
 import { FaSun, FaMoon } from 'react-icons/fa';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { Bar, Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 const DeanPage = () => {
   const [activeTab, setActiveTab] = useState('complaints');
@@ -26,6 +30,126 @@ const DeanPage = () => {
   const [complaintError, setComplaintError] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [summaryReports, setSummaryReports] = useState([]);
+  const [loadingSummaryReports, setLoadingSummaryReports] = useState(false);
+  const [summaryReportsError, setSummaryReportsError] = useState(null);
+  const [selectedBlock, setSelectedBlock] = useState('all');
+  const [availableBlocks, setAvailableBlocks] = useState(['all']);
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          color: 'var(--text-primary)',
+          font: {
+            size: 14
+          }
+        }
+      },
+      title: {
+        display: true,
+        text: 'Complaints Overview',
+        color: 'var(--text-primary)',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          color: 'var(--text-primary)'
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)'
+        }
+      },
+      x: {
+        ticks: {
+          color: 'var(--text-primary)'
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)'
+        }
+      }
+    }
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: {
+          color: 'var(--text-primary)',
+          font: {
+            size: 14
+          }
+        }
+      }
+    }
+  };
+
+  const getChartData = () => {
+    const labels = filteredReports.map(report => 
+      selectedBlock === 'all' ? 'All Blocks' : `Block ${report.blockNumber}`
+    );
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Total Complaints',
+          data: filteredReports.map(report => report.totalComplaints),
+          backgroundColor: 'rgba(54, 162, 235, 0.8)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Resolved',
+          data: filteredReports.map(report => report.resolvedComplaints),
+          backgroundColor: 'rgba(75, 192, 192, 0.8)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Pending',
+          data: filteredReports.map(report => report.pendingComplaints),
+          backgroundColor: 'rgba(255, 206, 86, 0.8)',
+          borderColor: 'rgba(255, 206, 86, 1)',
+          borderWidth: 1
+        }
+      ]
+    };
+  };
+
+  const getDoughnutData = () => {
+    const total = filteredReports.reduce((sum, report) => sum + report.totalComplaints, 0);
+    const resolved = filteredReports.reduce((sum, report) => sum + report.resolvedComplaints, 0);
+    const pending = filteredReports.reduce((sum, report) => sum + report.pendingComplaints, 0);
+
+    return {
+      labels: ['Resolved', 'Pending'],
+      datasets: [
+        {
+          data: [resolved, pending],
+          backgroundColor: [
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(255, 206, 86, 0.8)'
+          ],
+          borderColor: [
+            'rgba(75, 192, 192, 1)',
+            'rgba(255, 206, 86, 1)'
+          ],
+          borderWidth: 1
+        }
+      ]
+    };
+  };
 
   // Function to fetch dean data - extracted to be reusable
   const fetchDeanData = async () => {
@@ -105,6 +229,8 @@ const DeanPage = () => {
   useEffect(() => {
     if (activeTab === 'complaints') {
       fetchEscalatedComplaints();
+    } else if (activeTab === 'summaryReports') {
+      fetchSummaryReports();
     }
   }, [activeTab]);
 
@@ -135,6 +261,50 @@ const DeanPage = () => {
       setComplaintError(error.message);
     } finally {
       setLoadingComplaints(false);
+    }
+  };
+
+  const fetchSummaryReports = async () => {
+    setLoadingSummaryReports(true);
+    setSummaryReportsError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/complaints/summary', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `Failed to fetch summary reports: ${response.status}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch summary reports');
+      }
+
+      // Extract unique blocks from the reports and sort them
+      const blockNumbers = data.data.map(report => {
+        const block = String(report.blockNumber).trim();
+        return block;
+      }).filter(block => block !== '' && block !== undefined && block !== null);
+
+      const uniqueBlocks = ['all', ...new Set(blockNumbers)].sort((a, b) => {
+        if (a === 'all') return -1;
+        if (b === 'all') return 1;
+        return parseInt(a) - parseInt(b);
+      });
+
+      setAvailableBlocks(uniqueBlocks);
+      setSummaryReports(data.data);
+    } catch (error) {
+      console.error('Error fetching summary reports:', error);
+      setSummaryReportsError(error.message);
+    } finally {
+      setLoadingSummaryReports(false);
     }
   };
 
@@ -285,6 +455,23 @@ const DeanPage = () => {
     setIsDarkMode(!isDarkMode);
   };
 
+  const handleBlockChange = (e) => {
+    setSelectedBlock(e.target.value);
+  };
+
+  const filteredReports = selectedBlock === 'all' 
+    ? [{
+        proctorName: 'All Proctors',
+        blockNumber: 'All Blocks',
+        totalComplaints: summaryReports.reduce((sum, report) => sum + report.totalComplaints, 0),
+        resolvedComplaints: summaryReports.reduce((sum, report) => sum + report.resolvedComplaints, 0),
+        pendingComplaints: summaryReports.reduce((sum, report) => sum + report.pendingComplaints, 0),
+        summary: `Total: ${summaryReports.reduce((sum, report) => sum + report.totalComplaints, 0)}, 
+                 Resolved: ${summaryReports.reduce((sum, report) => sum + report.resolvedComplaints, 0)}, 
+                 Pending: ${summaryReports.reduce((sum, report) => sum + report.pendingComplaints, 0)}`
+      }]
+    : summaryReports.filter(report => String(report.blockNumber).trim() === selectedBlock);
+
   return (
     <div className={`dean-container ${darkMode ? 'dark-mode' : ''}`}>
       <div className="dean-header">
@@ -322,6 +509,12 @@ const DeanPage = () => {
             onClick={() => setActiveTab('editProfile')}
           >
             Edit Profile
+          </button>
+          <button
+            className={`dean-nav-btn ${activeTab === 'summaryReports' ? 'active' : ''}`}
+            onClick={() => setActiveTab('summaryReports')}
+          >
+            View Summary Reports
           </button>
         </div>
 
@@ -521,6 +714,69 @@ const DeanPage = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'summaryReports' && (
+            <div className="dean-section dean-summary-reports-section">
+              <div className="dean-summary-reports-header">
+                <h2>Summary Reports from Proctors</h2>
+                <div className="dean-block-filter">
+                  <label htmlFor="blockSelect">Filter by Block:</label>
+                  <select 
+                    id="blockSelect"
+                    value={selectedBlock}
+                    onChange={handleBlockChange}
+                    className="dean-block-select"
+                  >
+                    {availableBlocks.map(block => (
+                      <option key={block} value={block}>
+                        {block === 'all' ? 'All Blocks' : `Block ${block}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {loadingSummaryReports && <p className="dean-loading">Loading summary reports...</p>}
+              {summaryReportsError && <p className="dean-error">Error: {summaryReportsError}</p>}
+
+              <div className="dean-charts-container">
+                <div className="dean-chart-wrapper">
+                  <Bar options={chartOptions} data={getChartData()} />
+                </div>
+                <div className="dean-chart-wrapper">
+                  <Doughnut options={doughnutOptions} data={getDoughnutData()} />
+                </div>
+              </div>
+
+              <div className="dean-summary-reports-container">
+                {filteredReports.length === 0 ? (
+                  <p>No summary reports found for the selected block.</p>
+                ) : (
+                  filteredReports.map(report => (
+                    <div key={report.blockNumber} className="dean-summary-report-card">
+                      <div className="dean-report-header">
+                        <h3>{selectedBlock === 'all' ? 'Summary Report' : `Report from ${report.proctorName}`}</h3>
+                        <div className="dean-quick-stats">
+                          <div className="dean-stat-item">
+                            <span className="dean-stat-label">Total</span>
+                            <span className="dean-stat-value">{report.totalComplaints}</span>
+                          </div>
+                          <div className="dean-stat-item">
+                            <span className="dean-stat-label">Resolved</span>
+                            <span className="dean-stat-value dean-resolved">{report.resolvedComplaints}</span>
+                          </div>
+                          <div className="dean-stat-item">
+                            <span className="dean-stat-label">Pending</span>
+                            <span className="dean-stat-value dean-pending">{report.pendingComplaints}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
