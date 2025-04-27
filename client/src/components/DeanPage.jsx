@@ -38,6 +38,14 @@ const DeanPage = () => {
   const [resolvedComplaints, setResolvedComplaints] = useState([]);
   const [loadingResolved, setLoadingResolved] = useState(false);
   const [resolvedError, setResolvedError] = useState(null);
+  const [hiddenComplaints, setHiddenComplaints] = useState(() => {
+    const savedHiddenComplaints = localStorage.getItem('hiddenComplaints');
+    return savedHiddenComplaints ? new Set(JSON.parse(savedHiddenComplaints)) : new Set();
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hiddenComplaints', JSON.stringify(Array.from(hiddenComplaints)));
+  }, [hiddenComplaints]);
 
   const chartOptions = {
     responsive: true,
@@ -501,6 +509,25 @@ const DeanPage = () => {
     setSelectedBlock(e.target.value);
   };
 
+  const handleClearComplaint = (complaintId) => {
+    setHiddenComplaints(prev => {
+      const newSet = new Set([...prev, complaintId]);
+      localStorage.setItem('hiddenComplaints', JSON.stringify(Array.from(newSet)));
+      return newSet;
+    });
+  };
+
+  const handleShowComplaint = (complaintId) => {
+    setHiddenComplaints(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(complaintId);
+      localStorage.setItem('hiddenComplaints', JSON.stringify(Array.from(newSet)));
+      return newSet;
+    });
+  };
+
+  const filteredComplaints = complaints.filter(complaint => !hiddenComplaints.has(complaint._id));
+
   const filteredReports = selectedBlock === 'all' 
     ? [{
         proctorName: 'All Proctors',
@@ -568,7 +595,7 @@ const DeanPage = () => {
               {complaintError && <p className="dean-error">Error: {complaintError}</p>}
 
               <div className="dean-complaints-grid">
-                {complaints.map(complaint => (
+                {filteredComplaints.map(complaint => (
                   <div key={complaint._id} className="dean-complaint-card">
                     <div className="dean-complaint-header">
                       <h3>{complaint.complaintType}</h3>
@@ -587,12 +614,21 @@ const DeanPage = () => {
                       {complaint.isUrgent && <p className="dean-urgent-tag">URGENT</p>}
                     </div>
                     <div className="dean-complaint-actions">
-                      <button
-                        className="dean-resolve-btn"
-                        onClick={() => handleResolveComplaint(complaint._id)}
-                      >
-                        Mark as Resolved
-                      </button>
+                      {complaint.status.toLowerCase() === 'resolved' ? (
+                        <button
+                          className="dean-clear-btn"
+                          onClick={() => handleClearComplaint(complaint._id)}
+                        >
+                          Clear
+                        </button>
+                      ) : (
+                        <button
+                          className="dean-resolve-btn"
+                          onClick={() => handleResolveComplaint(complaint._id)}
+                        >
+                          Mark as Resolved
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
