@@ -3581,24 +3581,53 @@ const AdminPage = () => {
                   
                   <div className="charts-container">
                     <div className="chart-wrapper">
-                      <PieChart width={300} height={300}>
-                        <Pie
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Resolved', value: report.resolvedComplaints },
+                              { name: 'Pending', value: report.pendingComplaints }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={true}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          >
+                            <Cell fill="#4CAF50" />
+                            <Cell fill="#FFC107" />
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="chart-wrapper">
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart
                           data={[
+                            { name: 'Total', value: report.totalComplaints },
                             { name: 'Resolved', value: report.resolvedComplaints },
                             { name: 'Pending', value: report.pendingComplaints }
                           ]}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                          }}
                         >
-                          <Cell fill="#4CAF50" />
-                          <Cell fill="#FFC107" />
-                        </Pie>
-                      </PieChart>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="value" fill="#2196F3" />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 </div>
