@@ -28,8 +28,8 @@ const DeanPage = () => {
   const [complaints, setComplaints] = useState([]);
   const [loadingComplaints, setLoadingComplaints] = useState(false);
   const [complaintError, setComplaintError] = useState(null);
-  const [darkMode, setDarkMode] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [summaryReports, setSummaryReports] = useState([]);
   const [loadingSummaryReports, setLoadingSummaryReports] = useState(false);
   const [summaryReportsError, setSummaryReportsError] = useState(null);
@@ -46,6 +46,10 @@ const DeanPage = () => {
   useEffect(() => {
     localStorage.setItem('hiddenComplaints', JSON.stringify(Array.from(hiddenComplaints)));
   }, [hiddenComplaints]);
+
+  useEffect(() => {
+    document.body.classList.add('dark-mode');
+  }, []);
 
   const chartOptions = {
     responsive: true,
