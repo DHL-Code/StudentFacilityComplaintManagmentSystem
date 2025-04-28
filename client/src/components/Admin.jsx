@@ -174,11 +174,11 @@ const AdminPage = () => {
       const data = await response.json();
       console.log('Fetched feedback data:', data);
       setFeedback(data);
-      
+
       // Mark unviewed feedback as viewed
       const unviewedFeedback = data.filter(f => !f.viewedByAdmin);
       console.log('Unviewed feedback:', unviewedFeedback);
-      
+
       for (const feedback of unviewedFeedback) {
         try {
           console.log('Marking feedback as viewed:', feedback._id);
@@ -188,11 +188,11 @@ const AdminPage = () => {
               'Authorization': `Bearer ${token}`,
             },
           });
-          
+
           if (!viewResponse.ok) {
             throw new Error('Failed to mark feedback as viewed');
           }
-          
+
           const viewData = await viewResponse.json();
           console.log('Feedback marked as viewed:', viewData);
         } catch (error) {
@@ -1447,7 +1447,7 @@ const AdminPage = () => {
       // Remove the student and reorder the remaining ones
       const updatedStudents = studentApprovals.filter(student => student._id !== studentId);
       const reorderedStudents = reorderStudentIds(updatedStudents);
-      
+
       // Update the database with new IDs
       await Promise.all(reorderedStudents.map(async (student) => {
         const updateResponse = await fetch(`http://localhost:5000/api/student-approvals/${student._id}`, {
@@ -1522,7 +1522,7 @@ const AdminPage = () => {
           registrationDate: new Date().toISOString().slice(0, 16)
         });
         setShowAddStudentForm(false);
-        
+
         // Refresh the student approvals list
         const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
           headers: {
@@ -1572,18 +1572,18 @@ const AdminPage = () => {
 
       setUploadStatus(`Successfully processed ${data.count} students`);
       setCsvFile(null);
-      
+
       // Refresh the student approvals list
       const approvalsResponse = await fetch('http://localhost:5000/api/student-approvals', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       if (!approvalsResponse.ok) {
         throw new Error('Failed to refresh student list');
       }
-      
+
       const approvalsData = await approvalsResponse.json();
       setStudentApprovals(approvalsData);
     } catch (error) {
@@ -1617,8 +1617,8 @@ const AdminPage = () => {
       }
 
       // Update the student in the list
-      setStudentApprovals(prev => prev.map(student => 
-        student._id === studentId 
+      setStudentApprovals(prev => prev.map(student =>
+        student._id === studentId
           ? { ...student, status: action }
           : student
       ));
@@ -1662,8 +1662,8 @@ const AdminPage = () => {
       }
 
       // Update the student in the list
-      setStudentApprovals(prev => prev.map(student => 
-        student._id === studentId 
+      setStudentApprovals(prev => prev.map(student =>
+        student._id === studentId
           ? { ...student, ...editedStudent }
           : student
       ));
@@ -1688,9 +1688,9 @@ const AdminPage = () => {
       setFilteredApprovals(studentApprovals);
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = studentApprovals.filter(approval => 
-        approval.studentId.toLowerCase().includes(query) || 
-        approval.name.toLowerCase().includes(query) || 
+      const filtered = studentApprovals.filter(approval =>
+        approval.studentId.toLowerCase().includes(query) ||
+        approval.name.toLowerCase().includes(query) ||
         approval.email.toLowerCase().includes(query) ||
         approval.department.toLowerCase().includes(query) ||
         approval.college.toLowerCase().includes(query)
@@ -1738,7 +1738,7 @@ const AdminPage = () => {
 
     try {
       // Check if studentId already exists (excluding the current student)
-      const existingId = studentApprovals.find(s => 
+      const existingId = studentApprovals.find(s =>
         s.studentId === newStudent.studentId && s._id !== editingStudent._id
       );
       if (existingId) {
@@ -1748,7 +1748,7 @@ const AdminPage = () => {
       }
 
       // Check if email already exists (excluding the current student)
-      const existingEmail = studentApprovals.find(s => 
+      const existingEmail = studentApprovals.find(s =>
         s.email === newStudent.email && s._id !== editingStudent._id
       );
       if (existingEmail) {
@@ -1780,9 +1780,9 @@ const AdminPage = () => {
       }
 
       // Update the student in the list
-      setStudentApprovals(prevApprovals => 
-        prevApprovals.map(approval => 
-          approval._id === editingStudent._id 
+      setStudentApprovals(prevApprovals =>
+        prevApprovals.map(approval =>
+          approval._id === editingStudent._id
             ? { ...approval, ...newStudent }
             : approval
         )
@@ -1848,8 +1848,8 @@ const AdminPage = () => {
       }
 
       // Update the student in the list
-      setStudentApprovals(prev => prev.map(student => 
-        student._id === studentId 
+      setStudentApprovals(prev => prev.map(student =>
+        student._id === studentId
           ? { ...student, ...editingStudentData }
           : student
       ));
@@ -1922,7 +1922,7 @@ const AdminPage = () => {
   };
 
   // Filter reports based on selected role and block
-  const filteredReports = selectedBlock === 'all' 
+  const filteredReports = selectedBlock === 'all'
     ? [{
       name: 'All Staff',
       role: selectedRole === 'all' ? 'All Roles' : selectedRole,
@@ -2003,15 +2003,6 @@ const AdminPage = () => {
             Student Feedback
           </button>
           <button
-            className={activeTab === 'reports' ? 'active' : ''}
-            onClick={() => {
-              setActiveTab('reports');
-              setIsMobileNavOpen(false);
-            }}
-          >
-            Generate Reports
-          </button>
-          <button
             className={activeTab === 'profile' ? 'active' : ''}
             onClick={() => {
               setActiveTab('profile');
@@ -2076,9 +2067,7 @@ const AdminPage = () => {
         <button onClick={() => setActiveTab('feedback')}>
           Student Feedback
         </button>
-        <button onClick={() => setActiveTab('reports')}>
-          Generate Reports
-        </button>
+
         <button onClick={() => setActiveTab('profile')}>
           Profile
         </button>
@@ -2245,10 +2234,10 @@ const AdminPage = () => {
       {activeTab === 'create-staff' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Create Staff Account</h2>
-          
+
           {successMessage && (
-            <div className="success-message" style={{ 
-              color: 'green', 
+            <div className="success-message" style={{
+              color: 'green',
               backgroundColor: '#2a2a2a',
               padding: '10px',
               marginBottom: '10px',
@@ -2259,8 +2248,8 @@ const AdminPage = () => {
           )}
 
           {errorMessage && (
-            <div className="error-message" style={{ 
-              color: 'red', 
+            <div className="error-message" style={{
+              color: 'red',
               backgroundColor: '#2a2a2a',
               padding: '10px',
               marginBottom: '10px',
@@ -2276,8 +2265,8 @@ const AdminPage = () => {
             borderRadius: '8px'
           }}>
             <div className="photo-upload" style={{ marginBottom: '20px' }}>
-              <div 
-                className="profile-preview" 
+              <div
+                className="profile-preview"
                 onClick={() => document.getElementById('staffPhoto').click()}
                 style={{
                   width: '150px',
@@ -2293,9 +2282,9 @@ const AdminPage = () => {
                 }}
               >
                 {profilePreview ? (
-                  <img 
-                    src={profilePreview} 
-                    alt="Preview" 
+                  <img
+                    src={profilePreview}
+                    alt="Preview"
                     style={{
                       width: '100%',
                       height: '100%',
@@ -2486,7 +2475,7 @@ const AdminPage = () => {
 
             <button
               type="submit"
-              style={{ 
+              style={{
                 background: '#4a4a4a',
                 color: 'white',
                 border: 'none',
@@ -2864,63 +2853,7 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* Reports Section */}
-      {activeTab === 'reports' && (
-        <div className="section">
-          <h2 style={{ color: 'white' }}>Generate Reports</h2>
 
-          <div className="report-controls" style={{ marginBottom: '20px' }}>
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label style={{ color: 'white', marginRight: '10px' }}>Report Type:</label>
-              <select
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value)}
-                style={{ padding: '8px', borderRadius: '4px' }}
-              >
-                <option value="proctor">Proctor Performance</option>
-                <option value="supervisor">Supervisor Performance</option>
-                <option value="dean">Dean Performance</option>
-              </select>
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label style={{ color: 'white', marginRight: '10px' }}>Time Period:</label>
-              <select
-                value={timePeriod}
-                onChange={(e) => setTimePeriod(e.target.value)}
-                style={{ padding: '8px', borderRadius: '4px' }}
-              >
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-              </select>
-            </div>
-
-            <button
-              onClick={handleGenerateReport}
-              disabled={reportLoading}
-              style={{
-                background: '#4a4a4a',
-                color: 'white',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              {reportLoading ? 'Generating Report...' : 'Generate Report'}
-            </button>
-          </div>
-
-          {reportError && (
-            <div style={{ color: 'red', marginBottom: '15px' }}>
-              {reportError}
-            </div>
-          )}
-
-          {reportData && renderReport()}
-        </div>
-      )}
 
       {/* Add Blocks & Dorms Section */}
       {activeTab === 'blocks-dorms' && (
@@ -3448,7 +3381,7 @@ const AdminPage = () => {
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-4">Student Approvals</h2>
-              
+
               {/* Search Bar */}
               <div className="mb-4">
                 <div className="flex">
@@ -3459,7 +3392,7 @@ const AdminPage = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <button 
+                  <button
                     className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     Search
@@ -3469,7 +3402,7 @@ const AdminPage = () => {
                   {filteredApprovals.length} of {studentApprovals.length} students found
                 </p>
               </div>
-              
+
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -3572,9 +3505,9 @@ const AdminPage = () => {
                             </select>
                           ) : (
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                              ${approval.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                                approval.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                                'bg-yellow-100 text-yellow-800'}`}>
+                              ${approval.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                approval.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                  'bg-yellow-100 text-yellow-800'}`}>
                               {approval.status}
                             </span>
                           )}
@@ -3680,7 +3613,7 @@ const AdminPage = () => {
             <div className="admin-filters">
               <div className="admin-role-filter">
                 <label htmlFor="roleSelect">Filter by Role:</label>
-                <select 
+                <select
                   id="roleSelect"
                   value={selectedRole}
                   onChange={handleRoleChange}
@@ -3694,7 +3627,7 @@ const AdminPage = () => {
               </div>
               <div className="admin-block-filter">
                 <label htmlFor="blockSelect">Filter by Block:</label>
-                <select 
+                <select
                   id="blockSelect"
                   value={selectedBlock}
                   onChange={handleBlockChange}
@@ -3737,7 +3670,7 @@ const AdminPage = () => {
                       <span className="stat-value pending">{report.pendingComplaints}</span>
                     </div>
                   </div>
-                  
+
                   <div className="charts-container">
                     <div className="chart-wrapper">
                       <ResponsiveContainer width="100%" height={300}>
