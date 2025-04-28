@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('account-approvals');
@@ -112,6 +113,11 @@ const AdminPage = () => {
   const [selectedBlock, setSelectedBlock] = useState('all');
   const [availableBlocks, setAvailableBlocks] = useState(['all']);
   const [showSummaryReports, setShowSummaryReports] = useState(false);
+
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const location = useLocation();
 
@@ -1935,9 +1941,13 @@ const AdminPage = () => {
     fetchSummaryReports();
   };
 
+  const toggleMobileNav = () => {
+    setIsMobileNavOpen(!isMobileNavOpen);
+  };
+
   return (
-    <div className="admin-dashboard">
-      <div className="admin-top-nav">
+    <div className="admin-container">
+      <div className="admin-header">
         <h1>Admin Dashboard</h1>
         <div className="nav-actions">
           <div className="nav-right">
@@ -1947,6 +1957,109 @@ const AdminPage = () => {
               {darkMode ? ' Light Mode' : ' Dark Mode'}
             </button>
             <button className="logout-btn" onClick={handleLogout}>
+              <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+            </button>
+          </div>
+        </div>
+        <button className="admin-hamburger" onClick={toggleMobileNav}>
+          ☰
+        </button>
+      </div>
+
+      {/* Mobile Navigation */}
+      <div className={`admin-mobile-nav ${isMobileNavOpen ? 'active' : ''}`}>
+        <div className="admin-mobile-nav-header">
+          <h2>Menu</h2>
+          <button className="admin-mobile-close-btn" onClick={toggleMobileNav}>
+            ✕
+          </button>
+        </div>
+        <div className="admin-mobile-nav-buttons">
+          <button
+            className={activeTab === 'account-approvals' ? 'active' : ''}
+            onClick={() => {
+              setActiveTab('account-approvals');
+              setIsMobileNavOpen(false);
+            }}
+          >
+            Student Approvals ({accountRequests.length})
+          </button>
+          <button
+            className={activeTab === 'create-staff' ? 'active' : ''}
+            onClick={() => {
+              setActiveTab('create-staff');
+              setIsMobileNavOpen(false);
+            }}
+          >
+            Create Staff
+          </button>
+          <button
+            className={activeTab === 'feedback' ? 'active' : ''}
+            onClick={() => {
+              setActiveTab('feedback');
+              setIsMobileNavOpen(false);
+            }}
+          >
+            Student Feedback
+          </button>
+          <button
+            className={activeTab === 'reports' ? 'active' : ''}
+            onClick={() => {
+              setActiveTab('reports');
+              setIsMobileNavOpen(false);
+            }}
+          >
+            Generate Reports
+          </button>
+          <button
+            className={activeTab === 'profile' ? 'active' : ''}
+            onClick={() => {
+              setActiveTab('profile');
+              setIsMobileNavOpen(false);
+            }}
+          >
+            Profile
+          </button>
+          <button
+            className={activeTab === 'colleges-departments' ? 'active' : ''}
+            onClick={() => {
+              setActiveTab('colleges-departments');
+              setIsMobileNavOpen(false);
+            }}
+          >
+            Colleges & Departments
+          </button>
+          <button
+            className={activeTab === 'blocks-dorms' ? 'active' : ''}
+            onClick={() => {
+              setActiveTab('blocks-dorms');
+              setIsMobileNavOpen(false);
+            }}
+          >
+            Blocks & Dorms
+          </button>
+          <button
+            className={activeTab === 'summary-reports' ? 'active' : ''}
+            onClick={() => {
+              setActiveTab('summary-reports');
+              setIsMobileNavOpen(false);
+            }}
+          >
+            Summary Reports
+          </button>
+          <div className="mobile-action-buttons">
+            <AdminNotificationBell userId={userData?.userId} />
+            <button className="dark-mode-toggle" onClick={() => {
+              toggleDarkMode();
+              setIsMobileNavOpen(false);
+            }}>
+              <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+              {darkMode ? ' Light Mode' : ' Dark Mode'}
+            </button>
+            <button className="logout-btn" onClick={() => {
+              handleLogout();
+              setIsMobileNavOpen(false);
+            }}>
               <FontAwesomeIcon icon={faSignOutAlt} /> Logout
             </button>
           </div>

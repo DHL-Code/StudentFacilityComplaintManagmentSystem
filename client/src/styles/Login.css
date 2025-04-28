@@ -22,11 +22,11 @@
 .dark-mode {
   --primary-bg: linear-gradient(135deg, #0a0a0c, #6a4b9c);
   --form-bg: #23232b;
-  --text-primary: #e0e0e0;
-  --text-secondary: #b0b0b0;
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
   --border-color: rgba(255, 255, 255, 0.1);
   --input-bg: #181818;
-  --input-text: #f7f7f7;
+  --input-text: #ffffff;
   --button-bg: #3498db;
   --button-hover: #2980b9;
   --error-bg: #2d0a0a;
@@ -34,7 +34,7 @@
   --link-color: #64b5f6;
   --link-hover: #90caf9;
   --select-bg: #181818;
-  --select-text: #f7f7f7;
+  --select-text: #ffffff;
   --select-arrow: #666;
   --shadow-color: rgba(0, 0, 0, 0.3);
 }

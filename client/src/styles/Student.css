@@ -897,7 +897,7 @@ body.dark-mode .student-edit-profile form .student-password-change-section {
 /* Dark mode styles */
 body.dark-mode {
   background-color: #121212;
-  color: #e0e0e0;
+  color: #ffffff;
 }
 
 body.dark-mode .student-sidebar {
@@ -910,7 +910,7 @@ body.dark-mode .student-profile-container {
 }
 
 body.dark-mode .student-detail-item {
-  background-color: black;
+  background-color: #2d2d2d;
   color: #ffffff;
 }
 
@@ -954,7 +954,7 @@ body.dark-mode .student-edit-profile form .gender-selection label {
 }
 
 body.dark-mode .student-hamburger {
-  color: whitesmoke;
+  color: #ffffff;
 }
 
 /* Light mode styles */
@@ -965,12 +965,25 @@ body:not(.dark-mode) {
 
 body:not(.dark-mode) .student-sidebar {
   background-color: #ffffff;
-  color: #333;
+  color: #000000;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark-mode) .student-sidebar li {
+  color: #000000;
 }
 
 body:not(.dark-mode) .student-sidebar li:hover {
   color: #0056b3;
+}
+
+body:not(.dark-mode) .student-nav-items span {
+  color: #000000;
+}
+
+body:not(.dark-mode) .student-nav-items span:hover {
+  color: #0056b3;
+  text-decoration: underline;
 }
 
 body:not(.dark-mode) .student-top-nav button {
