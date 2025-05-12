@@ -5,7 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import MessagePopup from './MessagePopup';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faSun, faMoon, faSignOutAlt, faUser, faBell, faHome, faClipboardList, faUsers, faUniversity, faBuilding, faChartBar } from '@fortawesome/free-solid-svg-icons';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
@@ -996,7 +996,7 @@ const AdminPage = () => {
                       ))}
                     </div>
                   </div>
-                  <p className="text-gray-600 mt-1">{f.comment}</p>
+                  <p className="text-gray-600 mt-1">{f.comment || f.message}</p>
                   <p className="text-gray-500 text-xs">From: Student {f.studentId}</p>
                 </div>
               ))}
@@ -1945,148 +1945,74 @@ const AdminPage = () => {
     setIsMobileNavOpen(!isMobileNavOpen);
   };
 
+  // 1. Make student update confirmation message disappear after a short delay
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   return (
-    <div className="admin-container">
-      <div className="admin-header">
-        <h1>Admin Dashboard</h1>
-        <div className="nav-actions">
-          <div className="nav-right">
-            <AdminNotificationBell userId={userData?.userId} />
+    <div className={`admin-dashboard-modern${darkMode ? ' dark' : ''}`}> {/* Modern wrapper */}
+      {/* Sidebar */}
+      <aside className="modern-sidebar">
+        <div className="sidebar-header">
+          <span className="sidebar-logo">Admin Dashboard</span>
+        </div>
+        <nav className="sidebar-nav">
+          <ul>
+            <li className={activeTab === 'account-approvals' ? 'active' : ''} onClick={() => setActiveTab('account-approvals')}>
+              <FontAwesomeIcon icon={faUsers} /> <span>Student Approvals</span>
+            </li>
+            <li className={activeTab === 'create-staff' ? 'active' : ''} onClick={() => setActiveTab('create-staff')}>
+              <FontAwesomeIcon icon={faUser} /> <span>Create Staff</span>
+            </li>
+            <li className={activeTab === 'feedback' ? 'active' : ''} onClick={() => setActiveTab('feedback')}>
+              <FontAwesomeIcon icon={faBell} /> <span>Student Feedback</span>
+            </li>
+            <li className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>
+              <FontAwesomeIcon icon={faUser} /> <span>Profile</span>
+            </li>
+            <li className={activeTab === 'colleges-departments' ? 'active' : ''} onClick={() => setActiveTab('colleges-departments')}>
+              <FontAwesomeIcon icon={faUniversity} /> <span>Colleges & Departments</span>
+            </li>
+            <li className={activeTab === 'blocks-dorms' ? 'active' : ''} onClick={() => setActiveTab('blocks-dorms')}>
+              <FontAwesomeIcon icon={faBuilding} /> <span>Blocks & Dorms</span>
+            </li>
+            <li className={activeTab === 'summary-reports' ? 'active' : ''} onClick={() => setActiveTab('summary-reports')}>
+              <FontAwesomeIcon icon={faChartBar} /> <span>Summary Reports</span>
+            </li>
+          </ul>
+        </nav>
+        <div className="sidebar-footer">
+            <button className="logout-btn" onClick={handleLogout}>
+            <FontAwesomeIcon icon={faSignOutAlt} /> Log Out
+            </button>
+          </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="modern-main-content">
+        {/* Top Bar */}
+        <header className="modern-topbar">
+          <div className="topbar-right">
+            <AdminNotificationBell userId={userData?.userId} className="notification-bell" />
             <button className="dark-mode-toggle" onClick={toggleDarkMode}>
               <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
-              {darkMode ? ' Light Mode' : ' Dark Mode'}
             </button>
-            <button className="logout-btn" onClick={handleLogout}>
-              <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-            </button>
+            <div className="modern-profile-avatar">
+              <FontAwesomeIcon icon={faUser} />
+              <span>{adminData?.name?.split(' ')[0] || 'Admin'}</span>
           </div>
         </div>
-        <button className="admin-hamburger" onClick={toggleMobileNav}>
-          ☰
-        </button>
-      </div>
+        </header>
 
-      {/* Mobile Navigation */}
-      <div className={`admin-mobile-nav ${isMobileNavOpen ? 'active' : ''}`}>
-        <div className="admin-mobile-nav-header">
-          <h2>Menu</h2>
-          <button className="admin-mobile-close-btn" onClick={toggleMobileNav}>
-            ✕
-          </button>
-        </div>
-        <div className="admin-mobile-nav-buttons">
-          <button
-            className={activeTab === 'account-approvals' ? 'active' : ''}
-            onClick={() => {
-              setActiveTab('account-approvals');
-              setIsMobileNavOpen(false);
-            }}
-          >
-            Student Approvals ({accountRequests.length})
-          </button>
-          <button
-            className={activeTab === 'create-staff' ? 'active' : ''}
-            onClick={() => {
-              setActiveTab('create-staff');
-              setIsMobileNavOpen(false);
-            }}
-          >
-            Create Staff
-          </button>
-          <button
-            className={activeTab === 'feedback' ? 'active' : ''}
-            onClick={() => {
-              setActiveTab('feedback');
-              setIsMobileNavOpen(false);
-            }}
-          >
-            Student Feedback
-          </button>
-          <button
-            className={activeTab === 'profile' ? 'active' : ''}
-            onClick={() => {
-              setActiveTab('profile');
-              setIsMobileNavOpen(false);
-            }}
-          >
-            Profile
-          </button>
-          <button
-            className={activeTab === 'colleges-departments' ? 'active' : ''}
-            onClick={() => {
-              setActiveTab('colleges-departments');
-              setIsMobileNavOpen(false);
-            }}
-          >
-            Colleges & Departments
-          </button>
-          <button
-            className={activeTab === 'blocks-dorms' ? 'active' : ''}
-            onClick={() => {
-              setActiveTab('blocks-dorms');
-              setIsMobileNavOpen(false);
-            }}
-          >
-            Blocks & Dorms
-          </button>
-          <button
-            className={activeTab === 'summary-reports' ? 'active' : ''}
-            onClick={() => {
-              setActiveTab('summary-reports');
-              setIsMobileNavOpen(false);
-            }}
-          >
-            Summary Reports
-          </button>
-          <div className="mobile-action-buttons">
-            <AdminNotificationBell userId={userData?.userId} />
-            <button className="dark-mode-toggle" onClick={() => {
-              toggleDarkMode();
-              setIsMobileNavOpen(false);
-            }}>
-              <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
-              {darkMode ? ' Light Mode' : ' Dark Mode'}
-            </button>
-            <button className="logout-btn" onClick={() => {
-              handleLogout();
-              setIsMobileNavOpen(false);
-            }}>
-              <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <nav className="admin-nav">
-        <button onClick={() => setActiveTab('account-approvals')}>
-          Student Approvals ({accountRequests.length})
-        </button>
-        <button onClick={() => setActiveTab('create-staff')}>
-          Create Staff
-        </button>
-        <button onClick={() => setActiveTab('feedback')}>
-          Student Feedback
-        </button>
-
-        <button onClick={() => setActiveTab('profile')}>
-          Profile
-        </button>
-        <button onClick={() => setActiveTab('colleges-departments')}>
-          Colleges & Departments
-        </button>
-        <button onClick={() => setActiveTab('blocks-dorms')}>
-          Blocks & Dorms
-        </button>
-        <button onClick={() => setActiveTab('summary-reports')}>
-          Summary Reports
-        </button>
-      </nav>
-
-      {/* Profile Section */}
+        {/* Main Content (existing sections) */}
+        <div className="main-content">
       {activeTab === 'profile' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Admin Profile</h2>
-
           {loading ? (
             <p style={{ color: 'white' }}>Loading profile data...</p>
           ) : adminData ? (
@@ -2162,7 +2088,6 @@ const AdminPage = () => {
                     <p style={{ color: '#aaa', margin: '0' }}>{adminData.role}</p>
                   </div>
                 </div>
-
                 <div style={{
                   backgroundColor: '#333',
                   borderRadius: '8px',
@@ -2229,1436 +2154,409 @@ const AdminPage = () => {
           )}
         </div>
       )}
-
-      {/* Create Staff Section */}
       {activeTab === 'create-staff' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Create Staff Account</h2>
-
           {successMessage && (
-            <div className="success-message" style={{
-              color: 'green',
-              backgroundColor: '#2a2a2a',
-              padding: '10px',
-              marginBottom: '10px',
-              borderRadius: '4px'
-            }}>
-              {successMessage}
-            </div>
-          )}
-
+                <div className="success-message" style={{ color: 'green', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{successMessage}</div>
+              )}
           {errorMessage && (
-            <div className="error-message" style={{
-              color: 'red',
-              backgroundColor: '#2a2a2a',
-              padding: '10px',
-              marginBottom: '10px',
-              borderRadius: '4px'
-            }}>
-              {errorMessage}
-            </div>
-          )}
-
-          <form onSubmit={handleCreateStaff} className="staff-form" style={{
-            backgroundColor: '#2a2a2a',
-            padding: '20px',
-            borderRadius: '8px'
-          }}>
-            <div className="photo-upload" style={{ marginBottom: '20px' }}>
-              <div
-                className="profile-preview"
-                onClick={() => document.getElementById('staffPhoto').click()}
-                style={{
-                  width: '150px',
-                  height: '150px',
-                  border: '2px dashed #444',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  overflow: 'hidden'
-                }}
-              >
-                {profilePreview ? (
-                  <img
-                    src={profilePreview}
-                    alt="Preview"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                ) : (
-                  <div className="upload-placeholder" style={{ color: 'white', textAlign: 'center' }}>
-                    <span style={{ fontSize: '24px' }}>+</span>
-                    <p style={{ margin: '5px 0 0 0' }}>Upload Photo</p>
+                <div className="error-message" style={{ color: 'red', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{errorMessage}</div>
+              )}
+              <form onSubmit={handleCreateStaff} className="staff-form" style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '8px' }}>
+                {/* Name */}
+                <div className="form-group">
+                  <label>Name</label>
+                  <input type="text" value={newStaff.name} onChange={e => setNewStaff({ ...newStaff, name: e.target.value })} required />
+                  {formErrors.name && <span className="error-message">{formErrors.name}</span>}
                   </div>
-                )}
+                {/* Email */}
+                <div className="form-group">
+                  <label>Email</label>
+                  <input type="email" value={newStaff.email} onChange={e => setNewStaff({ ...newStaff, email: e.target.value })} onBlur={handleEmailBlur} required />
+                  {formErrors.email && <span className="error-message">{formErrors.email}</span>}
               </div>
-              <input
-                type="file"
-                id="staffPhoto"
-                accept="image/*"
-                onChange={handleProfilePhotoChange}
-                hidden
-              />
+                {/* Phone */}
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input type="text" value={newStaff.phone} onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })} onBlur={handlePhoneBlur} required />
+                  {formErrors.phone && <span className="error-message">{formErrors.phone}</span>}
             </div>
-
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Full Name</label>
-              <input
-                type="text"
-                value={newStaff.name}
-                onChange={e => setNewStaff({ ...newStaff, name: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: '1px solid #444',
-                  backgroundColor: '#1a1a1a',
-                  color: 'white'
-                }}
-                required
-                placeholder="Enter Full Name"
-              />
-              {formErrors.name && (
-                <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.name}</span>
-              )}
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Email</label>
-              <input
-                type="email"
-                value={newStaff.email}
-                onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
-                onBlur={handleEmailBlur}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: `1px solid ${formErrors.email ? 'red' : '#444'}`,
-                  backgroundColor: '#1a1a1a',
-                  color: 'white'
-                }}
-                placeholder="Enter email"
-              />
-              {formErrors.email && (
-                <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.email}</span>
-              )}
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Phone Number</label>
-              <input
-                type="tel"
-                value={newStaff.phone}
-                onChange={e => {
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                  setNewStaff({ ...newStaff, phone: value });
-                }}
-                onBlur={handlePhoneBlur}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: `1px solid ${formErrors.phone ? 'red' : '#444'}`,
-                  backgroundColor: '#1a1a1a',
-                  color: 'white'
-                }}
-                maxLength="10"
-                pattern="[0-9]*"
-                inputMode="numeric"
-                placeholder="Enter phone number"
-              />
-              {formErrors.phone && (
-                <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.phone}</span>
-              )}
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Password</label>
-              <input
-                type="password"
-                value={newStaff.password}
-                onChange={e => setNewStaff({ ...newStaff, password: e.target.value })}
-                onBlur={handlePasswordBlur}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: `1px solid ${formErrors.password ? 'red' : '#444'}`,
-                  backgroundColor: '#1a1a1a',
-                  color: 'white'
-                }}
-                placeholder="Enter password"
-              />
-              {formErrors.password && (
-                <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.password}</span>
-              )}
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Role</label>
-              <select
-                value={newStaff.role}
-                onChange={e => setNewStaff({ ...newStaff, role: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: '1px solid #444',
-                  backgroundColor: '#1a1a1a',
-                  color: 'white'
-                }}
-              >
+                {/* Role */}
+                <div className="form-group">
+                  <label>Role</label>
+                  <select value={newStaff.role} onChange={e => setNewStaff({ ...newStaff, role: e.target.value })} required>
                 <option value="proctor">Proctor</option>
                 <option value="supervisor">Supervisor</option>
-                <option value="dean">Student Dean</option>
+                    <option value="dean">Dean</option>
               </select>
+                  {formErrors.role && <span className="error-message">{formErrors.role}</span>}
             </div>
-
+                {/* Password */}
+                <div className="form-group">
+                  <label>Password</label>
+                  <input type="password" value={newStaff.password} onChange={e => setNewStaff({ ...newStaff, password: e.target.value })} onBlur={handlePasswordBlur} required />
+                  {formErrors.password && <span className="error-message">{formErrors.password}</span>}
+                </div>
+                {/* Block (for proctor) */}
             {newStaff.role === 'proctor' && (
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Block</label>
-                <select
-                  value={newStaff.block}
-                  onChange={e => setNewStaff(prev => ({ ...prev, block: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: `1px solid ${formErrors.block ? 'red' : '#444'}`,
-                    backgroundColor: '#1a1a1a',
-                    color: 'white'
-                  }}
-                  required
-                >
+                  <div className="form-group">
+                    <label>Block</label>
+                    <select value={newStaff.block} onChange={e => setNewStaff({ ...newStaff, block: e.target.value })} required>
                   <option value="">Select Block</option>
-                  {blocks.map((block) => (
-                    <option key={block._id} value={block._id}>
-                      Block {block.number}
-                    </option>
+                      {blocks.map(block => (
+                        <option key={block._id} value={block._id}>{block.number}</option>
                   ))}
                 </select>
-                {formErrors.block && (
-                  <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.block}</span>
-                )}
+                    {formErrors.block && <span className="error-message">{formErrors.block}</span>}
               </div>
             )}
-
+                {/* Gender (for supervisor) */}
             {newStaff.role === 'supervisor' && (
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Gender</label>
-                <select
-                  value={newStaff.gender}
-                  onChange={e => setNewStaff({ ...newStaff, gender: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #444',
-                    backgroundColor: '#1a1a1a',
-                    color: 'white'
-                  }}
-                  required
-                >
+                  <div className="form-group">
+                    <label>Gender</label>
+                    <select value={newStaff.gender} onChange={e => setNewStaff({ ...newStaff, gender: e.target.value })} required>
                   <option value="">Select Gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                 </select>
               </div>
             )}
-
-            <button
-              type="submit"
-              style={{
-                background: '#4a4a4a',
-                color: 'white',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                width: '100%',
-                marginTop: '20px'
-              }}
-              disabled={loading}
-            >
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </button>
+                {/* Profile Photo */}
+                <div className="form-group photo-upload">
+                  <label>Profile Photo</label>
+                  <input type="file" accept="image/*" onChange={handleProfilePhotoChange} />
+                  {profilePreview && <img src={profilePreview} alt="Preview" style={{ width: 80, height: 80, borderRadius: '50%', marginTop: 10 }} />}
+                </div>
+                <button type="submit" className="add-student-button">Create Staff</button>
           </form>
         </div>
       )}
-
-      {/* Colleges and Departments Section */}
-      {activeTab === 'colleges-departments' && (
+          {activeTab === 'feedback' && (
         <div className="section">
-          <h2 style={{ color: 'white' }}>Manage Colleges and Departments</h2>
-
-          {/* College Creation Form */}
-          <div className="subsection">
-            <h3 style={{ color: 'white' }}>
-              {editingCollege ? 'Edit College' : 'Create College'}
-            </h3>
-            <form onSubmit={editingCollege ? handleUpdateCollege : handleCreateCollege} className="college-form">
-              <div className="form-group">
-                <label style={{ color: 'white' }}>College Name</label>
-                <input
-                  type="text"
-                  value={newCollege.name || ''}
-                  onChange={(e) => setNewCollege({ ...newCollege, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  style={{ background: 'green', color: 'white' }}
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : (editingCollege ? 'Update College' : 'Create College')}
-                </button>
-                {editingCollege && (
-                  <button
-                    type="button"
-                    style={{ background: 'gray', color: 'white' }}
-                    onClick={() => {
-                      setEditingCollege(null);
-                      setNewCollege({ name: '' });
-                    }}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-              {collegeErrorMessage && (
-                <div className="error-message" style={{ color: 'red', marginTop: '10px' }}>
-                  {collegeErrorMessage}
-                </div>
+              <h2 style={{ color: 'white' }}>Student Feedback</h2>
+              {successMessage && (
+                <div style={{ color: 'green', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{successMessage}</div>
               )}
-            </form>
-
-            {/* Display Colleges */}
-            <div className="colleges-list">
-              <h4 style={{ color: 'white' }}>Existing Colleges</h4>
-              <div style={{
-                maxHeight: '300px',
-                overflowY: 'auto',
-                padding: '10px',
-                backgroundColor: '#2a2a2a',
-                borderRadius: '8px',
-                marginTop: '10px'
-              }}>
-                {colleges.length > 0 ? (
-                  <ul style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0
-                  }}>
-                    {colleges.map((college) => (
-                      <li key={college._id} style={{
-                        color: 'white',
-                        padding: '10px',
-                        borderBottom: '1px solid #444',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <span>{college.name}</span>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <button
-                            onClick={() => handleEditCollege(college)}
-                            style={{
-                              background: 'blue',
-                              color: 'white',
-                              border: 'none',
-                              padding: '5px 10px',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCollege(college._id)}
-                            style={{
-                              background: 'red',
-                              color: 'white',
-                              border: 'none',
-                              padding: '5px 10px',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
-                    No colleges found.
-                  </p>
-                )}
+              {feedbackError && (
+                <div style={{ color: 'red', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{feedbackError}</div>
+              )}
+              {feedbackLoading ? (
+                <p style={{ color: 'white' }}>Loading feedback data...</p>
+              ) : feedback.length === 0 ? (
+                <p style={{ color: 'white' }}>No feedback available.</p>
+              ) : (
+                <div className="feedback-container" style={{ maxHeight: '600px', overflowY: 'auto', padding: '10px' }}>
+                  {feedback.map(item => (
+                    <div key={item._id} className="feedback-card" style={{ background: '#232a4d', color: '#fff', borderRadius: '12px', marginBottom: '16px', padding: '18px', boxShadow: '0 2px 8px rgba(30,40,90,0.08)' }}>
+                      <div className="feedback-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontWeight: 600 }}>{item.studentName || item.studentId || item.userId || 'Anonymous Student'}</span>
+                        <span style={{ fontSize: '0.9em', color: '#4dabf7' }}>{new Date(item.createdAt).toLocaleString()}</span>
               </div>
+                      <div className="feedback-body" style={{ marginBottom: '8px' }}>{item.comment || item.message}</div>
+                      <div className="feedback-actions" style={{ display: 'flex', gap: '10px' }}>
+                        <button className="student-delete-btn" style={{ background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 16px', cursor: 'pointer' }} onClick={() => handleDeleteFeedback(item._id)}>Delete</button>
             </div>
           </div>
-
-          {/* Department Creation Form */}
-          <div className="subsection">
-            <h3 style={{ color: 'white' }}>
-              {editingDepartment ? 'Edit Department' : 'Create Department'}
-            </h3>
-            <form onSubmit={editingDepartment ? handleUpdateDepartment : handleCreateDepartment} className="department-form">
-              <div className="form-group">
-                <label style={{ color: 'white' }}>Department Name</label>
-                <input
-                  type="text"
-                  value={newDepartment.name || ''}
-                  onChange={(e) => setNewDepartment({ ...newDepartment, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label style={{ color: 'white' }}>College</label>
-                <select
-                  value={newDepartment.college || ''}
-                  onChange={(e) => setNewDepartment({ ...newDepartment, college: e.target.value })}
-                  required
-                >
-                  <option value="">Select College</option>
-                  {colleges.map((college) => (
-                    <option key={college._id} value={college._id}>
-                      {college.name}
-                    </option>
                   ))}
-                </select>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  style={{ background: 'green', color: 'white' }}
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : (editingDepartment ? 'Update Department' : 'Create Department')}
-                </button>
-                {editingDepartment && (
-                  <button
-                    type="button"
-                    style={{ background: 'gray', color: 'white' }}
-                    onClick={() => {
-                      setEditingDepartment(null);
-                      setNewDepartment({ name: '', college: '' });
-                    }}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-              {departmentErrorMessage && (
-                <div className="error-message" style={{ color: 'red', marginTop: '10px' }}>
-                  {departmentErrorMessage}
+              )}
                 </div>
               )}
+          {activeTab === 'colleges-departments' && (
+            <div className="section">
+              <h2 style={{ color: 'white' }}>Manage Colleges and Departments</h2>
+              <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                {/* Colleges Management */}
+                <div style={{ flex: 1, minWidth: 300 }}>
+                  <h3 style={{ color: '#4dabf7' }}>Colleges</h3>
+                  <form onSubmit={editingCollege ? handleUpdateCollege : handleCreateCollege} style={{ marginBottom: 16 }}>
+                    <input type="text" value={newCollege.name} onChange={e => setNewCollege({ name: e.target.value })} placeholder="College Name" required style={{ padding: 8, borderRadius: 6, border: '1px solid #4dabf7', marginRight: 8 }} />
+                    <button type="submit" className="add-student-button">{editingCollege ? 'Update' : 'Add'}</button>
+                    {editingCollege && <button type="button" className="student-delete-btn" onClick={() => { setEditingCollege(null); setNewCollege({ name: '' }); }}>Cancel</button>}
             </form>
-
-            {/* Display Departments */}
-            <div className="departments-list">
-              <h4 style={{ color: 'white' }}>Existing Departments</h4>
-              <div style={{
-                maxHeight: '300px',
-                overflowY: 'auto',
-                padding: '10px',
-                backgroundColor: '#2a2a2a',
-                borderRadius: '8px',
-                marginTop: '10px'
-              }}>
-                {departments.length > 0 ? (
-                  <ul style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0
-                  }}>
-                    {departments.map((department) => (
-                      <li key={department._id} style={{
-                        color: 'white',
-                        padding: '10px',
-                        borderBottom: '1px solid #444',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <div>
-                          <span>{department.name}</span>
-                          <span style={{ color: '#aaa', marginLeft: '10px' }}>
-                            ({department.college?.name || 'Unknown College'})
+                  {collegeErrorMessage && <div className="error-message" style={{ color: 'red', marginBottom: 8 }}>{collegeErrorMessage}</div>}
+                  <ul className="colleges-list" style={{ listStyle: 'none', padding: 0 }}>
+                    {colleges.map(college => (
+                      <li key={college._id} style={{ background: '#232a4d', color: '#fff', borderRadius: 8, marginBottom: 8, padding: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{college.name}</span>
+                        <span>
+                          <button className="student-edit-btn" style={{ marginRight: 8 }} onClick={() => handleEditCollege(college)}>Edit</button>
+                          <button className="student-delete-btn" onClick={() => handleDeleteCollege(college._id)}>Delete</button>
                           </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <button
-                            onClick={() => handleEditDepartment(department)}
-                            style={{
-                              background: 'blue',
-                              color: 'white',
-                              border: 'none',
-                              padding: '5px 10px',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDepartment(department._id)}
-                            style={{
-                              background: 'red',
-                              color: 'white',
-                              border: 'none',
-                              padding: '5px 10px',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
                       </li>
                     ))}
                   </ul>
-                ) : (
-                  <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
-                    No departments found.
-                  </p>
-                )}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Feedback Section */}
-      {activeTab === 'feedback' && (
-        <div className="section">
-          <h2 style={{ color: 'white' }}>Student Feedback</h2>
-
-          {successMessage && (
-            <div style={{
-              color: 'green',
-              backgroundColor: '#2a2a2a',
-              padding: '10px',
-              marginBottom: '10px',
-              borderRadius: '4px'
-            }}>
-              {successMessage}
-            </div>
-          )}
-
-          {feedbackError && (
-            <div style={{
-              color: 'red',
-              backgroundColor: '#2a2a2a',
-              padding: '10px',
-              marginBottom: '10px',
-              borderRadius: '4px'
-            }}>
-              {feedbackError}
-            </div>
-          )}
-
-          {feedbackLoading ? (
-            <p style={{ color: 'white' }}>Loading feedback data...</p>
-          ) : feedback.length === 0 ? (
-            <p style={{ color: 'white' }}>No feedback available.</p>
-          ) : (
-            <div className="feedback-container" style={{
-              maxHeight: '600px',
-              overflowY: 'auto',
-              padding: '10px'
-            }}>
-              {feedback.map((item) => (
-                <div key={item._id} className="feedback-card" style={{
-                  backgroundColor: '#2a2a2a',
-                  padding: '20px',
-                  marginBottom: '20px',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                }}>
-                  <div className="feedback-header" style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '15px'
-                  }}>
-                    <div className="rating" style={{ color: '#FFD700' }}>
-                      {[...Array(5)].map((_, index) => (
-                        <span
-                          key={index}
-                          style={{
-                            fontSize: '20px',
-                            marginRight: '2px',
-                            color: index < item.rating ? '#FFD700' : '#ddd'
-                          }}
-                        >
-                          ★
-                        </span>
+                {/* Departments Management */}
+                <div style={{ flex: 1, minWidth: 300 }}>
+                  <h3 style={{ color: '#4dabf7' }}>Departments</h3>
+                  <form onSubmit={editingDepartment ? handleUpdateDepartment : handleCreateDepartment} style={{ marginBottom: 16 }}>
+                    <input type="text" value={newDepartment.name} onChange={e => setNewDepartment({ ...newDepartment, name: e.target.value })} placeholder="Department Name" required style={{ padding: 8, borderRadius: 6, border: '1px solid #4dabf7', marginRight: 8 }} />
+                    <select value={newDepartment.college} onChange={e => setNewDepartment({ ...newDepartment, college: e.target.value })} required style={{ padding: 8, borderRadius: 6, border: '1px solid #4dabf7', marginRight: 8 }}>
+                      <option value="">Select College</option>
+                      {colleges.map(college => (
+                        <option key={college._id} value={college._id}>{college.name}</option>
                       ))}
+                    </select>
+                    <button type="submit" className="add-student-button">{editingDepartment ? 'Update' : 'Add'}</button>
+                    {editingDepartment && <button type="button" className="student-delete-btn" onClick={() => { setEditingDepartment(null); setNewDepartment({ name: '', college: '' }); }}>Cancel</button>}
+                  </form>
+                  {departmentErrorMessage && <div className="error-message" style={{ color: 'red', marginBottom: 8 }}>{departmentErrorMessage}</div>}
+                  <ul className="departments-list" style={{ listStyle: 'none', padding: 0 }}>
+                    {departments.map(dept => {
+                      const deptCollegeId = dept.college?._id || dept.college;
+                      const deptCollegeName = dept.college?.name || dept.college;
+                      const foundCollege = colleges.find(
+                        c =>
+                          String(c._id) === String(deptCollegeId) ||
+                          String(c.name) === String(deptCollegeName)
+                      );
+                      return (
+                        <li key={dept._id} style={{ background: '#232a4d', color: '#fff', borderRadius: 8, marginBottom: 8, padding: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{dept.name} ({foundCollege?.name || 'Unknown'})</span>
+                          <span>
+                            <button className="student-edit-btn" style={{ marginRight: 8 }} onClick={() => handleEditDepartment(dept)}>Edit</button>
+                            <button className="student-delete-btn" onClick={() => handleDeleteDepartment(dept._id)}>Delete</button>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div className="feedback-date" style={{ color: '#aaa' }}>
-                        {new Date(item.createdAt).toLocaleDateString()}
                       </div>
-                      {item.viewedByAdmin && (
-                        <div style={{ color: '#4CAF50', fontSize: '14px' }}>
-                          Viewed {new Date(item.viewedAt).toLocaleDateString()}
                         </div>
                       )}
-                      <button
-                        onClick={() => handleDeleteFeedback(item._id)}
-                        style={{
-                          background: '#dc3545',
-                          color: 'white',
-                          border: 'none',
-                          padding: '5px 10px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          transition: 'background-color 0.3s'
-                        }}
-                        onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
-                        onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                  <div className="feedback-content" style={{
-                    color: 'white',
-                    marginBottom: '15px',
-                    backgroundColor: '#363636',
-                    padding: '15px',
-                    borderRadius: '4px'
-                  }}>
-                    <p style={{ margin: 0 }}>{item.comment}</p>
-                  </div>
-                  <div className="feedback-footer" style={{ color: '#aaa', fontSize: '14px' }}>
-                    <span>Student ID: {item.userId}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-
-
-      {/* Add Blocks & Dorms Section */}
       {activeTab === 'blocks-dorms' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Manage Blocks and Dorms</h2>
-
-          {/* Block Management */}
-          <div className="subsection">
-            <h3 style={{ color: 'white' }}>
-              {editingBlock ? 'Edit Block' : 'Create Block'}
-            </h3>
-            <form onSubmit={editingBlock ? handleUpdateBlock : handleCreateBlock} className="block-form" style={{
-              backgroundColor: '#2a2a2a',
-              padding: '20px',
-              borderRadius: '8px',
-              marginBottom: '20px'
-            }}>
-              {successMessage && (
-                <div style={{
-                  color: 'green',
-                  backgroundColor: '#1a1a1a',
-                  padding: '10px',
-                  marginBottom: '10px',
-                  borderRadius: '4px'
-                }}>
-                  {successMessage}
-                </div>
-              )}
-              {blockErrorMessage && (
-                <div style={{
-                  color: 'red',
-                  backgroundColor: '#1a1a1a',
-                  padding: '10px',
-                  marginBottom: '10px',
-                  borderRadius: '4px'
-                }}>
-                  {blockErrorMessage}
-                </div>
-              )}
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Block Number</label>
-                <input
-                  type="text"
-                  value={newBlock.number}
-                  onChange={(e) => setNewBlock({ ...newBlock, number: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid #444',
-                    color: 'white',
-                    padding: '8px',
-                    borderRadius: '4px'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  style={{
-                    background: '#4a4a4a',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    flex: 1
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : (editingBlock ? 'Update Block' : 'Create Block')}
-                </button>
-                {editingBlock && (
-                  <button
-                    type="button"
-                    style={{
-                      background: '#6c757d',
-                      color: 'white',
-                      border: 'none',
-                      padding: '10px 20px',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      setEditingBlock(null);
-                      setNewBlock({ number: '' });
-                    }}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
+              <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                {/* Blocks Management */}
+                <div style={{ flex: 1, minWidth: 300 }}>
+                  <h3 style={{ color: '#4dabf7' }}>Blocks</h3>
+                  <form onSubmit={editingBlock ? handleUpdateBlock : handleCreateBlock} style={{ marginBottom: 16 }}>
+                    <input type="number" value={newBlock.number} onChange={e => setNewBlock({ number: e.target.value })} placeholder="Block Number (201-237)" required style={{ padding: 8, borderRadius: 6, border: '1px solid #4dabf7', marginRight: 8 }} />
+                    <button type="submit" className="add-student-button">{editingBlock ? 'Update' : 'Add'}</button>
+                    {editingBlock && <button type="button" className="student-delete-btn" onClick={() => { setEditingBlock(null); setNewBlock({ number: '' }); }}>Cancel</button>}
             </form>
-
-            {/* Display Blocks */}
-            <div className="blocks-list">
-              <h4 style={{ color: 'white' }}>Existing Blocks</h4>
-              <div className="list-container" style={{
-                maxHeight: '300px',
-                overflowY: 'auto',
-                backgroundColor: '#2a2a2a',
-                borderRadius: '8px',
-                padding: '10px'
-              }}>
-                {blocks.length > 0 ? (
-                  blocks.map((block) => (
-                    <div key={block._id} className="list-item" style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '10px',
-                      borderBottom: '1px solid #444',
-                      color: 'white'
-                    }}>
-                      <span>Block {block.number}</span>
-                      <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
-                        <button
-                          onClick={() => handleEditBlock(block)}
-                          style={{
-                            background: '#007bff',
-                            color: 'white',
-                            border: 'none',
-                            padding: '5px 10px',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteBlock(block._id)}
-                          style={{
-                            background: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            padding: '5px 10px',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Delete
-                        </button>
+                  {blockErrorMessage && <div className="error-message" style={{ color: 'red', marginBottom: 8 }}>{blockErrorMessage}</div>}
+                  <ul className="blocks-list" style={{ listStyle: 'none', padding: 0 }}>
+                    {blocks.map(block => (
+                      <li key={block._id} style={{ background: '#232a4d', color: '#fff', borderRadius: 8, marginBottom: 8, padding: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{block.number}</span>
+                        <span>
+                          <button className="student-edit-btn" style={{ marginRight: 8 }} onClick={() => handleEditBlock(block)}>Edit</button>
+                          <button className="student-delete-btn" onClick={() => handleDeleteBlock(block._id)}>Delete</button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
-                    No blocks found.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Dorm Management */}
-          <div className="subsection">
-            <h3 style={{ color: 'white' }}>
-              {editingDorm ? 'Edit Dorm' : 'Create Dorm'}
-            </h3>
-            <form onSubmit={editingDorm ? handleUpdateDorm : handleCreateDorm} className="dorm-form" style={{
-              backgroundColor: '#2a2a2a',
-              padding: '20px',
-              borderRadius: '8px',
-              marginBottom: '20px'
-            }}>
-              {successMessage && (
-                <div style={{
-                  color: 'green',
-                  backgroundColor: '#1a1a1a',
-                  padding: '10px',
-                  marginBottom: '10px',
-                  borderRadius: '4px'
-                }}>
-                  {successMessage}
-                </div>
-              )}
-              {dormErrorMessage && (
-                <div style={{
-                  color: 'red',
-                  backgroundColor: '#1a1a1a',
-                  padding: '10px',
-                  marginBottom: '10px',
-                  borderRadius: '4px'
-                }}>
-                  {dormErrorMessage}
-                </div>
-              )}
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Dorm Number</label>
-                <input
-                  type="text"
-                  value={newDorm.number}
-                  onChange={(e) => setNewDorm({ ...newDorm, number: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid #444',
-                    color: 'white',
-                    padding: '8px',
-                    borderRadius: '4px'
-                  }}
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Block</label>
-                <select
-                  value={newDorm.block}
-                  onChange={(e) => setNewDorm({ ...newDorm, block: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid #444',
-                    color: 'white',
-                    padding: '8px',
-                    borderRadius: '4px'
-                  }}
-                >
+                {/* Dorms Management */}
+                <div style={{ flex: 1, minWidth: 300 }}>
+                  <h3 style={{ color: '#4dabf7' }}>Dorms</h3>
+                  <form onSubmit={editingDorm ? handleUpdateDorm : handleCreateDorm} style={{ marginBottom: 16 }}>
+                    <input type="text" value={newDorm.number} onChange={e => setNewDorm({ ...newDorm, number: e.target.value })} placeholder="Dorm Number (e.g. 001, 101, 201)" required style={{ padding: 8, borderRadius: 6, border: '1px solid #4dabf7', marginRight: 8 }} />
+                    <select value={newDorm.block} onChange={e => setNewDorm({ ...newDorm, block: e.target.value })} required style={{ padding: 8, borderRadius: 6, border: '1px solid #4dabf7', marginRight: 8 }}>
                   <option value="">Select Block</option>
-                  {blocks.map((block) => (
-                    <option key={block._id} value={block._id}>
-                      Block {block.number}
-                    </option>
+                      {blocks.map(block => (
+                        <option key={block._id} value={block._id}>{block.number}</option>
                   ))}
                 </select>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  style={{
-                    background: '#4a4a4a',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    flex: 1
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : (editingDorm ? 'Update Dorm' : 'Create Dorm')}
-                </button>
-                {editingDorm && (
-                  <button
-                    type="button"
-                    style={{
-                      background: '#6c757d',
-                      color: 'white',
-                      border: 'none',
-                      padding: '10px 20px',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      setEditingDorm(null);
-                      setNewDorm({ number: '', block: '' });
-                    }}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
+                    <button type="submit" className="add-student-button">{editingDorm ? 'Update' : 'Add'}</button>
+                    {editingDorm && <button type="button" className="student-delete-btn" onClick={() => { setEditingDorm(null); setNewDorm({ number: '', block: '' }); }}>Cancel</button>}
             </form>
-
-            {/* Display Dorms */}
-            <div className="dorms-list">
-              <h4 style={{ color: 'white' }}>Existing Dorms</h4>
-              <div className="list-container" style={{
-                maxHeight: '300px',
-                overflowY: 'auto',
-                backgroundColor: '#2a2a2a',
-                borderRadius: '8px',
-                padding: '10px'
-              }}>
-                {dorms.length > 0 ? (
-                  dorms.map((dorm) => {
-                    return (
-                      <div key={dorm._id} className="list-item" style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '10px',
-                        borderBottom: '1px solid #444',
-                        color: 'white'
-                      }}>
-                        <span>
-                          Dorm {dorm.number} in Block {dorm.block?.number || 'Unknown'}
-                        </span>
-                        <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
-                          <button
-                            onClick={() => handleEditDorm(dorm)}
-                            style={{
-                              background: '#007bff',
-                              color: 'white',
-                              border: 'none',
-                              padding: '5px 10px',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDorm(dorm._id)}
-                            style={{
-                              background: '#dc3545',
-                              color: 'white',
-                              border: 'none',
-                              padding: '5px 10px',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
-                    No dorms found.
-                  </p>
-                )}
-              </div>
+                  {dormErrorMessage && <div className="error-message" style={{ color: 'red', marginBottom: 8 }}>{dormErrorMessage}</div>}
+                  <ul className="dorms-list" style={{ listStyle: 'none', padding: 0 }}>
+                    {dorms.map(dorm => {
+                      const dormBlockId = dorm.block?._id || dorm.block;
+                      const dormBlockNumber = dorm.block?.number || dorm.block;
+                      const foundBlock = blocks.find(
+                        b =>
+                          String(b._id).trim() === String(dormBlockId).trim() ||
+                          String(b.number).trim() === String(dormBlockNumber).trim()
+                      );
+                      return (
+                        <li key={dorm._id} style={{ background: '#232a4d', color: '#fff', borderRadius: 8, marginBottom: 8, padding: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{dorm.number} (Block {foundBlock?.number || 'Unknown'})</span>
+                          <span>
+                            <button className="student-edit-btn" style={{ marginRight: 8 }} onClick={() => handleEditDorm(dorm)}>Edit</button>
+                            <button className="student-delete-btn" onClick={() => handleDeleteDorm(dorm._id)}>Delete</button>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
             </div>
           </div>
         </div>
       )}
-
-      {/* Student Approvals Section */}
       {activeTab === 'account-approvals' && (
-        <div className="section">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Student Account Approvals</h2>
-            <button
-              onClick={() => setShowAddStudentForm(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Add New Student
-            </button>
+            <div className="section student-approvals-section">
+              <div className="approvals-header">
+                <h2>Student Approvals</h2>
+                <div className="actions-row">
+                  <button className="add-student-button" onClick={() => { setShowAddStudentForm(true); setEditingStudent(null); }}>Add Student</button>
+                  <form onSubmit={handleCsvUpload} style={{ display: 'inline-block' }}>
+                    <input type="file" accept=".csv" onChange={e => setCsvFile(e.target.files[0])} style={{ marginRight: 8 }} />
+                    <button type="submit" className="add-student-button">Upload CSV</button>
+                  </form>
+                  {uploadStatus && <span style={{ color: '#4dabf7', marginLeft: 8 }}>{uploadStatus}</span>}
           </div>
-
-          {/* Add Student Form Modal */}
+                <div className="search-container">
+                  <input className="search-input" type="text" placeholder="Search by ID, name, email, department, college..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                </div>
+              </div>
+              <table className="approvals-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>College</th>
+                    <th>Status</th>
+                    <th>Registration Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredApprovals.map(student => (
+                    <tr key={student._id}>
+                      <td>{student.studentId}</td>
+                      <td>{student.name}</td>
+                      <td>{student.email}</td>
+                      <td>{student.department}</td>
+                      <td>{student.college}</td>
+                      <td>{student.status}</td>
+                      <td>{new Date(student.registrationDate).toLocaleString()}</td>
+                      <td className="table-actions">
+                        <button className="student-edit-btn" onClick={() => handleEditStudent(student)}>Edit</button>
+                        <button className="student-delete-btn" onClick={() => handleDeleteStudent(student._id)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {/* Add Student Modal */}
           {showAddStudentForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-gray-800 p-6 rounded-lg w-[500px]">
-                <h3 className="text-xl font-bold text-white mb-4">Add New Student</h3>
-                <form onSubmit={handleFormSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-white mb-1">Student ID</label>
-                    <input
-                      type="text"
-                      value={newStudent.studentId}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, studentId: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    />
+                <div className="modal-overlay">
+                  <div className="modal-content">
+                    <h3>{editingStudent ? 'Edit Student' : 'Add Student'}</h3>
+                    <form onSubmit={handleFormSubmit}>
+                      {/* Student ID (read-only for add, editable for edit) */}
+                      <div className="form-group">
+                        <label>ID</label>
+                        <input type="text" value={newStudent.studentId} onChange={e => setNewStudent({ ...newStudent, studentId: e.target.value })} readOnly={!editingStudent} required />
                   </div>
-                  <div>
-                    <label className="block text-white mb-1">Name</label>
-                    <input
-                      type="text"
-                      value={newStudent.name}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    />
+                      {/* Status */}
+                      <div className="form-group">
+                        <label>Status</label>
+                        <select value={newStudent.status} onChange={e => setNewStudent({ ...newStudent, status: e.target.value })} required>
+                          <option value="pending">Pending</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
                   </div>
-                  <div>
-                    <label className="block text-white mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={newStudent.email}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    />
+                      {/* Name */}
+                      <div className="form-group">
+                        <label>Name</label>
+                        <input type="text" value={newStudent.name} onChange={e => setNewStudent({ ...newStudent, name: e.target.value })} required />
                   </div>
-                  <div>
-                    <label className="block text-white mb-1">College</label>
-                    <select
-                      value={newStudent.college}
-                      onChange={async (e) => {
-                        const selectedCollege = e.target.value;
-                        setNewStudent(prev => ({ ...prev, college: selectedCollege, department: '' }));
-                        if (selectedCollege) {
-                          try {
-                            // Get departments using the college name directly
-                            const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(selectedCollege)}/departments`, {
-                              headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`
-                              }
-                            });
-                            if (!response.ok) throw new Error('Failed to fetch departments');
+                      {/* Email */}
+                      <div className="form-group">
+                        <label>Email</label>
+                        <input type="email" value={newStudent.email} onChange={e => setNewStudent({ ...newStudent, email: e.target.value })} required />
+                      </div>
+                      {/* College Dropdown */}
+                      <div className="form-group">
+                        <label>College</label>
+                        <select value={newStudent.college} onChange={async e => {
+                          setNewStudent({ ...newStudent, college: e.target.value, department: '' });
+                          // Fetch departments for selected college
+                          const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(e.target.value)}/departments`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                          });
+                          if (response.ok) {
                             const data = await response.json();
                             setDepartments(data);
-                          } catch (error) {
-                            console.error('Error fetching departments:', error);
-                            setErrorMessage('Failed to load departments');
-                          }
                         } else {
                           setDepartments([]);
                         }
-                      }}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    >
+                        }} required>
                       <option value="">Select College</option>
-                      {colleges.map((college) => (
-                        <option key={college._id} value={college.name}>
-                          {college.name}
-                        </option>
+                          {colleges.map(college => (
+                            <option key={college._id} value={college.name}>{college.name}</option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-white mb-1">Department</label>
-                    <select
-                      value={newStudent.department}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, department: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                      disabled={!newStudent.college}
-                    >
+                      {/* Department Dropdown */}
+                      <div className="form-group">
+                        <label>Department</label>
+                        <select value={newStudent.department} onChange={e => setNewStudent({ ...newStudent, department: e.target.value })} required>
                       <option value="">Select Department</option>
-                      {departments.map((department) => (
-                        <option key={department._id} value={department.name}>
-                          {department.name}
-                        </option>
+                          {departments.map(dept => (
+                            <option key={dept._id} value={dept.name}>{dept.name}</option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-white mb-1">Status</label>
-                    <select
-                      value={newStudent.status}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, status: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-white mb-1">Registration Date</label>
-                    <input
-                      type="datetime-local"
-                      value={newStudent.registrationDate}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, registrationDate: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                      required
-                    />
+                      {/* Registration Date */}
+                      <div className="form-group">
+                        <label>Registration Date</label>
+                        <input type="datetime-local" value={newStudent.registrationDate} onChange={e => setNewStudent({ ...newStudent, registrationDate: e.target.value })} required />
                   </div>
                   <div className="admin-student-form-buttons">
-                    <button
-                      type="submit"
-                      className="admin-add-student-btn px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Add Student
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddStudentForm(false);
-                        setNewStudent({
-                          studentId: '',
-                          name: '',
-                          email: '',
-                          department: '',
-                          college: '',
-                          status: 'pending',
-                          registrationDate: new Date().toISOString().slice(0, 16)
-                        });
-                        setDepartments([]);
-                      }}
-                      className="admin-cancel-student-btn px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
+                        <button type="submit" className="add-student-button">{editingStudent ? 'Update' : 'Add'}</button>
+                        <button type="button" className="student-delete-btn" onClick={() => { setShowAddStudentForm(false); setEditingStudent(null); }}>Cancel</button>
                   </div>
                 </form>
               </div>
             </div>
           )}
-
-          {/* CSV Upload Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-bold mb-4">Upload Students CSV</h2>
-            <form onSubmit={handleCsvUpload} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select CSV File
-                </label>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setCsvFile(e.target.files[0])}
-                  className="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100"
-                />
               </div>
-              {uploadStatus && (
-                <p className={`text-sm ${uploadStatus.includes('Successfully') ? 'text-green-600' : 'text-red-600'}`}>
-                  {uploadStatus}
-                </p>
-              )}
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Upload CSV
-              </button>
-            </form>
-          </div>
-
-          {/* Student Approvals Table */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Student Approvals</h2>
-
-              {/* Search Bar */}
-              <div className="mb-4">
-                <div className="flex">
-                  <input
-                    type="text"
-                    placeholder="Search by ID, name, email, department, or college..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    Search
-                  </button>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {filteredApprovals.length} of {studentApprovals.length} students found
-                </p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredApprovals.map((approval) => (
-                      <tr key={approval._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {editingStudentId === approval._id ? (
-                            <input
-                              type="text"
-                              value={editingStudentData.studentId}
-                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, studentId: e.target.value }))}
-                              className="w-full px-2 py-1 border rounded"
-                            />
-                          ) : (
-                            approval.studentId
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {editingStudentId === approval._id ? (
-                            <input
-                              type="text"
-                              value={editingStudentData.name}
-                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, name: e.target.value }))}
-                              className="w-full px-2 py-1 border rounded"
-                            />
-                          ) : (
-                            approval.name
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {editingStudentId === approval._id ? (
-                            <input
-                              type="email"
-                              value={editingStudentData.email}
-                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, email: e.target.value }))}
-                              className="w-full px-2 py-1 border rounded"
-                            />
-                          ) : (
-                            approval.email
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {editingStudentId === approval._id ? (
-                            <input
-                              type="text"
-                              value={editingStudentData.department}
-                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, department: e.target.value }))}
-                              className="w-full px-2 py-1 border rounded"
-                            />
-                          ) : (
-                            approval.department
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {editingStudentId === approval._id ? (
-                            <input
-                              type="text"
-                              value={editingStudentData.college}
-                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, college: e.target.value }))}
-                              className="w-full px-2 py-1 border rounded"
-                            />
-                          ) : (
-                            approval.college
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {editingStudentId === approval._id ? (
-                            <input
-                              type="datetime-local"
-                              value={editingStudentData.registrationDate}
-                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, registrationDate: e.target.value }))}
-                              className="w-full px-2 py-1 border rounded"
-                            />
-                          ) : (
-                            new Date(approval.registrationDate).toLocaleString()
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {editingStudentId === approval._id ? (
-                            <select
-                              value={editingStudentData.status}
-                              onChange={(e) => setEditingStudentData(prev => ({ ...prev, status: e.target.value }))}
-                              className="w-full px-2 py-1 border rounded"
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="approved">Approved</option>
-                              <option value="rejected">Rejected</option>
-                            </select>
-                          ) : (
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                              ${approval.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                approval.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                  'bg-yellow-100 text-yellow-800'}`}>
-                              {approval.status}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-32">
-                          <div className="table-actions">
-                            {editingStudentId === approval._id ? (
-                              <>
-                                <button
-                                  onClick={() => handleInlineSave(approval._id)}
-                                  className="student-edit-btn"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                  Save
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setEditingStudentId(null);
-                                    setEditingStudentData(null);
-                                  }}
-                                  className="student-delete-btn"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                  Cancel
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => handleInlineEdit(approval)}
-                                  className="student-edit-btn"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteStudent(approval._id)}
-                                  className="student-delete-btn"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  Delete
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Rejection Modal */}
-          {selectedStudent && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-gray-800 p-6 rounded-lg w-96">
-                <h3 className="text-lg font-bold text-white mb-4">Reject Student</h3>
-                <textarea
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Enter rejection reason"
-                  className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded mb-4 focus:border-blue-500 focus:outline-none"
-                  rows="4"
-                />
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => {
-                      setSelectedStudent(null);
-                      setRejectionReason('');
-                    }}
-                    className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleStudentAction(selectedStudent._id, 'rejected')}
-                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            </div>
           )}
-        </div>
-      )}
-
-      {/* Add Summary Reports Section */}
       {activeTab === 'summary-reports' && (
         <div className="admin-summary-reports-section">
           <div className="admin-summary-reports-header">
             <h2>Summary Reports</h2>
             <div className="admin-filters">
               <div className="admin-role-filter">
-                <label htmlFor="roleSelect">Filter by Role:</label>
-                <select
-                  id="roleSelect"
-                  value={selectedRole}
-                  onChange={handleRoleChange}
-                  className="role-select"
-                >
-                  <option value="all">All Roles</option>
-                  <option value="proctor">Proctors</option>
-                  <option value="supervisor">Supervisors</option>
-                  <option value="dean">Deans</option>
+                    <label>Role</label>
+                    <select value={selectedRole} onChange={handleRoleChange} className="role-select">
+                      <option value="all">All</option>
+                      <option value="proctor">Proctor</option>
+                      <option value="supervisor">Supervisor</option>
+                      <option value="dean">Dean</option>
                 </select>
               </div>
               <div className="admin-block-filter">
-                <label htmlFor="blockSelect">Filter by Block:</label>
-                <select
-                  id="blockSelect"
-                  value={selectedBlock}
-                  onChange={handleBlockChange}
-                  className="block-select"
-                >
+                    <label>Block</label>
+                    <select value={selectedBlock} onChange={handleBlockChange} className="block-select">
                   {availableBlocks.map(block => (
-                    <option key={block} value={block}>
-                      {block === 'all' ? 'All Blocks' : `Block ${block}`}
-                    </option>
+                        <option key={block} value={block}>{block}</option>
                   ))}
                 </select>
               </div>
             </div>
           </div>
-
-          {loadingSummaryReports && <p className="loading">Loading summary reports...</p>}
-          {summaryReportsError && <p className="error">Error: {summaryReportsError}</p>}
-
           <div className="admin-summary-reports-container">
-            {filteredReports.length === 0 ? (
-              <p>No summary reports found for the selected filters.</p>
-            ) : (
-              filteredReports.map(report => (
-                <div key={report.blockNumber} className="admin-summary-report-card">
+                {loadingSummaryReports ? (
+                  <div className="loading-spinner" />
+                ) : summaryReportsError ? (
+                  <div className="error-message">{summaryReportsError}</div>
+                ) : filteredReports.length === 0 ? (
+                  <div>No reports available.</div>
+                ) : (
+                  filteredReports.map((report, idx) => (
+                    <div key={idx} className="admin-summary-report-card">
                   <div className="report-header">
-                    <h3>{selectedBlock === 'all' ? 'Summary Report' : `Report from ${report.name}`}</h3>
-                    <p className="role-label">{report.role}</p>
+                        <h3>{report.name}</h3>
+                        <span className="role-label">{report.role}</span>
+                        <span className="role-label">Block: {report.blockNumber}</span>
                   </div>
                   <div className="quick-stats">
                     <div className="stat-item">
-                      <span className="stat-label">Total</span>
+                          <span className="stat-label">Total Complaints</span>
                       <span className="stat-value">{report.totalComplaints}</span>
                     </div>
                     <div className="stat-item">
@@ -3670,55 +2568,29 @@ const AdminPage = () => {
                       <span className="stat-value pending">{report.pendingComplaints}</span>
                     </div>
                   </div>
-
                   <div className="charts-container">
                     <div className="chart-wrapper">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={[
-                              { name: 'Resolved', value: report.resolvedComplaints },
-                              { name: 'Pending', value: report.pendingComplaints }
-                            ]}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={true}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          >
-                            <Cell fill="#4CAF50" />
-                            <Cell fill="#FFC107" />
-                          </Pie>
+                          <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={[{ name: 'Resolved', value: report.resolvedComplaints }, { name: 'Pending', value: report.pendingComplaints }]}> 
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis />
                           <Tooltip />
                           <Legend />
-                        </PieChart>
+                              <Bar dataKey="value" fill="#4dabf7" />
+                            </BarChart>
                       </ResponsiveContainer>
                     </div>
-
                     <div className="chart-wrapper">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                          data={[
-                            { name: 'Total', value: report.totalComplaints },
-                            { name: 'Resolved', value: report.resolvedComplaints },
-                            { name: 'Pending', value: report.pendingComplaints }
-                          ]}
-                          margin={{
-                            top: 5,
-                            right: 30,
-                            left: 20,
-                            bottom: 5,
-                          }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
+                          <ResponsiveContainer width="100%" height={250}>
+                            <PieChart>
+                              <Pie dataKey="value" data={[{ name: 'Resolved', value: report.resolvedComplaints }, { name: 'Pending', value: report.pendingComplaints }]} cx="50%" cy="50%" outerRadius={80} fill="#4dabf7" label>
+                                <Cell key="resolved" fill="#4caf50" />
+                                <Cell key="pending" fill="#ffc107" />
+                              </Pie>
                           <Tooltip />
                           <Legend />
-                          <Bar dataKey="value" fill="#2196F3" />
-                        </BarChart>
+                            </PieChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
@@ -3728,6 +2600,8 @@ const AdminPage = () => {
           </div>
         </div>
       )}
+        </div>
+      </main>
     </div>
   );
 };

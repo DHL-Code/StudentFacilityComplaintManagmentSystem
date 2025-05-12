@@ -4,11 +4,11 @@ import '../styles/Student.css';
 import { Star, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes, faUser, faChalkboardTeacher, faCalendarAlt, faBook, faCog, faHome, faStar } from '@fortawesome/free-solid-svg-icons';
 import { faFlag } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
-    const [activeSection, setActiveSection] = useState('complaintForm');
+    const [activeSection, setActiveSection] = useState('dashboard');
     const [complaintType, setComplaintType] = useState('');
     const [specificInfo, setSpecificInfo] = useState('');
     const [description, setDescription] = useState('');
@@ -640,523 +640,538 @@ const Dashboard = () => {
     }, [profile?.userId]);
 
     return (
-        <div className="student-dashboard">
-            <div className="student-sidebar">
-                <h1>Student Dashboard</h1>
-                <ul>
-                    <li onClick={() => handleNavigation('complaintForm')}>Complaint Form</li>
-                    <li onClick={() => handleNavigation('viewProfile')}>View Profile</li>
-                    <li onClick={() => handleNavigation('editProfile')}>Edit Profile</li>
-                    <li onClick={() => handleNavigation('complaintStatus')}>Complaint Status</li>
-                    <li onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</li>
-
-                </ul>
-            </div>
-
-            {/* Top Navigation Bar */}
-            <div className="student-top-nav">
-                <div className="nav-actions">
-                    <button className="dark-mode-toggle" onClick={toggleDarkMode}>
-                        <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
-                        {darkMode ? ' Light Mode' : ' Dark Mode'}
-                    </button>
-                    <button className="logout-btn" onClick={handleLogout}>
-                        <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-                    </button>
-                    {/* Add NotificationBell */}
-                    <NotificationBell userId={profile?.userId} className="notification-bell"/>
+        <div className={`student-dashboard-modern${darkMode ? ' dark' : ''}`}>
+            <aside className="modern-sidebar">
+                <div className="sidebar-header">
+                    <span className="sidebar-logo">Student Dashboard</span>
                 </div>
-            </div>
+                <nav className="sidebar-nav">
+                    <ul>
+                        <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => handleNavigation('dashboard')}>
+                            <FontAwesomeIcon icon={faHome} /> <span>Dashboard</span>
+                        </li>
+                        <li className={activeSection === 'complaintForm' ? 'active' : ''} onClick={() => handleNavigation('complaintForm')}>
+                            <FontAwesomeIcon icon={faCommentDots} /> <span>Complaint Form</span>
+                        </li>
+                        <li className={activeSection === 'viewProfile' ? 'active' : ''} onClick={() => handleNavigation('viewProfile')}>
+                            <FontAwesomeIcon icon={faUser} /> <span>View Profile</span>
+                        </li>
+                        <li className={activeSection === 'editProfile' ? 'active' : ''} onClick={() => handleNavigation('editProfile')}>
+                            <FontAwesomeIcon icon={faCog} /> <span>Edit Profile</span>
+                        </li>
+                        <li className={activeSection === 'complaintStatus' ? 'active' : ''} onClick={() => handleNavigation('complaintStatus')}>
+                            <FontAwesomeIcon icon={faBook} /> <span>Complaint Status</span>
+                        </li>
+                        <li className={activeSection === 'provideFeedback' ? 'active' : ''} onClick={() => handleNavigation('provideFeedback')}>
+                            <FontAwesomeIcon icon={faStar} /> <span>Feedback</span>
+                        </li>
+                    </ul>
+                </nav>
+                <div className="sidebar-footer">
+                    <button className="logout-btn" onClick={handleLogout}>
+                        <FontAwesomeIcon icon={faSignOutAlt} /> Log Out
+                    </button>
+                </div>
+            </aside>
 
-            <div className="student-content">
-                <div className="student-top-nav">
-                    <span className="student-hamburger" onClick={toggleNav}>
-                        {isNavActive ? 'x' : '☰'}
-                    </span>
-                    <div className={`student-nav-items ${isNavActive ? 'active' : ''}`}>
-                        <span onClick={() => handleNavigation('complaintForm')}>Complaint Form</span>
-                        <span onClick={() => handleNavigation('viewProfile')}>View Profile</span>
-                        <span onClick={() => handleNavigation('editProfile')}>Edit Profile</span>
-                        <span onClick={() => handleNavigation('complaintStatus')}>Complaint Status</span>
-                        <span onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</span>
+            <main className="modern-main-content">
+                <header className="modern-topbar">
+                    <div className="topbar-left">
+                        {/* Search bar removed */}
+                    </div>
+                    <div className="topbar-right">
+                     
+                        <NotificationBell userId={profile?.userId} className="notification-bell" />
                         <button className="dark-mode-toggle" onClick={toggleDarkMode}>
                             <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
-                            {darkMode ? ' Light Mode' : ' Dark Mode'}
                         </button>
-                        <button className="proctor-mobile-nav-item" onClick={handleLogout}>
-                            <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-                        </button>
-                        {/* Add NotificationBell */}
-                        <NotificationBell userId={profile?.userId} className='notification-bell' />
+                        <div className="modern-profile-avatar">
+                            {currentProfilePhoto ? (
+                                <img src={currentProfilePhoto} alt="Profile" />
+                            ) : (
+                                <FontAwesomeIcon icon={faUser} />
+                            )}
+                            <span>{profile?.fullName?.split(' ')[0] || 'Student'}</span>
+                        </div>
                     </div>
+                </header>
 
-                </div>
-                {/* Navigation Buttons for Desktop View */}
-                <div className="student-desk-nav">
-                    <button onClick={() => handleNavigation('complaintForm')}>Complaint Form</button>
-                    <button onClick={() => handleNavigation('viewProfile')}>View Profile</button>
-                    <button onClick={() => handleNavigation('editProfile')}>Edit Profile</button>
-                    <button onClick={() => handleNavigation('complaintStatus')}>Complaint Status</button>
-                    <button onClick={() => handleNavigation('provideFeedback')}>Provide Feedback</button>
-                    <NotificationBell userId={profile?.userId} className='notification-bell'/>
-                </div>
-
-                {activeSection === 'complaintForm' && (
-                    <section className="student-complaint-form">
-                        <h2>Complaint Form</h2>
-                        <form onSubmit={handleSubmitComplaint}>
-                            <div className="student-form-groups">
-                                <label>User ID:</label>
-                                <input
-                                    type="text"
-                                    value={profile?.userId || ''}
-                                    readOnly
-                                    className="student-readonly-input"
-                                />
-                            </div>
-                            <div className="student-form-groups">
-                                <label>Block Number:</label>
-                                <input
-                                    type="text"
-                                    value={profile?.blockNumber || ''}
-                                    readOnly
-                                    className="student-readonly-input"
-                                />
-                            </div>
-                            <div className="student-form-groups">
-                                <label>Dorm Number:</label>
-                                <input
-                                    type="text"
-                                    value={profile?.dormNumber || ''}
-                                    readOnly
-                                    className="student-readonly-input"
-                                />
-                            </div>
-                            <label>
-                                Type of Problem:
-                                <select value={complaintType} onChange={(e) => setComplaintType(e.target.value)} required>
-                                    <option value="">Select...</option>
-                                    <option value="Electricity">Electricity</option>
-                                    <option value="Toilet Problem">Toilet Problem</option>
-                                    <option value="Water Pipe Issue">Water Pipe Issue</option>
-                                    <option value="Bed">Bed</option>
-                                    <option value="Locker">Locker</option>
-                                    <option value="Pillow">Pillow</option>
-                                    <option value="Furniture">Furniture</option>
-                                    <option value="Cheapwood">Cheapwood</option>
-                                    <option value="Bulb">Bulb</option>
-                                    <option value="Socket">Socket</option>
-                                    <option value="Mattress">Mattress</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </label>
-                            <label>
-                                Specific Information:
-                                <input
-                                    type="text"
-                                    value={specificInfo}
-                                    onChange={(e) => setSpecificInfo(e.target.value)}
-                                    placeholder="e.g., socket, wire, bulb..."
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Description:
-                                <textarea
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="Describe your complaint..."
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Upload a Photograph (max 5 MB):
-                                <input type="file" accept=".jpg,.png" onChange={handleFileChange} />
-                                {fileError && <p className="student-error">{fileError}</p>}
-                            </label>
-                            <button type="submit">Submit Complaint</button>
-                        </form>
-                        {successMessage && <p className="student-success">{successMessage}</p>}
-                        {error && <p className="student-error">{error}</p>}
-                    </section>
-                )}
-
-                {activeSection === 'viewProfile' && (
-                    <section className="student-view-profile">
-                        <h2>View Profile</h2>
-                        {loading && <p className="student-loading">Loading profile...</p>}
-                        {error && <p className="student-error">Error: {error}</p>}
-                        {profile && (
-                            <div className="student-profile-container">
-                                <div className="student-profile-header">
-                                    {currentProfilePhoto ? (
-                                        <img
-                                            src={currentProfilePhoto}
-                                            alt="Profile"
-                                            className="student-profile-photo"
-                                            onError={(e) => {
-                                                e.target.style.display = 'none';
-                                                setError('Failed to load profile photo');
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className="student-profile-photo-placeholder">No Photo</div>
-                                    )}
-                                    <h3 className='full-name'>{profile.fullName}</h3>
-                                    <p className="user-id">{profile.userId}</p>
-                                </div>
-                                <div className="student-profile-details">
-                                    <div className="student-detail-item">
-                                        <span className="student-detail-label">Department:</span>
-                                        <span className="student-detail-value">{profile.department}</span>
-                                    </div>
-                                    <div className="student-detail-item">
-                                        <span className="student-detail-label">Email:</span>
-                                        <span className="student-detail-value">{profile.email}</span>
-                                    </div>
-                                    <div className="student-detail-item">
-                                        <span className="student-detail-label">Phone Number:</span>
-                                        <span className="student-detail-value">{profile.phoneNumber}</span>
-                                    </div>
-                                    <div className="student-detail-item">
-                                        <span className="student-detail-label">Gender:</span>
-                                        <span className="student-detail-value">{profile.gender}</span>
-                                    </div>
-                                    <div className="student-detail-item">
-                                        <span className="student-detail-label">College:</span>
-                                        <span className="student-detail-value">{profile.college}</span>
-                                    </div>
-                                    <div className="student-detail-item">
-                                        <span className="student-detail-label">Account Created:</span>
-                                        <span className="student-detail-value">
-                                            {new Date(profile.createdAt).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </section>
-                )}
-
-                {activeSection === 'editProfile' && (
-                    <section className="student-edit-profile">
-                        <h2>Edit Profile</h2>
-                        {loading && <p className="student-loading">Saving changes...</p>}
-                        {error && <p className="student-error">Error: {error}</p>}
-
-                        <form onSubmit={handleProfileUpdate}>
-                            <div className="student-profile-photo-edit">
-                                <div
-                                    className="student-photo-preview"
-                                    onClick={() => document.getElementById('profilePhotoInput').click()}
-                                >
-                                    {newProfilePreview ? (
-                                        <img src={newProfilePreview} alt="Preview" className="student-profile-image" />
-                                    ) : profile?.profilePhoto ? (
-                                        <img src={profile.profilePhoto} alt="Current Profile" className="student-profile-image" />
-                                    ) : (
-                                        <div className="student-upload-placeholder">
-                                            <span className="student-upload-icon">+</span>
-                                            <span className="student-upload-text">Upload Photo</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <input
-                                    type="file"
-                                    id="profilePhotoInput"
-                                    accept="image/*"
-                                    onChange={handlePhotoChange}
-                                    style={{ display: 'none' }}
-                                />
-                                {fileError && <p className="student-error">{fileError}</p>}
-                            </div>
-                            <div className="student-form-fields">
-                                <label>
-                                    Full Name:
-                                    <input
-                                        className="student-narrow-input"
-                                        type="text"
-                                        value={formData.fullName || ''}
-                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                    />
-                                </label>
-
-                                <label>
-                                    Email:
-                                    <input
-                                        className="student-narrow-input"
-                                        type="email"
-                                        value={formData.email || ''}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    />
-                                </label>
-
-                                <label>
-                                    Phone Number:
-                                    <input
-                                        type="tel"
-                                        value={formData.phoneNumber || ''}
-                                        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                                    />
-                                </label>
-
-                                <label>
-                                    College:
-                                    <select
-                                        value={formData.college || ''}
-                                        onChange={(e) => {
-                                            const selectedCollegeName = e.target.value;
-                                            setFormData({ ...formData, college: selectedCollegeName, department: '' });
-                                        }}
-                                        disabled={loadingColleges}
-                                    >
-                                        <option value="">
-                                            {loadingColleges ? 'Loading colleges...' : 'Select College'}
-                                        </option>
-                                        {allColleges?.length > 0 ? (
-                                            allColleges.map((college) => (
-                                                <option key={college._id} value={college.name}>
-                                                    {college.name}
-                                                </option>
-                                            ))
-                                        ) : (
-                                            <option value="" disabled>
-                                                No colleges available
-                                            </option>
-                                        )}
-                                    </select>
-                                </label>
-
-                                <label>
-                                    Department:
-                                    <select
-                                        value={formData.department || ''}
-                                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                        disabled={!formData.college || loadingDepartments}
-                                    >
-                                        <option value="">
-                                            {loadingDepartments
-                                                ? 'Loading departments...'
-                                                : !formData.college
-                                                    ? 'Select a college first'
-                                                    : availableDepartments?.length === 0
-                                                        ? 'No departments available'
-                                                        : 'Select Department'}
-                                        </option>
-                                        {availableDepartments?.length > 0 &&
-                                            availableDepartments.map((dept) => (
-                                                <option key={dept._id} value={dept.name}>
-                                                    {dept.name}
-                                                </option>
-                                            ))
-                                        }
-                                    </select>
-                                </label>
-
-                                <div className="student-gender-selection">
-                                    <span className='gender'>Gender:</span>
-                                    <label>
-                                        <input
-                                            type="radio"
-                                            value="male"
-                                            checked={formData.gender === 'male'}
-                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                        />
-                                        Male
-                                    </label>
-                                    <label>
-                                        <input
-                                            type="radio"
-                                            value="female"
-                                            checked={formData.gender === 'female'}
-                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                        />
-                                        Female
-                                    </label>
-                                </div>
-
-                                <div className="student-password-change-section">
-                                    <h3>Change Password</h3>
-
-                                    <label>
-                                        Current Password:
-                                        <input
-                                            type="password"
-                                            value={formData.currentPassword}
-                                            onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                                            placeholder="Enter current password"
-                                        />
-                                    </label>
-
-                                    <label>
-                                        New Password:
-                                        <input
-                                            type="password"
-                                            value={formData.newPassword}
-                                            onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                                            placeholder="Enter new password (min 6 characters)"
-                                        />
-                                    </label>
-
-                                    <label>
-                                        Confirm New Password:
-                                        <input
-                                            type="password"
-                                            value={formData.confirmNewPassword}
-                                            onChange={(e) => setFormData({ ...formData, confirmNewPassword: e.target.value })}
-                                            placeholder="Confirm new password"
-                                        />
-                                    </label>
-                                </div>
-                            </div>
-
-                            <button type="submit" disabled={loading}>
-                                {loading ? 'Saving...' : 'Save Changes'}
-                            </button>
-                        </form>
-                    </section>
-                )}
-
-                {activeSection === 'provideFeedback' && (
-                    <motion.section
-                        className="student-feedback-section"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                    >
-                        <h2 className="student-feedback-title">Provide Feedback</h2>
-                        <form onSubmit={handleFeedbackSubmit} className="student-feedback-form">
-                            <div className="student-star-rating" style={{ gap: '18px' }}>
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <motion.button
-                                        key={star}
-                                        type="button"
-                                        onClick={() => handleStarClick(star)}
-                                        whileHover={{ scale: 1.2 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        className={star <= feedbackRating ? 'star active' : 'star'}
-                                        aria-label={`Rate ${star} stars`}
-                                    >
-                                        <Star
-                                            color={star <= feedbackRating ? '#FFD700' : '#ddd'}
-                                        />
-                                    </motion.button>
-                                ))}
-                                <p className="student-rating-text">
-                                    {feedbackRating
-                                        ? `Rated ${feedbackRating} ${feedbackRating === 1 ? 'star' : 'stars'}`
-                                        : 'Click to rate'}
+                {activeSection === 'dashboard' && (
+                    <section className="modern-dashboard-overview">
+                        <div className="modern-welcome-card awesome-welcome">
+                            <div className="welcome-text">
+                                <h2>Welcome, {profile?.fullName?.split(' ')[0] || 'Student'}!</h2>
+                                <p>
+                                    We're glad to have you here. This is your space to manage your facility complaints, update your profile, and provide feedback to help us improve your campus experience.<br /><br />
+                                    <strong>Tip:</strong> Use the sidebar to quickly access all features. If you have any issues, don't hesitate to submit a complaint or reach out for support. Your comfort and satisfaction matter!
                                 </p>
+                                <p style={{marginTop: '18px', fontWeight: 500, color: '#fba53b'}}>Have a great day and make your voice heard!</p>
                             </div>
 
-                            <textarea
-                                placeholder="Provide your feedback..."
-                                value={feedbackComment}
-                                onChange={(e) => setFeedbackComment(e.target.value)}
-                                className="student-feedback-textarea"
-                                rows={4}
-                                disabled={isFeedbackSubmitting}
-                            />
-                            <AnimatePresence>
-                                {feedbackSubmissionStatus === 'error' && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        className="student-error-message"
-                                    >
-                                        Please provide a rating or feedback comment.
-                                    </motion.p>
-                                )}
-                            </AnimatePresence>
-
-                            <button type="submit" disabled={isFeedbackSubmitting} className="student-feedback-button">
-                                {isFeedbackSubmitting ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Submitting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send className="mr-2 h-4 w-4" />
-                                        Submit Feedback
-                                    </>
-                                )}
-                            </button>
-
-                            <AnimatePresence>
-                                {feedbackSubmissionStatus === 'success' && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 10 }}
-                                        className="student-success-message"
-                                    >
-                                        Thank you for your feedback!
-                                    </motion.p>
-                                )}
-                            </AnimatePresence>
-                        </form>
-                    </motion.section>
-                )}
-
-                {activeSection === 'complaintStatus' && (
-                    <section className="student-complaint-status">
-                        <h2>Complaint Status</h2>
-                        {loadingComplaints ? (
-                            <p>Loading complaints...</p>
-                        ) : error ? (
-                            <p className="student-error">Error: {error}</p>
-                        ) : complaints.length === 0 ? (
-                            <p>No complaints submitted yet.</p>
-                        ) : (
-                            <div className="student-complaints-list">
-                                {complaints.map((complaint) => (
-                                    <div key={complaint._id} className={`student-complaint-card ${complaint.isUrgent ? 'urgent' : ''}`}>
-                                        <div className="student-complaint-header">
-                                            <h3>{complaint.complaintType}</h3>
-                                            <div className="student-complaint-status">
-                                                <span className={`student-status-badge ${complaint.status?.toLowerCase() || 'pending'}`}>
-                                                    {complaint.status || 'Pending'}
-                                                </span>
-                                                {complaint.isUrgent && (
-                                                    <span className="student-status-badge urgent">
-                                                        <FontAwesomeIcon icon={faFlag} /> Urgent
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="student-complaint-details">
-                                            <p><strong>Specific Issue:</strong> {complaint.specificInfo}</p>
-                                            <p><strong>Description:</strong> {complaint.description}</p>
-                                            <p><strong>Block:</strong> {complaint.blockNumber}</p>
-                                            <p><strong>Dorm:</strong> {complaint.dormNumber}</p>
-                                            <p><strong>Submitted:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
-                                        </div>
-                                        {complaint.file && (
-                                            <div className="student-complaint-image">
-                                                <img
-                                                    src={`http://localhost:5000/${complaint.file}`}
-                                                    alt="Complaint evidence"
-                                                    className="student-complaint-photo"
-                                                />
-                                            </div>
-                                        )}
-                                        <div className="student-complaint-actions">
-                                            <button
-                                                className="student-delete-btn"
-                                                onClick={() => handleDeleteComplaint(complaint._id)}
-                                            >
-                                                Delete Complaint
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        </div>
                     </section>
                 )}
-            </div>
+
+                {activeSection !== 'dashboard' && (
+                    <div className="student-content">
+                        {activeSection === 'complaintForm' && (
+                            <section className="student-complaint-form">
+                                <h2>Complaint Form</h2>
+                                <form onSubmit={handleSubmitComplaint}>
+                                    <div className="student-form-groups">
+                                        <label>User ID:</label>
+                                        <input
+                                            type="text"
+                                            value={profile?.userId || ''}
+                                            readOnly
+                                            className="student-readonly-input"
+                                        />
+                                    </div>
+                                    <div className="student-form-groups">
+                                        <label>Block Number:</label>
+                                        <input
+                                            type="text"
+                                            value={profile?.blockNumber || ''}
+                                            readOnly
+                                            className="student-readonly-input"
+                                        />
+                                    </div>
+                                    <div className="student-form-groups">
+                                        <label>Dorm Number:</label>
+                                        <input
+                                            type="text"
+                                            value={profile?.dormNumber || ''}
+                                            readOnly
+                                            className="student-readonly-input"
+                                        />
+                                    </div>
+                                    <label>
+                                        Type of Problem:
+                                        <select value={complaintType} onChange={(e) => setComplaintType(e.target.value)} required>
+                                            <option value="">Select...</option>
+                                            <option value="Electricity">Electricity</option>
+                                            <option value="Toilet Problem">Toilet Problem</option>
+                                            <option value="Water Pipe Issue">Water Pipe Issue</option>
+                                            <option value="Bed">Bed</option>
+                                            <option value="Locker">Locker</option>
+                                            <option value="Pillow">Pillow</option>
+                                            <option value="Furniture">Furniture</option>
+                                            <option value="Cheapwood">Cheapwood</option>
+                                            <option value="Bulb">Bulb</option>
+                                            <option value="Socket">Socket</option>
+                                            <option value="Mattress">Mattress</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        Specific Information:
+                                        <input
+                                            type="text"
+                                            value={specificInfo}
+                                            onChange={(e) => setSpecificInfo(e.target.value)}
+                                            placeholder="e.g., socket, wire, bulb..."
+                                            required
+                                        />
+                                    </label>
+                                    <label>
+                                        Description:
+                                        <textarea
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            placeholder="Describe your complaint..."
+                                            required
+                                        />
+                                    </label>
+                                    <label>
+                                        Upload a Photograph (max 5 MB):
+                                        <input type="file" accept=".jpg,.png" onChange={handleFileChange} />
+                                        {fileError && <p className="student-error">{fileError}</p>}
+                                    </label>
+                                    <button type="submit">Submit Complaint</button>
+                                </form>
+                                {successMessage && <p className="student-success">{successMessage}</p>}
+                                {error && <p className="student-error">{error}</p>}
+                            </section>
+                        )}
+
+                        {activeSection === 'viewProfile' && (
+                            <section className="student-view-profile">
+                                <h2>View Profile</h2>
+                                {loading && <p className="student-loading">Loading profile...</p>}
+                                {error && <p className="student-error">Error: {error}</p>}
+                                {profile && (
+                                    <div className="student-profile-container">
+                                        <div className="student-profile-header">
+                                            {currentProfilePhoto ? (
+                                                <img
+                                                    src={currentProfilePhoto}
+                                                    alt="Profile"
+                                                    className="student-profile-photo"
+                                                    onError={(e) => {
+                                                        e.target.style.display = 'none';
+                                                        setError('Failed to load profile photo');
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="student-profile-photo-placeholder">No Photo</div>
+                                            )}
+                                            <h3 className='full-name'>{profile.fullName}</h3>
+                                            <p className="user-id">{profile.userId}</p>
+                                        </div>
+                                        <div className="student-profile-details">
+                                            <div className="student-detail-item">
+                                                <span className="student-detail-label">Department:</span>
+                                                <span className="student-detail-value">{profile.department}</span>
+                                            </div>
+                                            <div className="student-detail-item">
+                                                <span className="student-detail-label">Email:</span>
+                                                <span className="student-detail-value">{profile.email}</span>
+                                            </div>
+                                            <div className="student-detail-item">
+                                                <span className="student-detail-label">Phone Number:</span>
+                                                <span className="student-detail-value">{profile.phoneNumber}</span>
+                                            </div>
+                                            <div className="student-detail-item">
+                                                <span className="student-detail-label">Gender:</span>
+                                                <span className="student-detail-value">{profile.gender}</span>
+                                            </div>
+                                            <div className="student-detail-item">
+                                                <span className="student-detail-label">College:</span>
+                                                <span className="student-detail-value">{profile.college}</span>
+                                            </div>
+                                            <div className="student-detail-item">
+                                                <span className="student-detail-label">Account Created:</span>
+                                                <span className="student-detail-value">
+                                                    {new Date(profile.createdAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
+                        {activeSection === 'editProfile' && (
+                            <section className="student-edit-profile">
+                                <h2>Edit Profile</h2>
+                                {loading && <p className="student-loading">Saving changes...</p>}
+                                {error && <p className="student-error">Error: {error}</p>}
+
+                                <form onSubmit={handleProfileUpdate}>
+                                    <div className="student-profile-photo-edit">
+                                        <div
+                                            className="student-photo-preview"
+                                            onClick={() => document.getElementById('profilePhotoInput').click()}
+                                        >
+                                            {newProfilePreview ? (
+                                                <img src={newProfilePreview} alt="Preview" className="student-profile-image" />
+                                            ) : profile?.profilePhoto ? (
+                                                <img src={profile.profilePhoto} alt="Current Profile" className="student-profile-image" />
+                                            ) : (
+                                                <div className="student-upload-placeholder">
+                                                    <span className="student-upload-icon">+</span>
+                                                    <span className="student-upload-text">Upload Photo</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="file"
+                                            id="profilePhotoInput"
+                                            accept="image/*"
+                                            onChange={handlePhotoChange}
+                                            style={{ display: 'none' }}
+                                        />
+                                        {fileError && <p className="student-error">{fileError}</p>}
+                                    </div>
+                                    <div className="student-form-fields">
+                                        <label>
+                                            Full Name:
+                                            <input
+                                                className="student-narrow-input"
+                                                type="text"
+                                                value={formData.fullName || ''}
+                                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                            />
+                                        </label>
+
+                                        <label>
+                                            Email:
+                                            <input
+                                                className="student-narrow-input"
+                                                type="email"
+                                                value={formData.email || ''}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            />
+                                        </label>
+
+                                        <label>
+                                            Phone Number:
+                                            <input
+                                                type="tel"
+                                                value={formData.phoneNumber || ''}
+                                                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                            />
+                                        </label>
+
+                                        <label>
+                                            College:
+                                            <select
+                                                value={formData.college || ''}
+                                                onChange={(e) => {
+                                                    const selectedCollegeName = e.target.value;
+                                                    setFormData({ ...formData, college: selectedCollegeName, department: '' });
+                                                }}
+                                                disabled={loadingColleges}
+                                            >
+                                                <option value="">
+                                                    {loadingColleges ? 'Loading colleges...' : 'Select College'}
+                                                </option>
+                                                {allColleges?.length > 0 ? (
+                                                    allColleges.map((college) => (
+                                                        <option key={college._id} value={college.name}>
+                                                            {college.name}
+                                                        </option>
+                                                    ))
+                                                ) : (
+                                                    <option value="" disabled>
+                                                        No colleges available
+                                                    </option>
+                                                )}
+                                            </select>
+                                        </label>
+
+                                        <label>
+                                            Department:
+                                            <select
+                                                value={formData.department || ''}
+                                                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                                disabled={!formData.college || loadingDepartments}
+                                            >
+                                                <option value="">
+                                                    {loadingDepartments
+                                                        ? 'Loading departments...'
+                                                        : !formData.college
+                                                            ? 'Select a college first'
+                                                            : availableDepartments?.length === 0
+                                                                ? 'No departments available'
+                                                                : 'Select Department'}
+                                                </option>
+                                                {availableDepartments?.length > 0 &&
+                                                    availableDepartments.map((dept) => (
+                                                        <option key={dept._id} value={dept.name}>
+                                                            {dept.name}
+                                                        </option>
+                                                    ))
+                                                }
+                                            </select>
+                                        </label>
+
+                                        <div className="student-gender-selection">
+                                            <span className='gender'>Gender:</span>
+                                            <label>
+                                                <input
+                                                    type="radio"
+                                                    value="male"
+                                                    checked={formData.gender === 'male'}
+                                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                                />
+                                                Male
+                                            </label>
+                                            <label>
+                                                <input
+                                                    type="radio"
+                                                    value="female"
+                                                    checked={formData.gender === 'female'}
+                                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                                />
+                                                Female
+                                            </label>
+                                        </div>
+
+                                        <div className="student-password-change-section">
+                                            <h3>Change Password</h3>
+
+                                            <label>
+                                                Current Password:
+                                                <input
+                                                    type="password"
+                                                    value={formData.currentPassword}
+                                                    onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                                                    placeholder="Enter current password"
+                                                />
+                                            </label>
+
+                                            <label>
+                                                New Password:
+                                                <input
+                                                    type="password"
+                                                    value={formData.newPassword}
+                                                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                                                    placeholder="Enter new password (min 6 characters)"
+                                                />
+                                            </label>
+
+                                            <label>
+                                                Confirm New Password:
+                                                <input
+                                                    type="password"
+                                                    value={formData.confirmNewPassword}
+                                                    onChange={(e) => setFormData({ ...formData, confirmNewPassword: e.target.value })}
+                                                    placeholder="Confirm new password"
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" disabled={loading}>
+                                        {loading ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                </form>
+                            </section>
+                        )}
+
+                        {activeSection === 'provideFeedback' && (
+                            <motion.section
+                                className="student-feedback-section"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                            >
+                                <h2 className="student-feedback-title">Provide Feedback</h2>
+                                <form onSubmit={handleFeedbackSubmit} className="student-feedback-form">
+                                    <div className="student-star-rating" style={{ gap: '18px' }}>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <motion.button
+                                                key={star}
+                                                type="button"
+                                                onClick={() => handleStarClick(star)}
+                                                whileHover={{ scale: 1.2 }}
+                                                whileTap={{ scale: 0.9 }}
+                                                className={star <= feedbackRating ? 'star active' : 'star'}
+                                                aria-label={`Rate ${star} stars`}
+                                            >
+                                                <Star
+                                                    color={star <= feedbackRating ? '#FFD700' : '#ddd'}
+                                                />
+                                            </motion.button>
+                                        ))}
+                                        <p className="student-rating-text">
+                                            {feedbackRating
+                                                ? `Rated ${feedbackRating} ${feedbackRating === 1 ? 'star' : 'stars'}`
+                                                : 'Click to rate'}
+                                        </p>
+                                    </div>
+
+                                    <textarea
+                                        placeholder="Provide your feedback..."
+                                        value={feedbackComment}
+                                        onChange={(e) => setFeedbackComment(e.target.value)}
+                                        className="student-feedback-textarea"
+                                        rows={4}
+                                        disabled={isFeedbackSubmitting}
+                                    />
+                                    <AnimatePresence>
+                                        {feedbackSubmissionStatus === 'error' && (
+                                            <motion.p
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="student-error-message"
+                                            >
+                                                Please provide a rating or feedback comment.
+                                            </motion.p>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <button type="submit" disabled={isFeedbackSubmitting} className="student-feedback-button">
+                                        {isFeedbackSubmitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send className="mr-2 h-4 w-4" />
+                                                Submit Feedback
+                                            </>
+                                        )}
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {feedbackSubmissionStatus === 'success' && (
+                                            <motion.p
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 10 }}
+                                                className="student-success-message"
+                                            >
+                                                Thank you for your feedback!
+                                            </motion.p>
+                                        )}
+                                    </AnimatePresence>
+                                </form>
+                            </motion.section>
+                        )}
+
+                        {activeSection === 'complaintStatus' && (
+                            <section className="student-complaint-status">
+                                <h2>Complaint Status</h2>
+                                {loadingComplaints ? (
+                                    <p>Loading complaints...</p>
+                                ) : error ? (
+                                    <p className="student-error">Error: {error}</p>
+                                ) : complaints.length === 0 ? (
+                                    <p>No complaints submitted yet.</p>
+                                ) : (
+                                    <div className="student-complaints-list">
+                                        {complaints.map((complaint) => (
+                                            <div key={complaint._id} className={`student-complaint-card ${complaint.isUrgent ? 'urgent' : ''}`}>
+                                                <div className="student-complaint-header">
+                                                    <h3>{complaint.complaintType}</h3>
+                                                    <div className="student-complaint-status">
+                                                        <span className={`student-status-badge ${complaint.status?.toLowerCase() || 'pending'}`}>
+                                                            {complaint.status || 'Pending'}
+                                                        </span>
+                                                        {complaint.isUrgent && (
+                                                            <span className="student-status-badge urgent">
+                                                                <FontAwesomeIcon icon={faFlag} /> Urgent
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="student-complaint-details">
+                                                    <p><strong>Specific Issue:</strong> {complaint.specificInfo}</p>
+                                                    <p><strong>Description:</strong> {complaint.description}</p>
+                                                    <p><strong>Block:</strong> {complaint.blockNumber}</p>
+                                                    <p><strong>Dorm:</strong> {complaint.dormNumber}</p>
+                                                    <p><strong>Submitted:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
+                                                </div>
+                                                {complaint.file && (
+                                                    <div className="student-complaint-image">
+                                                        <img
+                                                            src={`http://localhost:5000/${complaint.file}`}
+                                                            alt="Complaint evidence"
+                                                            className="student-complaint-photo"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div className="student-complaint-actions">
+                                                    <button
+                                                        className="student-delete-btn"
+                                                        onClick={() => handleDeleteComplaint(complaint._id)}
+                                                    >
+                                                        Delete Complaint
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </section>
+                        )}
+                    </div>
+                )}
+            </main>
 
             {unreadStatusUpdates.length > 0 && (
                 <div className="status-notifications">
@@ -1184,7 +1199,6 @@ const Dashboard = () => {
                     ))}
                 </div>
             )}
-
         </div>
     );
 };

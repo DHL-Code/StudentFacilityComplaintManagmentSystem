@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ProctorNotificationBell from '../components/ProctorNotificationBell';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes, faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
+import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes, faCheckCircle, faExclamationCircle, faUser, faClipboardList, faHome, faFileAlt } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import '../styles/ProctorDashboard.css';
@@ -535,97 +535,54 @@ function ProctorDashboard() {
   };
 
   return (
-    <div className={`proctor-dashboard ${darkMode ? 'dark-mode' : ''}`}>
-      <button className="proctor-mobile-nav-toggle" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
-        ☰
-      </button>
-      {/* Top Navigation Bar */}
-      <div className="top-nav">
-        <div className="nav-brand">
-          <h1>Proctor Dashboard</h1>
-          {proctorData?.block && <span className="block-badge">Block {proctorData.block}</span>}
+    <div className={`proctor-dashboard-modern${darkMode ? ' dark' : ''}`}>
+      {/* Sidebar */}
+      <aside className="modern-sidebar">
+        <div className="sidebar-header">
+          <span className="sidebar-logo">Proctor Dashboard</span>
         </div>
-        <div className="nav-actions">
-          <button className="dark-mode-toggle" onClick={toggleDarkMode}>
-            <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
-            {darkMode ? ' Light Mode' : ' Dark Mode'}
-          </button>
+        <nav className="sidebar-nav">
+          <ul>
+            <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => setActiveSection('dashboard')}>
+              <FontAwesomeIcon icon={faHome} /> <span>Dashboard</span>
+            </li>
+            <li className={activeSection === 'notifications' ? 'active' : ''} onClick={() => setActiveSection('notifications')}>
+              <FontAwesomeIcon icon={faBell} /> <span>Complaints</span>
+            </li>
+            <li className={activeSection === 'profile' ? 'active' : ''} onClick={() => setActiveSection('profile')}>
+              <FontAwesomeIcon icon={faUser} /> <span>My Profile</span>
+            </li>
+            <li className={activeSection === 'report' ? 'active' : ''} onClick={() => setActiveSection('report')}>
+              <FontAwesomeIcon icon={faFileAlt} /> <span>Write Report</span>
+            </li>
+            <li className={activeSection === 'summary-report' ? 'active' : ''} onClick={() => setActiveSection('summary-report')}>
+              <FontAwesomeIcon icon={faClipboardList} /> <span>Summary Report</span>
+            </li>
+          </ul>
+        </nav>
+        <div className="sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>
-            <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+            <FontAwesomeIcon icon={faSignOutAlt} /> Log Out
           </button>
-          {/* Replace NotificationBell with ProctorNotificationBell */}
-          <ProctorNotificationBell userId={proctorData?.staffId} />
         </div>
-      </div>
+      </aside>
 
-      <div className={`proctor-mobile-nav ${isMobileNavOpen ? 'active' : ''}`}>
-
-        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('dashboard')}>
-          Dashboard
-        </button>
-        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('notifications')}>
-          Complaints
-        </button>
-        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('profile')}>
-          My Profile
-        </button>
-        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('report')}>
-          Write Report
-        </button>
-        <button className="proctor-mobile-nav-item" onClick={() => handleNavigation('summary-report')}>
-          Summary Report
-        </button>
-        <button className="proctor-mobile-nav-item" onClick={toggleDarkMode}>
-          <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
-          {darkMode ? ' Light Mode' : ' Dark Mode'}
-        </button>
-        <button className="proctor-mobile-nav-item" onClick={handleLogout}>
-          <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-        </button>
-        {/* Replace NotificationBell with ProctorNotificationBell */}
-        <ProctorNotificationBell userId={proctorData?.staffId} />
-      </div>
-
-      <div className="dashboard-container">
-        {/* Sidebar Navigation */}
-        <div className="sidebar">
-          <div className="sidebar-menu">
-            <button
-              className={`menu-item ${activeSection === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveSection('dashboard')}
-            >
-              Dashboard Overview
+      {/* Main Content Area */}
+      <main className="modern-main-content">
+        {/* Top Bar */}
+        <header className="modern-topbar">
+          <div className="topbar-right">
+            <ProctorNotificationBell userId={proctorData?.staffId} className="notification-bell" />
+            <button className="dark-mode-toggle" onClick={toggleDarkMode}>
+              <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
             </button>
-            <button
-              className={`menu-item ${activeSection === 'notifications' ? 'active' : ''}`}
-              onClick={() => setActiveSection('notifications')}
-            >
-              <span className="menu-item-content">
-                Complaints
-              </span>
-            </button>
-            <button
-              className={`menu-item ${activeSection === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveSection('profile')}
-            >
-              My Profile
-            </button>
-            <button
-              className={`menu-item ${activeSection === 'report' ? 'active' : ''}`}
-              onClick={() => setActiveSection('report')}
-            >
-              Write Report
-            </button>
-            <button
-              className={`menu-item ${activeSection === 'summary-report' ? 'active' : ''}`}
-              onClick={() => setActiveSection('summary-report')}
-            >
-              Summary Report
-            </button>
+            <div className="modern-profile-avatar">
+              <FontAwesomeIcon icon={faUser} />
+              <span>{proctorData?.name?.split(' ')[0] || 'Proctor'}</span>
+            </div>
           </div>
-        </div>
+        </header>
 
-        {/* Main Content Area */}
         <div className="main-content">
           {loading && <div className="loading-overlay">Loading...</div>}
           {error && <div className="error-message">{error}</div>}
@@ -1081,7 +1038,7 @@ function ProctorDashboard() {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* Complaint Detail Modal */}
       {showComplaintModal && selectedComplaint && (

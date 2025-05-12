@@ -1494,20 +1494,59 @@ body.dark-mode .student-error-message {
 
 /* Dark mode adjustments */
 body.dark-mode .notification-bell {
-  background-color: #4dabf7;
-  color: white;
+  background-color: #4dabf7 !important;
+  color: #fff !important;
 }
 
 body.dark-mode .notification-bell:hover {
-  background-color: #3d8bd7;
-}
-
-body.dark-mode .notification-bell .notification-count {
-  background-color: #ff4444;
+  background-color: #2563eb !important;
 }
 
 body.dark-mode .notification-bell .bell-icon {
-  color: white;
+  color: #fff !important;
+}
+
+body.dark-mode .dark-mode-toggle {
+  background-color: #4dabf7 !important;
+  color: #fff !important;
+}
+
+body.dark-mode .dark-mode-toggle:hover {
+  background-color: #2563eb !important;
+  color: #fff !important;
+}
+
+body.dark-mode .dark-mode-toggle svg {
+  color: #fff !important;
+}
+
+body:not(.dark-mode) .notification-bell {
+  background-color: #4dabf7 !important;
+  color: #fff !important;
+  font-size: 1.1rem !important;
+  padding: 10px 14px !important;
+}
+body:not(.dark-mode) .notification-bell:hover {
+  background-color: #2563eb !important;
+  color: #fff !important;
+}
+body:not(.dark-mode) .notification-bell .bell-icon {
+  color: #fff !important;
+  font-size: 1.2em !important;
+}
+body:not(.dark-mode) .dark-mode-toggle {
+  background-color: #4dabf7 !important;
+  color: #fff !important;
+  font-size: 1.1rem !important;
+  padding: 10px 14px !important;
+}
+body:not(.dark-mode) .dark-mode-toggle:hover {
+  background-color: #2563eb !important;
+  color: #fff !important;
+}
+body:not(.dark-mode) .dark-mode-toggle svg {
+  color: #fff !important;
+  font-size: 1.2em !important;
 }
 
 /* Mobile adjustments */
@@ -1526,4 +1565,311 @@ body.dark-mode .notification-bell .bell-icon {
     min-width: 18px;
     height: 18px;
   }
+}
+
+/* Modern Sidebar */
+.modern-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  background: linear-gradient(135deg, #232a4d 60%, #2e2e54 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0 32px 32px 0;
+  box-shadow: 2px 0 16px rgba(30,40,90,0.15);
+  z-index: 100;
+}
+.sidebar-header {
+  padding: 32px 0 24px 0;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #fba53b;
+}
+.sidebar-logo {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2rem;
+  color: #fba53b;
+}
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar-nav li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 32px;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  margin: 6px 0;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-nav li.active, .sidebar-nav li:hover {
+  background: #fba53b;
+  color: #232a4d;
+}
+.sidebar-nav li svg {
+  font-size: 1.2em;
+}
+.sidebar-footer {
+  margin-top: auto;
+  padding: 24px 32px;
+}
+.sidebar-footer .logout-btn {
+  width: 100%;
+  background: #232a4d;
+  color: #fff;
+  border: 1px solid #fba53b;
+  border-radius: 8px;
+  font-size: 1rem;
+  padding: 10px 0;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-footer .logout-btn:hover {
+  background: #fba53b;
+  color: #232a4d;
+}
+
+/* Main Content Area */
+.modern-main-content {
+  margin-left: 240px;
+  min-height: 100vh;
+  background: linear-gradient(120deg, #232a4d 60%, #2e2e54 100%);
+  padding: 0 32px 32px 32px;
+}
+
+/* Top Bar */
+.modern-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px 0 24px 0;
+  background: none;
+}
+.topbar-left {
+  flex: 1;
+}
+.modern-search {
+  width: 260px;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: none;
+  background: #232a4d;
+  color: #fff;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(30,40,90,0.08);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.modern-lang-select {
+  background: #232a4d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 1rem;
+}
+.modern-profile-avatar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #232a4d;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 1rem;
+  color: #fff;
+  font-weight: 500;
+}
+.modern-profile-avatar img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fba53b;
+}
+
+/* Dashboard Overview */
+.modern-dashboard-overview {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.modern-welcome-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #4b5b9c 60%, #6a7fd7 100%);
+  color: #fff;
+  border-radius: 18px;
+  padding: 32px 40px;
+  box-shadow: 0 4px 24px rgba(30,40,90,0.10);
+  min-height: 140px;
+}
+.welcome-text h2 {
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.welcome-text p {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+.welcome-text a {
+  color: #fba53b;
+  text-decoration: underline;
+  font-weight: 500;
+}
+.welcome-illustration img {
+  width: 110px;
+  height: 110px;
+  border-radius: 16px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.modern-dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr;
+  gap: 32px;
+}
+.modern-performance-card, .modern-calendar-card, .modern-events-card {
+  background: #232a4d;
+  color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(30,40,90,0.10);
+  padding: 28px 24px 24px 24px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.modern-performance-card h3,
+.modern-calendar-card h3,
+.modern-events-card h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.performance-bars {
+  display: flex;
+  gap: 18px;
+  align-items: flex-end;
+  height: 120px;
+  margin-top: 10px;
+}
+.bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 48px;
+  gap: 6px;
+}
+.bar-inner {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, #fba53b 60%, #fba53b99 100%);
+  box-shadow: 0 2px 8px rgba(251,165,59,0.15);
+  transition: height 0.3s;
+}
+.bar span {
+  font-size: 0.95rem;
+  margin-top: 6px;
+  color: #fba53b;
+  font-weight: 500;
+}
+.calendar-list, .events-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.calendar-list li, .events-list li {
+  background: #2e2e54;
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: #fff;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(30,40,90,0.07);
+}
+.calendar-time {
+  font-weight: 600;
+  color: #fba53b;
+  min-width: 54px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .modern-dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 900px) {
+  .modern-main-content {
+    margin-left: 0;
+    padding: 0 8px 24px 8px;
+  }
+  .modern-sidebar {
+    display: none;
+  }
+  .modern-dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .modern-welcome-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 16px;
+    gap: 18px;
+  }
+}
+
+/* Dark Mode Enhancements */
+.student-dashboard-modern.dark, .student-dashboard-modern.dark .modern-main-content {
+  background: linear-gradient(120deg, #181c2f 60%, #232a4d 100%);
+  color: #fff;
+}
+.student-dashboard-modern.dark .modern-sidebar {
+  background: linear-gradient(135deg, #181c2f 60%, #232a4d 100%);
+}
+.student-dashboard-modern.dark .modern-performance-card,
+.student-dashboard-modern.dark .modern-calendar-card,
+.student-dashboard-modern.dark .modern-events-card {
+  background: #181c2f;
+  color: #fff;
+}
+.student-dashboard-modern.dark .calendar-list li, .student-dashboard-modern.dark .events-list li {
+  background: #232a4d;
+  color: #fff;
+}
+
+/* Typography */
+.student-dashboard-modern, .student-dashboard-modern * {
+  font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* Hide scrollbars for sidebar */
+.modern-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Add soft shadow to cards */
+.modern-performance-card, .modern-calendar-card, .modern-events-card, .modern-welcome-card {
+  box-shadow: 0 4px 24px rgba(30,40,90,0.10);
 }

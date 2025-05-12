@@ -1383,3 +1383,168 @@ body.dark-mode .approvals-table tr {
 body.dark-mode .approvals-table td::before {
   color: #ffffff;
 }
+
+/* Dark mode enhancements for profile and summary report sections */
+.admin-dashboard-modern.dark .profile-card,
+.admin-dashboard-modern.dark .admin-summary-report-card {
+  background: #232a4d !important;
+  color: #fff !important;
+}
+.admin-dashboard-modern.dark .profile-card h3,
+.admin-dashboard-modern.dark .profile-card h5,
+.admin-dashboard-modern.dark .profile-card span,
+.admin-dashboard-modern.dark .profile-card p,
+.admin-dashboard-modern.dark .admin-summary-report-card h3,
+.admin-dashboard-modern.dark .admin-summary-report-card .stat-label,
+.admin-dashboard-modern.dark .admin-summary-report-card .stat-value,
+.admin-dashboard-modern.dark .admin-summary-report-card .role-label {
+  color: #fff !important;
+}
+.admin-dashboard-modern.dark .stat-item {
+  background: #2d2d2d !important;
+  color: #fff !important;
+}
+.admin-dashboard-modern.dark .chart-wrapper {
+  background: #181c2f !important;
+  border: 1px solid #232a4d !important;
+}
+.admin-dashboard-modern.dark .recharts-cartesian-axis-tick-value,
+.admin-dashboard-modern.dark .recharts-text,
+.admin-dashboard-modern.dark .recharts-legend-item-text {
+  fill: #fff !important;
+  color: #fff !important;
+}
+.admin-dashboard-modern.dark .recharts-tooltip-label,
+.admin-dashboard-modern.dark .recharts-tooltip-item-list,
+.admin-dashboard-modern.dark .recharts-tooltip-item {
+  color: #fff !important;
+  fill: #fff !important;
+}
+
+/* Light mode improvements for better visibility */
+body:not(.dark-mode) .section,
+body:not(.dark-mode) .profile-card,
+body:not(.dark-mode) .feedback-card,
+body:not(.dark-mode) .colleges-list li,
+body:not(.dark-mode) .departments-list li,
+body:not(.dark-mode) .blocks-list li,
+body:not(.dark-mode) .dorms-list li,
+body:not(.dark-mode) .admin-summary-report-card {
+  background: #f8fafc !important;
+  color: #232a4d !important;
+  box-shadow: 0 2px 8px rgba(30,40,90,0.06);
+}
+body:not(.dark-mode) .section h2,
+body:not(.dark-mode) .section h3,
+body:not(.dark-mode) .section h4,
+body:not(.dark-mode) .profile-card h3,
+body:not(.dark-mode) .feedback-header span,
+body:not(.dark-mode) .admin-summary-report-card h3 {
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .form-group label,
+body:not(.dark-mode) .stat-label {
+  color: #2563eb !important;
+}
+body:not(.dark-mode) .form-group input,
+body:not(.dark-mode) .form-group select {
+  background: #fff !important;
+  color: #232a4d !important;
+  border: 1px solid #b0bec5 !important;
+}
+body:not(.dark-mode) .form-group input:focus,
+body:not(.dark-mode) .form-group select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 2px #90caf9 !important;
+}
+body:not(.dark-mode) .add-student-button,
+body:not(.dark-mode) .student-edit-btn,
+body:not(.dark-mode) .student-delete-btn {
+  color: #fff !important;
+}
+body:not(.dark-mode) .add-student-button {
+  background: linear-gradient(45deg, #2563eb, #64b5f6) !important;
+}
+body:not(.dark-mode) .student-edit-btn {
+  background: #e3f2fd !important;
+  color: #1976d2 !important;
+}
+body:not(.dark-mode) .student-edit-btn:hover {
+  background: #bbdefb !important;
+  color: #0d47a1 !important;
+}
+body:not(.dark-mode) .student-delete-btn {
+  background: #ffebee !important;
+  color: #c62828 !important;
+}
+body:not(.dark-mode) .student-delete-btn:hover {
+  background: #ffcdd2 !important;
+  color: #b71c1c !important;
+}
+body:not(.dark-mode) .approvals-table th {
+  background: linear-gradient(45deg, #2563eb, #64b5f6) !important;
+  color: #fff !important;
+}
+body:not(.dark-mode) .approvals-table td {
+  background: #f8fafc !important;
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .admin-summary-report-card {
+  background: #fff !important;
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .stat-item {
+  background: #e3f2fd !important;
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .chart-wrapper {
+  background: #fff !important;
+  border: 1px solid #e3e3e3 !important;
+}
+body:not(.dark-mode) .role-label {
+  background: #e3f2fd !important;
+  color: #1976d2 !important;
+}
+body:not(.dark-mode) .success-message {
+  background: #e8f5e9 !important;
+  color: #388e3c !important;
+  border-left: 5px solid #43a047 !important;
+}
+body:not(.dark-mode) .error-message {
+  background: #ffebee !important;
+  color: #c62828 !important;
+  border-left: 5px solid #e53935 !important;
+}
+body:not(.dark-mode) .modal-content {
+  background: #fff !important;
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .profile-photo-container div,
+body:not(.dark-mode) .profile-photo-container img {
+  border: 3px solid #b0bec5 !important;
+}
+body:not(.dark-mode) .modern-profile-avatar {
+  background: #e3f2fd !important;
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .modern-sidebar {
+  background: linear-gradient(135deg, #e3f2fd 60%, #bbdefb 100%) !important;
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .modern-main-content {
+  background: linear-gradient(120deg, #f8fafc 60%, #e3f2fd 100%) !important;
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .modern-topbar {
+  background: none !important;
+  color: #232a4d !important;
+}
+body:not(.dark-mode) .notification-bell,
+body:not(.dark-mode) .dark-mode-toggle {
+  background: #1976d2 !important;
+  color: #fff !important;
+}
+body:not(.dark-mode) .notification-bell:hover,
+body:not(.dark-mode) .dark-mode-toggle:hover {
+  background: #1565c0 !important;
+}
