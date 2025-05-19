@@ -74,18 +74,109 @@
 }
 
 .dean-container.dark-mode {
+  background: linear-gradient(120deg, #141a2a 60%, #181e36 100%) !important;
+  min-height: 100vh;
   --bg-primary: #181e36;
   --bg-secondary: #232b4a;
   --sidebar-bg: #232b4a;
-  --sidebar-active: #1a213a;
-  --sidebar-text: #fff;
-  --sidebar-icon: #fff;
-  --card-bg: #5567a3;
-  --card-text: #fff;
+  --sidebar-active: #283a6b;
+  --sidebar-text: #e3e8ff;
+  --sidebar-icon: #00c6fb;
+  --card-bg: linear-gradient(120deg, #232a4d 60%, #181c2f 100%);
+  --card-text: #e3e8ff;
   --highlight: #ffb347;
-  --border-color: #232b4a;
-  --text-primary: #fff;
-  --text-secondary: #b0b0b0;
+  --border-color: #3949ab;
+  --text-primary: #e3e8ff;
+  --text-secondary: #90caf9;
+}
+
+.dean-container.dark-mode .dean-section,
+.dean-container.dark-mode .dean-complaint-card,
+.dean-container.dark-mode .dean-profile-container {
+  background: var(--card-bg);
+  color: var(--card-text);
+  box-shadow: 0 4px 24px #181f3a;
+}
+
+.dean-container.dark-mode .dean-section h2,
+.dean-container.dark-mode .dean-complaint-header h3,
+.dean-container.dark-mode .dean-full-name {
+  color: #00c6fb;
+  font-weight: 900;
+  text-shadow: 0 2px 16px #00eaff, 0 0 8px #232a4d;
+  letter-spacing: 1px;
+}
+
+.dean-container.dark-mode .dean-profile-header,
+.dean-container.dark-mode .dean-user-id,
+.dean-container.dark-mode .dean-profile-details,
+.dean-container.dark-mode .dean-detail-label,
+.dean-container.dark-mode .dean-detail-value {
+  color: #e3e8ff;
+}
+
+.dean-container.dark-mode .dean-detail-label,
+.dean-container.dark-mode .dean-form-group label {
+  color: #00c6fb;
+  font-weight: 700;
+  text-shadow: 0 1px 8px #232a4d;
+}
+
+.dean-container.dark-mode .dean-detail-value,
+.dean-container.dark-mode .dean-form-group input {
+  color: #fff;
+  font-weight: 500;
+}
+
+.dean-container.dark-mode .dean-form-group input {
+  background: #181f3a;
+  border: 1.5px solid #3949ab;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px #232a4d;
+}
+
+.dean-container.dark-mode .dean-form-group input:focus {
+  border-color: #00c6fb;
+  box-shadow: 0 0 0 2px #1976d2;
+}
+
+.dean-container.dark-mode .dean-profile-photo-placeholder {
+  background-color: #3949ab;
+  color: #fff;
+}
+
+.dean-container.dark-mode .dean-complaint-header h3 {
+  color: #00c6fb;
+}
+
+.dean-container.dark-mode .dean-section h2 {
+  color: #00c6fb;
+}
+
+.dean-container.dark-mode .dean-user-id {
+  color: #90caf9;
+}
+
+.dean-container.dark-mode .dean-detail-label {
+  color: #00eaff;
+}
+
+.dean-container.dark-mode .dean-detail-value {
+  color: #fff;
+}
+
+.dean-container.dark-mode .dean-complaint-details p,
+.dean-container.dark-mode .dean-complaint-details strong {
+  color: #e3e8ff;
+}
+
+.dean-container.dark-mode .dean-complaint-card {
+  border: 1.5px solid #3949ab;
+}
+
+.dean-container.dark-mode .dean-form-group input::placeholder {
+  color: #90caf9;
+  opacity: 1;
 }
 
 /* Header Styles */
@@ -196,20 +287,35 @@
   background-color: var(--bg-primary);
 }
 
-.dean-section {
-  background: none;
-  box-shadow: none;
-  padding: 0;
-  background-color: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 2rem;
-  margin-bottom: 2rem;
+.dean-section, .dean-complaint-card, .dean-profile-container {
+  background: #f8fbff;
+  color: #232a4d;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(30,40,90,0.08);
 }
-
-.dean-section h2 {
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
+.dean-section h2, .dean-complaint-header h3, .dean-full-name {
+  color: #232a4d;
+  font-weight: 900;
+  text-shadow: 0 2px 8px #e3f2fd;
+  letter-spacing: 1px;
+}
+.dean-profile-header, .dean-user-id, .dean-profile-details, .dean-detail-label, .dean-detail-value {
+  color: #232a4d;
+}
+.dean-detail-label, .dean-form-group label {
+  color: #1976d2;
+  font-weight: 700;
+  text-shadow: 0 1px 4px #e3f2fd;
+}
+.dean-detail-value, .dean-form-group input {
+  color: #181818;
+  font-weight: 500;
+}
+.dean-form-group input {
+  background: #fff;
+  border: 1.5px solid #b6d0ff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px #e3f2fd;
 }
 
 /* Complaints Grid */
@@ -287,13 +393,16 @@
 
 /* Profile Styles */
 .dean-profile-container {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 600px;
+  min-height: 500px;
+  padding: 3rem 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(30,40,90,0.10);
 }
 
 .dean-profile-header {
-  text-align: center;
-  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  margin-bottom: 2.5rem;
 }
 
 .dean-profile-photo {
@@ -318,20 +427,16 @@
 }
 
 .dean-full-name {
-  font-size: 1.5rem;
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: 900;
 }
 
 .dean-user-id {
-  color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 1.2rem;
 }
 
 .dean-profile-details {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  font-size: 1.15rem;
 }
 
 .dean-detail-item {
@@ -341,13 +446,11 @@
 }
 
 .dean-detail-label {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 1.15rem;
 }
 
 .dean-detail-value {
-  color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 1.15rem;
 }
 
 /* Form Styles */

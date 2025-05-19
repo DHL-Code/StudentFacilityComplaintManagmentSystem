@@ -26,7 +26,7 @@ const SupervisorPage = () => {
     const [newProfilePhoto, setNewProfilePhoto] = useState(null);
     const [newProfilePreview, setNewProfilePreview] = useState(null);
     const [fileError, setFileError] = useState('');
-    const [activeSection, setActiveSection] = useState('viewProfile');
+    const [activeSection, setActiveSection] = useState('dashboard');
     const [selectedComplaintId, setSelectedComplaintId] = useState(null);
     const location = useLocation();
 
@@ -62,6 +62,8 @@ const SupervisorPage = () => {
     const [validationModalMessage, setValidationModalMessage] = useState('');
 
     const [editErrors, setEditErrors] = useState({});
+
+    const [expandedImage, setExpandedImage] = useState(null);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
@@ -207,9 +209,7 @@ const SupervisorPage = () => {
                 throw new Error('Invalid or missing gender in supervisor profile');
             }
 
-            const supervisorGender = profileData.gender; // No need for toLowerCase() since we validate the value
-
-            console.log('Supervisor gender:', supervisorGender);
+            const supervisorGender = profileData.gender;
 
             // Send the gender directly as the blockRange parameter
             const url = `http://localhost:5000/api/complaints/verified?blockRange=${supervisorGender}`;
@@ -238,12 +238,15 @@ const SupervisorPage = () => {
                 throw new Error('Invalid response format: expected an array of complaints');
             }
 
-            console.log('Received complaints:', data.data.map(c => ({
+            // Filter out escalated complaints from the main view
+            const filteredComplaints = data.data.filter(complaint => complaint.status !== 'escalated');
+
+            console.log('Received complaints:', filteredComplaints.map(c => ({
                 blockNumber: c.blockNumber,
                 status: c.status
             })));
 
-            setComplaints(data.data);
+            setComplaints(filteredComplaints);
         } catch (error) {
             console.error('Error fetching verified complaints:', error);
             setComplaintError(error.message);
@@ -730,9 +733,6 @@ const SupervisorPage = () => {
             setShowEscalationModal(false);
             setEscalationReason('');
 
-            // Refresh the escalated complaints list
-            await fetchEscalatedComplaints();
-
             // Show success message
             alert('Complaint has been successfully escalated to the dean');
         } catch (error) {
@@ -806,120 +806,64 @@ const SupervisorPage = () => {
 
     return (
         <div className="supervisor-page">
-            <div className="Supervisor-mobile-header">
-                <button className="Supervisor-hamburger-btn" onClick={toggleMobileMenu}>
-                    {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-                </button>
-                <h1>Supervisor Dashboard</h1>
-                <div className="Supervisor-header-actions">
-                    <button className="Supervisor-theme-toggle" onClick={toggleTheme}>
-                        {isDarkMode ? <FaSun className="Supervisor-theme-icon" /> : <FaMoon className="Supervisor-theme-icon" />}
-                    </button>
-                    <SupervisorNotificationBell userId={profile?._id || profile?.userId} />
-                    <button className="Supervisor-logout-btn" onClick={handleLogout}>
-                        Logout
-                    </button>
-                </div>
-            </div>
-
-            <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-                <button
-                    onClick={() => handleNavigation('viewProfile')}
-                    className={activeSection === 'viewProfile' ? 'active' : ''}
-                >
-                    View Profile
-                </button>
-                <button
-                    onClick={() => handleNavigation('editProfile')}
-                    className={activeSection === 'editProfile' ? 'active' : ''}
-                >
-                    Edit Profile
-                </button>
-                <button
-                    onClick={() => handleNavigation('complaints')}
-                    className={activeSection === 'complaints' ? 'active' : ''}
-                >
-                    Complaint Management
-                </button>
-                <button
-                    onClick={() => handleNavigation('reports')}
-                    className={activeSection === 'reports' ? 'active' : ''}
-                >
-                    Escalation Reports
-                </button>
-                <button
-                    onClick={() => handleNavigation('summaryReports')}
-                    className={activeSection === 'summaryReports' ? 'active' : ''}
-                >
-                    View Summary Reports
-                </button>
-                <button
-                    onClick={() => handleNavigation('viewReports')}
-                    className={activeSection === 'viewReports' ? 'active' : ''}
-                >
-                    View Reports
-                </button>
-            </div>
-
+            {/* Sidebar */}
             <div className="Supervisor-sidebar">
-                <h2>Navigation</h2>
+                <div className="sidebar-header">Supervisor Dashboard</div>
                 <div className="Supervisor-sidebar-nav">
-                    <button
-                        onClick={() => handleNavigation('viewProfile')}
-                        className={activeSection === 'viewProfile' ? 'active' : ''}
-                    >
-                        View Profile
+                    <button onClick={() => handleNavigation('dashboard')} className={activeSection === 'dashboard' ? 'active' : ''}>
+                        Dashboard
                     </button>
-                    <button
-                        onClick={() => handleNavigation('editProfile')}
-                        className={activeSection === 'editProfile' ? 'active' : ''}
-                    >
-                        Edit Profile
-                    </button>
-                    <button
-                        onClick={() => handleNavigation('complaints')}
-                        className={activeSection === 'complaints' ? 'active' : ''}
-                    >
+                    <button onClick={() => handleNavigation('complaints')} className={activeSection === 'complaints' ? 'active' : ''}>
                         Complaint Management
                     </button>
-                    <button
-                        onClick={() => handleNavigation('reports')}
-                        className={activeSection === 'reports' ? 'active' : ''}
-                    >
+                    <button onClick={() => handleNavigation('viewProfile')} className={activeSection === 'viewProfile' ? 'active' : ''}>
+                        View Profile
+                    </button>
+                    <button onClick={() => handleNavigation('editProfile')} className={activeSection === 'editProfile' ? 'active' : ''}>
+                        Edit Profile
+                    </button>
+                    <button onClick={() => handleNavigation('reports')} className={activeSection === 'reports' ? 'active' : ''}>
                         Escalation Reports
                     </button>
-                    <button
-                        onClick={() => handleNavigation('summaryReports')}
-                        className={activeSection === 'summaryReports' ? 'active' : ''}
-                    >
+                    <button onClick={() => handleNavigation('summaryReports')} className={activeSection === 'summaryReports' ? 'active' : ''}>
                         View Summary Reports
                     </button>
-                    <button
-                        onClick={() => handleNavigation('viewReports')}
-                        className={activeSection === 'viewReports' ? 'active' : ''}
-                    >
+                    <button onClick={() => handleNavigation('viewReports')} className={activeSection === 'viewReports' ? 'active' : ''}>
                         View Reports
                     </button>
                 </div>
+                <button className="Supervisor-logout-btn" onClick={handleLogout}>
+                    Log Out
+                </button>
             </div>
-
+            {/* Main Content */}
             <div className="Supervisor-main-content">
-                <div className="Supervisor-desktop-header">
-                    <h1>Supervisor Dashboard</h1>
-                    <div className="Supervisor-header-actions">
-                        <button className="Supervisor-theme-toggle" onClick={toggleTheme}>
-                            {isDarkMode ? <FaSun className="Supervisor-theme-icon" /> : <FaMoon className="Supervisor-theme-icon" />}
-                        </button>
-                        <SupervisorNotificationBell userId={profile?._id || profile?.userId} />
-                        <button className="Supervisor-logout-btn" onClick={handleLogout}>
-                            Logout
-                        </button>
+                {/* Topbar */}
+                <div className="modern-topbar">
+                    <button className="Supervisor-theme-toggle" onClick={toggleTheme}>
+                        {isDarkMode ? <FaSun /> : <FaMoon />}
+                    </button>
+                    <SupervisorNotificationBell userId={profile?._id || profile?.userId} />
+                    <div className="modern-profile-avatar">
+                        <span>{profile?.fullName || 'Supervisor'}</span>
                     </div>
                 </div>
-
                 <div className="Supervisor-content-area">
+                    {/* Dashboard Welcome Card */}
+                    {activeSection === 'dashboard' && (
+                        <div className="supervisor-welcome-card">
+                            <h2>Welcome, {profile?.fullName?.split(' ')[0] || 'Supervisor'}!</h2>
+                            <p>
+                                We're glad to have you here. This is your dedicated space to manage facility complaints, update your profile, and review important reports to help improve campus life for everyone.<br /><br />
+                                <b>Tip:</b> Use the sidebar to quickly access all features. You can view and resolve complaints, escalate issues to the dean, and keep track of your assigned blocks. If you have any issues, don't hesitate to submit or escalate a complaint, or reach out for support.<br /><br />
+                                Your role is vital in ensuring a safe, comfortable, and productive environment for all students. Thank you for your commitment and dedication!<br /><br />
+                                <span className="supervisor-tip">Have a great day and make your voice heard!</span>
+                            </p>
+                        </div>
+                    )}
+                    {/* Existing sections (complaints, viewProfile, editProfile, reports, summaryReports, viewReports) remain unchanged, just update their root className to 'supervisor-card' */}
                     {activeSection === 'viewProfile' && (
-                        <section className="view-profile">
+                        <section className="supervisor-card">
                             <h2>View Profile</h2>
                             {loading && <p className="loading">Loading profile...</p>}
                             {error && <p className="error">Error: {error}</p>}
@@ -930,11 +874,8 @@ const SupervisorPage = () => {
                                             <img
                                                 src={currentProfilePhoto}
                                                 alt="Profile"
-                                                className="profile-photo"
-                                                onError={(e) => {
-                                                    e.target.style.display = 'none';
-                                                    setError('Failed to load profile photo');
-                                                }}
+                                                className="profile-photo-img"
+                                                onClick={() => setExpandedImage(currentProfilePhoto)}
                                             />
                                         ) : (
                                             <div className="profile-photo-placeholder">No Photo</div>
@@ -978,9 +919,8 @@ const SupervisorPage = () => {
                             )}
                         </section>
                     )}
-
                     {activeSection === 'editProfile' && (
-                        <section className="edit-profile">
+                        <section className="supervisor-card">
                             <h2>Edit Profile</h2>
                             {loading && <p className="loading">Saving changes...</p>}
                             {error && <p className="error">Error: {error}</p>}
@@ -990,15 +930,13 @@ const SupervisorPage = () => {
                                         className="photo-preview"
                                         onClick={() => document.getElementById('profilePhotoInput').click()}
                                     >
-                                        {newProfilePreview ? (
-                                            <img src={newProfilePreview} alt="Preview" className="profile-image" />
-                                        ) : currentProfilePhoto ? (
-                                            <img src={currentProfilePhoto} alt="Current Profile" className="profile-image" />
-                                        ) : (
-                                            <div className="upload-placeholder">
-                                                <span className="upload-icon">+</span>
-                                                <span className="upload-text">Upload Photo</span>
-                                            </div>
+                                        {(newProfilePreview || currentProfilePhoto) && (
+                                            <img
+                                                src={newProfilePreview || currentProfilePhoto}
+                                                alt="Profile Preview"
+                                                className="profile-photo-img"
+                                                onClick={() => setExpandedImage(newProfilePreview || currentProfilePhoto)}
+                                            />
                                         )}
                                     </div>
                                     <input
@@ -1135,9 +1073,8 @@ const SupervisorPage = () => {
                             </form>
                         </section>
                     )}
-
                     {activeSection === 'complaints' && (
-                        <div className="Supervisor-complaints-section">
+                        <section className="supervisor-card">
                             <h2>Complaint Management</h2>
                             {loadingComplaints && <p className="loading">Loading complaints...</p>}
                             {complaintError && <p className="error">Error: {complaintError}</p>}
@@ -1167,20 +1104,21 @@ const SupervisorPage = () => {
                                                         <img
                                                             src={`http://localhost:5000/${complaint.file}`}
                                                             alt="Complaint evidence"
-                                                            className="supervisor-complaint-photo"
+                                                            className="complaint-evidence-img"
+                                                            onClick={() => setExpandedImage(`http://localhost:5000/${complaint.file}`)}
                                                         />
                                                     ) : complaint.file.match(/\.(mp4|mov|avi)$/i) ? (
-                                                        <video
-                                                            controls
-                                                            className="supervisor-complaint-video"
+                                                        <video 
+                                                            controls 
+                                                            className="complaint-evidence-video"
                                                             src={`http://localhost:5000/${complaint.file}`}
                                                         >
                                                             Your browser does not support the video tag.
                                                         </video>
                                                     ) : complaint.file.match(/\.(mp3|wav)$/i) ? (
-                                                        <audio
-                                                            controls
-                                                            className="supervisor-complaint-audio"
+                                                        <audio 
+                                                            controls 
+                                                            className="complaint-evidence-audio"
                                                             src={`http://localhost:5000/${complaint.file}`}
                                                         >
                                                             Your browser does not support the audio tag.
@@ -1253,11 +1191,10 @@ const SupervisorPage = () => {
                                     </div>
                                 </div>
                             )}
-                        </div>
+                        </section>
                     )}
-
                     {activeSection === 'reports' && (
-                        <div className="section reports-section">
+                        <section className="supervisor-card">
                             <h2>Escalation Reports</h2>
                             {loadingReports && <p className="loading">Loading reports...</p>}
                             {reportsError && <p className="error">Error: {reportsError}</p>}
@@ -1314,20 +1251,21 @@ const SupervisorPage = () => {
                                                         <img
                                                             src={`http://localhost:5000/${selectedComplaint.file}`}
                                                             alt="Complaint evidence"
-                                                            className="supervisor-complaint-photo"
+                                                            className="complaint-evidence-img"
+                                                            onClick={() => setExpandedImage(`http://localhost:5000/${selectedComplaint.file}`)}
                                                         />
                                                     ) : selectedComplaint.file.match(/\.(mp4|mov|avi)$/i) ? (
-                                                        <video
-                                                            controls
-                                                            className="supervisor-complaint-video"
+                                                        <video 
+                                                            controls 
+                                                            className="complaint-evidence-video"
                                                             src={`http://localhost:5000/${selectedComplaint.file}`}
                                                         >
                                                             Your browser does not support the video tag.
                                                         </video>
                                                     ) : selectedComplaint.file.match(/\.(mp3|wav)$/i) ? (
-                                                        <audio
-                                                            controls
-                                                            className="supervisor-complaint-audio"
+                                                        <audio 
+                                                            controls 
+                                                            className="complaint-evidence-audio"
                                                             src={`http://localhost:5000/${selectedComplaint.file}`}
                                                         >
                                                             Your browser does not support the audio tag.
@@ -1347,11 +1285,10 @@ const SupervisorPage = () => {
                                     </div>
                                 </div>
                             )}
-                        </div>
+                        </section>
                     )}
-
                     {activeSection === 'summaryReports' && (
-                        <div className="section summary-reports-section">
+                        <section className="supervisor-card">
                             <div className="summary-reports-header">
                                 <h2>Summary Reports from Proctors</h2>
                                 <div className="block-filter">
@@ -1474,10 +1411,10 @@ const SupervisorPage = () => {
                                     ))
                                 )}
                             </div>
-                        </div>
+                        </section>
                     )}
                     {activeSection === 'viewReports' && (
-                        <div className="Supervisor-view-reports-section">
+                        <section className="supervisor-card">
                             <h2>Proctor Reports</h2>
                             {loadingReports && <p className="loading">Loading reports...</p>}
                             {reportsError && <p className="error">Error: {reportsError}</p>}
@@ -1486,24 +1423,33 @@ const SupervisorPage = () => {
                                     <p>No reports found.</p>
                                 ) : (
                                     reports.map(report => (
-                                        <div key={report._id} className="Supervisor-report-card">
-                                            <h3>Report from {report.proctorName}</h3>
-                                            <div className="Supervisor-report-details">
-                                                <p><strong>Block:</strong> {report.block}</p>
-                                                <p><strong>Content:</strong> {report.content}</p>
+                                        <div key={report._id} className="awesome-report-card">
+                                            <div className="report-header">
+                                                <span role="img" aria-label="report">📄</span> Report from <span className="report-key">{report.proctorName}</span>
                                             </div>
-                                            <div className="Supervisor-report-date">
-                                                Submitted on: {new Date(report.createdAt).toLocaleDateString()}
+                                            <div className="Supervisor-report-details">
+                                                <div><b>Block:</b> <span className="report-key">{report.block}</span></div>
+                                                <div><b>Content:</b> {report.content}</div>
+                                            </div>
+                                            <div className="report-date">
+                                                <span role="img" aria-label="calendar">📅</span> Submitted on: {new Date(report.createdAt).toLocaleDateString()}
                                             </div>
                                         </div>
                                     ))
                                 )}
                             </div>
-                        </div>
+                        </section>
                     )}
                 </div>
             </div>
             <ValidationModal />
+            {expandedImage && (
+                <div className="modal-overlay" onClick={() => setExpandedImage(null)}>
+                    <div className="modal-content" style={{maxWidth: '90vw', maxHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                        <img src={expandedImage} alt="Expanded" style={{maxWidth: '100%', maxHeight: '80vh', borderRadius: '16px'}} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -442,21 +442,22 @@ button:hover {
 }
 
 .add-student-button {
-  background: linear-gradient(45deg, #00b09b, #96c93d);
-  border: none;
-  padding: 0.8rem 2rem;
-  border-radius: 30px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  background: linear-gradient(45deg, #2563eb, #64b5f6) !important;
+  color: #fff !important;
+  padding: 8px 20px !important;
+  min-width: 120px;
+  max-width: 200px;
+  font-size: 1rem;
+  border-radius: 20px;
+  margin: 18px auto 0 auto;
+  display: block;
+  box-shadow: 0 2px 8px rgba(30,40,90,0.10);
+  transition: background 0.18s, box-shadow 0.18s;
 }
 
 .add-student-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
+  filter: brightness(1.08);
+  box-shadow: 0 4px 16px rgba(30,40,90,0.13);
 }
 
 /* Table Enhancements */

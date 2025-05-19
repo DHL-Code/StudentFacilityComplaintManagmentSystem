@@ -585,7 +585,8 @@ const DeanPage = () => {
     : summaryReports.filter(report => String(report.blockNumber).trim() === selectedBlock);
 
   return (
-    <div className={`student-dashboard-modern${darkMode ? ' dark' : ''}`}>
+    <div className={`dean-container${darkMode ? ' dark-mode' : ''}`}>
+      
       <aside className="modern-sidebar">
         <div className="sidebar-header">
           <span className="sidebar-logo">Dean Dashboard</span>

@@ -5,7 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import MessagePopup from './MessagePopup';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon, faSignOutAlt, faUser, faBell, faHome, faClipboardList, faUsers, faUniversity, faBuilding, faChartBar } from '@fortawesome/free-solid-svg-icons';
+import { faSun, faMoon, faSignOutAlt, faUser, faBell, faHome, faClipboardList, faUsers, faUniversity, faBuilding, faChartBar, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
@@ -403,44 +403,40 @@ const AdminPage = () => {
         body: formData
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create staff account');
+        throw new Error(data.error || 'Failed to create staff account');
       }
 
-      const data = await response.json();
-      setSuccessMessage(data.message);
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
+      // Show success message immediately
+      setSuccessMessage('Staff account created successfully!');
 
       // Reset form while preserving the role
       setNewStaff({
         name: '',
         email: '',
         phone: '',
-        role: newStaff.role, // Preserve the role
+        role: newStaff.role,
         password: '',
-        block: '', // Clear the block selection
+        block: '',
         profilePhoto: null
       });
       setProfilePreview(null);
 
-      // Refresh blocks list
-      const blocksResponse = await fetch('http://localhost:5000/api/blocks', {
+      // Fetch blocks in the background
+      fetch('http://localhost:5000/api/blocks', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
+      })
+      .then(blocksResponse => blocksResponse.json())
+      .then(blocksData => {
+        setBlocks(blocksData);
+      })
+      .catch(error => {
+        console.error('Error refreshing blocks:', error);
       });
-
-      if (!blocksResponse.ok) {
-        throw new Error('Failed to refresh blocks');
-      }
-
-      const blocksData = await blocksResponse.json();
-      setBlocks(blocksData);
 
     } catch (error) {
       console.error('Error creating staff:', error);
@@ -2172,6 +2168,85 @@ const AdminPage = () => {
             <div className="error-message" style={{ color: 'red', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{errorMessage}</div>
           )}
           <form onSubmit={handleCreateStaff} className="staff-form" style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '8px' }}>
+            {/* Profile Photo Upload */}
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label style={{ alignSelf: 'flex-start' }}>Profile Photo</label>
+              <div style={{ position: 'relative', marginBottom: '16px' }}>
+                <div
+                  style={{
+                    width: '100px',
+                    height: '100px',
+                    borderRadius: '50%',
+                    background: '#232a4d',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(30,40,90,0.10)',
+                    border: profilePreview ? '3px solid #4dabf7' : '2px dashed #4dabf7',
+                    overflow: 'hidden',
+                    marginBottom: '10px',
+                    cursor: 'pointer',
+                    transition: 'border 0.2s',
+                  }}
+                  onClick={() => document.getElementById('profilePhotoInput').click()}
+                >
+                  {profilePreview ? (
+                    <img
+                      src={profilePreview}
+                      alt="Profile Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                    />
+                  ) : (
+                    <FontAwesomeIcon icon={faUser} style={{ color: '#4dabf7', fontSize: '2.5rem' }} />
+                  )}
+                  {/* Floating FAB with + icon */}
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); document.getElementById('profilePhotoInput').click(); }}
+                    style={{
+                      position: 'absolute',
+                      bottom: '-8px',
+                      right: '-8px',
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(90deg, #2563eb, #64b5f6)',
+                      color: '#fff',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 8px rgba(30,40,90,0.18)',
+                      fontSize: '1.3rem',
+                      cursor: 'pointer',
+                      zIndex: 2,
+                      transition: 'background 0.18s, box-shadow 0.18s',
+                    }}
+                    tabIndex={-1}
+                    aria-label="Upload Image"
+                  >
+                    <FontAwesomeIcon icon={faPlus} />
+                  </button>
+                </div>
+                <input
+                  id="profilePhotoInput"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setProfilePreview(reader.result);
+                        setNewStaff(prev => ({ ...prev, profilePhoto: file }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </div>
+            </div>
             {/* Name */}
             <div className="form-group">
               <label>Name</label>

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, faTimes, faUser, faChalkboardTeacher, faCalendarAlt, faBook, faCog, faHome, faStar } from '@fortawesome/free-solid-svg-icons';
 import { faFlag } from '@fortawesome/free-solid-svg-icons';
+import { FaBars } from 'react-icons/fa';
 
 const Dashboard = () => {
     const [activeSection, setActiveSection] = useState('dashboard');
@@ -681,8 +682,32 @@ const Dashboard = () => {
         }
     }, [successMessage]);
 
+    // Add a function to close sidebar when clicking outside
+    useEffect(() => {
+        if (!isSidebarOpen) return;
+        const handleClick = (e) => {
+            if (e.target.closest('.mobile-sidebar') || e.target.closest('.hamburger-icon')) return;
+            setIsSidebarOpen(false);
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [isSidebarOpen]);
+
     return (
         <div className={`student-dashboard-modern${darkMode ? ' dark' : ''}`}>
+            {/* Hamburger for mobile */}
+            <div className="hamburger-icon" style={{
+                display: 'none',
+                position: 'fixed',
+                top: 24,
+                left: 18,
+                zIndex: 2000
+            }}
+            onClick={() => setIsSidebarOpen(true)}
+            >
+                <FaBars size={28} color="#fba53b" />
+            </div>
+            {/* Sidebar for desktop */}
             <aside className="modern-sidebar">
                 <div className="sidebar-header">
                     <span className="sidebar-logo">Student Dashboard</span>
@@ -715,7 +740,63 @@ const Dashboard = () => {
                     </button>
                 </div>
             </aside>
-
+            {/* Mobile Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div className="mobile-sidebar-overlay" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    background: 'rgba(0,0,0,0.4)',
+                    zIndex: 2100
+                }}>
+                    <nav className="mobile-sidebar" style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '75vw',
+                        maxWidth: 320,
+                        height: '100vh',
+                        background: 'linear-gradient(135deg, #232a4d 60%, #2e2e54 100%)',
+                        color: '#fff',
+                        boxShadow: '2px 0 16px rgba(30,40,90,0.15)',
+                        borderRadius: '0 32px 32px 0',
+                        zIndex: 2200,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '32px 0 0 0'
+                    }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px 24px 32px'}}>
+                            <span className="sidebar-logo" style={{fontSize: '2rem', color: '#fba53b'}}>Student Dashboard</span>
+                            <button style={{background: 'none', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer'}} onClick={() => setIsSidebarOpen(false)}>&times;</button>
+                        </div>
+                        <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
+                            <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => { handleNavigation('dashboard'); setIsSidebarOpen(false); }} style={{padding: '14px 32px', cursor: 'pointer'}}>
+                                <FontAwesomeIcon icon={faHome} /> <span>Dashboard</span>
+                            </li>
+                            <li className={activeSection === 'complaintForm' ? 'active' : ''} onClick={() => { handleNavigation('complaintForm'); setIsSidebarOpen(false); }} style={{padding: '14px 32px', cursor: 'pointer'}}>
+                                <FontAwesomeIcon icon={faCommentDots} /> <span>Complaint Form</span>
+                            </li>
+                            <li className={activeSection === 'viewProfile' ? 'active' : ''} onClick={() => { handleNavigation('viewProfile'); setIsSidebarOpen(false); }} style={{padding: '14px 32px', cursor: 'pointer'}}>
+                                <FontAwesomeIcon icon={faUser} /> <span>View Profile</span>
+                            </li>
+                            <li className={activeSection === 'editProfile' ? 'active' : ''} onClick={() => { handleNavigation('editProfile'); setIsSidebarOpen(false); }} style={{padding: '14px 32px', cursor: 'pointer'}}>
+                                <FontAwesomeIcon icon={faCog} /> <span>Edit Profile</span>
+                            </li>
+                            <li className={activeSection === 'complaintStatus' ? 'active' : ''} onClick={() => { handleNavigation('complaintStatus'); setIsSidebarOpen(false); }} style={{padding: '14px 32px', cursor: 'pointer'}}>
+                                <FontAwesomeIcon icon={faBook} /> <span>Complaint Status</span>
+                            </li>
+                            <li className={activeSection === 'provideFeedback' ? 'active' : ''} onClick={() => { handleNavigation('provideFeedback'); setIsSidebarOpen(false); }} style={{padding: '14px 32px', cursor: 'pointer'}}>
+                                <FontAwesomeIcon icon={faStar} /> <span>Feedback</span>
+                            </li>
+                            <li style={{padding: '14px 32px', cursor: 'pointer'}} onClick={() => { handleLogout(); setIsSidebarOpen(false); }}>
+                                <FontAwesomeIcon icon={faSignOutAlt} /> <span>Log Out</span>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            )}
             <main className="modern-main-content">
                 <header className="modern-topbar">
                     <div className="topbar-left">
@@ -911,8 +992,8 @@ const Dashboard = () => {
                                         >
                                             {newProfilePreview ? (
                                                 <img src={newProfilePreview} alt="Preview" className="student-profile-image" />
-                                            ) : profile?.profilePhoto ? (
-                                                <img src={profile.profilePhoto} alt="Current Profile" className="student-profile-image" />
+                                            ) : currentProfilePhoto ? (
+                                                <img src={currentProfilePhoto} alt="Current Profile" className="student-profile-image" />
                                             ) : (
                                                 <div className="student-upload-placeholder">
                                                     <span className="student-upload-icon">+</span>
@@ -1092,7 +1173,9 @@ const Dashboard = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.5 }}
                             >
-                                <h2 className="student-feedback-title">Provide Feedback</h2>
+                                <h2 className="student-feedback-title">
+                                    <span role="img" aria-label="feedback">💭</span> Provide Feedback <span role="img" aria-label="feedback">💭</span>
+                                </h2>
                                 <form onSubmit={handleFeedbackSubmit} className="student-feedback-form">
                                     <div className="student-star-rating" style={{ gap: '18px' }}>
                                         {[1, 2, 3, 4, 5].map((star) => (
@@ -1112,13 +1195,13 @@ const Dashboard = () => {
                                         ))}
                                         <p className="student-rating-text">
                                             {feedbackRating
-                                                ? `Rated ${feedbackRating} ${feedbackRating === 1 ? 'star' : 'stars'}`
-                                                : 'Click to rate'}
+                                                ? `Rated ${feedbackRating} ${feedbackRating === 1 ? 'star' : 'stars'} ${feedbackRating >= 4 ? '😊' : feedbackRating >= 3 ? '😐' : '😔'}`
+                                                : 'Click to rate ⭐'}
                                         </p>
                                     </div>
 
                                     <textarea
-                                        placeholder="Provide your feedback..."
+                                        placeholder="Share your thoughts with us... 💭"
                                         value={feedbackComment}
                                         onChange={(e) => setFeedbackComment(e.target.value)}
                                         className="student-feedback-textarea"
@@ -1133,7 +1216,7 @@ const Dashboard = () => {
                                                 exit={{ opacity: 0, y: -10 }}
                                                 className="student-error-message"
                                             >
-                                                Please provide a rating or feedback comment.
+                                                Please provide a rating or feedback comment. ❌
                                             </motion.p>
                                         )}
                                     </AnimatePresence>
@@ -1147,7 +1230,7 @@ const Dashboard = () => {
                                         ) : (
                                             <>
                                                 <Send className="mr-2 h-4 w-4" />
-                                                Submit Feedback
+                                                Submit Feedback ✨
                                             </>
                                         )}
                                     </button>
@@ -1160,7 +1243,7 @@ const Dashboard = () => {
                                                 exit={{ opacity: 0, y: 10 }}
                                                 className="student-success-message"
                                             >
-                                                Thank you for your feedback!
+                                                Thank you for your feedback! 🙏
                                             </motion.p>
                                         )}
                                     </AnimatePresence>

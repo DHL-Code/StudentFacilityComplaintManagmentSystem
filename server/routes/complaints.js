@@ -157,8 +157,8 @@ router.get('/verified', async (req, res) => {
         
         // Define block ranges based on gender
         const blockRanges = {
-            male: { $gte: 201, $lte: 222 },
-            female: { $gte: 223, $lte: 237 }
+            male: { $gte: 201, $lte: 223 },  // Updated range for male blocks
+            female: { $gte: 224, $lte: 237 } // Updated range for female blocks
         };
 
         // Validate blockRange parameter
@@ -172,11 +172,15 @@ router.get('/verified', async (req, res) => {
         // Get the appropriate block range
         const blockQuery = blockRanges[blockRange];
 
-        // Find verified complaints within the specified block range
+        console.log('Block range query:', blockQuery); // Debug log
+
+        // Find verified and resolved complaints within the specified block range
         const complaints = await Complaint.find({
-            status: 'verified',
-            blockNumber: blockQuery
+            status: { $in: ['verified', 'resolved'] }, // Include both verified and resolved complaints
+            blockNumber: { $regex: /^\d+$/, $gte: blockQuery.$gte.toString(), $lte: blockQuery.$lte.toString() }
         }).sort({ createdAt: -1 });
+
+        console.log('Found complaints:', complaints.length); // Debug log
 
         res.json({
             success: true,
