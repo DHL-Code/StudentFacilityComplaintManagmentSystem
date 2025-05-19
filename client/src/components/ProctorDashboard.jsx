@@ -44,6 +44,7 @@ function ProctorDashboard() {
   const [showProfileUpdateModal, setShowProfileUpdateModal] = useState(false);
   const [profileUpdateMessage, setProfileUpdateMessage] = useState('');
   const [isUpdateSuccess, setIsUpdateSuccess] = useState(false);
+  const [editErrors, setEditErrors] = useState({});
 
   // Consolidated data fetching
   useEffect(() => {
@@ -347,28 +348,17 @@ function ProctorDashboard() {
     });
   };
 
-  // Add password validation function
+  // Validation helpers
+  const validateName = (name) => /^[A-Za-z ]+$/.test(name.trim());
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePhone = (phone) => {
+    if (phone.startsWith('09')) return /^09\d{8}$/.test(phone);
+    if (phone.startsWith('+251')) return /^\+251\d{9,10}$/.test(phone);
+    return false;
+  };
   const validatePassword = (password) => {
-    const passwordErrors = [];
-    if (!password) {
-      passwordErrors.push("Password is required.");
-    }
-    if (password.length < 8) {
-      passwordErrors.push("Password should be at least 8 characters long.");
-    }
-    if (!/[A-Z]/.test(password)) {
-      passwordErrors.push("Password should contain at least one uppercase letter.");
-    }
-    if (!/[a-z]/.test(password)) {
-      passwordErrors.push("Password should contain at least one lowercase letter.");
-    }
-    if (!/[0-9]/.test(password)) {
-      passwordErrors.push("Password should contain at least one number.");
-    }
-    if (!/[!@#$%^&*]/.test(password)) {
-      passwordErrors.push("Password should contain at least one special character.");
-    }
-    return passwordErrors;
+    if (!password) return true;
+    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*]/.test(password);
   };
 
   const handleEditFormChange = (e) => {
@@ -401,6 +391,15 @@ function ProctorDashboard() {
   };
 
   const handleSaveProfile = async () => {
+    const errors = {};
+    if (!validateName(editFormData.name)) errors.name = 'Name must contain only letters and spaces.';
+    if (!validateEmail(editFormData.email)) errors.email = 'Invalid email address.';
+    if (!validatePhone(editFormData.phone)) errors.phone = 'Phone must be 10 digits (09...) or 13 digits (+251...)';
+    if (editFormData.newPassword && !validatePassword(editFormData.newPassword)) errors.newPassword = 'Password must be 8+ chars, upper, lower, number, special.';
+    if (editFormData.newPassword !== editFormData.confirmPassword) errors.confirmPassword = 'Passwords do not match.';
+    setEditErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     try {
       // Validate passwords if they are being changed
       if (editFormData.newPassword || editFormData.confirmPassword) {
@@ -534,6 +533,20 @@ function ProctorDashboard() {
     }
   };
 
+  // Add useEffect to auto-clear error and profile update messages
+  useEffect(() => {
+    if (error) {
+        const timer = setTimeout(() => setError(null), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [error]);
+  useEffect(() => {
+    if (profileUpdateMessage) {
+        const timer = setTimeout(() => setProfileUpdateMessage(''), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [profileUpdateMessage]);
+
   return (
     <div className={`proctor-dashboard-modern${darkMode ? ' dark' : ''}`}>
       {/* Sidebar */}
@@ -574,12 +587,12 @@ function ProctorDashboard() {
           <div className="topbar-right">
             <ProctorNotificationBell userId={proctorData?.staffId} className="notification-bell" />
             <button className="dark-mode-toggle" onClick={toggleDarkMode}>
-              <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
-            </button>
+          <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+        </button>
             <div className="modern-profile-avatar">
               <FontAwesomeIcon icon={faUser} />
               <span>{proctorData?.name?.split(' ')[0] || 'Proctor'}</span>
-            </div>
+      </div>
           </div>
         </header>
 
@@ -724,19 +737,31 @@ function ProctorDashboard() {
                             </div>
 
                             {complaint.file && (
-                              <div className="complaint-image-container">
-                                <img
-                                  src={`http://localhost:5000/${complaint.file}`}
-                                  alt="Complaint evidence"
-                                  className="complaint-image"
-                                  onClick={() => handleExpandImage(`http://localhost:5000/${complaint.file}`)}
-                                />
-                                <button
-                                  className="expand-image-btn"
-                                  onClick={() => handleExpandImage(`http://localhost:5000/${complaint.file}`)}
-                                >
-                                  <FontAwesomeIcon icon={faExpand} />
-                                </button>
+                              <div className="complaint-media-container">
+                                {complaint.file.match(/\.(jpg|jpeg|png)$/i) ? (
+                                  <img
+                                    src={`http://localhost:5000/${complaint.file}`}
+                                    alt="Complaint evidence"
+                                    className="complaint-image"
+                                    onClick={() => handleExpandImage(`http://localhost:5000/${complaint.file}`)}
+                                  />
+                                ) : complaint.file.match(/\.(mp4|mov|avi)$/i) ? (
+                                  <video
+                                    controls
+                                    className="complaint-video"
+                                    src={`http://localhost:5000/${complaint.file}`}
+                                  >
+                                    Your browser does not support the video tag.
+                                  </video>
+                                ) : complaint.file.match(/\.(mp3|wav)$/i) ? (
+                                  <audio
+                                    controls
+                                    className="complaint-audio"
+                                    src={`http://localhost:5000/${complaint.file}`}
+                                  >
+                                    Your browser does not support the audio tag.
+                                  </audio>
+                                ) : null}
                               </div>
                             )}
                           </div>
@@ -797,14 +822,16 @@ function ProctorDashboard() {
               {isEditingProfile ? (
                 <div className="edit-profile-form">
                   <div className="form-group">
-                    <label htmlFor="name">Name</label>
+                    <label htmlFor="name">Full Name</label>
                     <input
                       type="text"
                       id="name"
                       name="name"
                       value={editFormData.name}
                       onChange={handleEditFormChange}
+                      placeholder="Enter your full name"
                     />
+                    {editErrors.name && <span className="error-message">{editErrors.name}</span>}
                   </div>
                   <div className="form-group">
                     <label htmlFor="email">Email</label>
@@ -814,7 +841,9 @@ function ProctorDashboard() {
                       name="email"
                       value={editFormData.email}
                       onChange={handleEditFormChange}
+                      placeholder="Enter your email"
                     />
+                    {editErrors.email && <span className="error-message">{editErrors.email}</span>}
                   </div>
                   <div className="form-group">
                     <label htmlFor="phone">Phone</label>
@@ -824,7 +853,9 @@ function ProctorDashboard() {
                       name="phone"
                       value={editFormData.phone}
                       onChange={handleEditFormChange}
+                      placeholder="Enter your phone number"
                     />
+                    {editErrors.phone && <span className="error-message">{editErrors.phone}</span>}
                   </div>
                   
                   <div className="password-change-section">
@@ -1080,19 +1111,31 @@ function ProctorDashboard() {
             {selectedComplaint.file && (
               <div className="complaint-detail-item">
                 <h4>Evidence</h4>
-                <div className="complaint-image-container">
-                  <img
-                    src={`http://localhost:5000/${selectedComplaint.file}`}
-                    alt="Complaint evidence"
-                    className="complaint-image"
-                    onClick={() => handleExpandImage(`http://localhost:5000/${selectedComplaint.file}`)}
-                  />
-                  <button
-                    className="expand-image-btn"
-                    onClick={() => handleExpandImage(`http://localhost:5000/${selectedComplaint.file}`)}
-                  >
-                    <FontAwesomeIcon icon={faExpand} /> Expand
-                  </button>
+                <div className="complaint-media-container">
+                  {selectedComplaint.file.match(/\.(jpg|jpeg|png)$/i) ? (
+                    <img
+                      src={`http://localhost:5000/${selectedComplaint.file}`}
+                      alt="Complaint evidence"
+                      className="complaint-image"
+                      onClick={() => handleExpandImage(`http://localhost:5000/${selectedComplaint.file}`)}
+                    />
+                  ) : selectedComplaint.file.match(/\.(mp4|mov|avi)$/i) ? (
+                    <video
+                      controls
+                      className="complaint-video"
+                      src={`http://localhost:5000/${selectedComplaint.file}`}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : selectedComplaint.file.match(/\.(mp3|wav)$/i) ? (
+                    <audio
+                      controls
+                      className="complaint-audio"
+                      src={`http://localhost:5000/${selectedComplaint.file}`}
+                    >
+                      Your browser does not support the audio tag.
+                    </audio>
+                  ) : null}
                 </div>
               </div>
             )}

@@ -724,6 +724,19 @@ body.dark-mode .student-edit-profile form .student-password-change-section {
   border-radius: 4px;
 }
 
+.student-complaint-video {
+  width: 100%;
+  max-height: 300px;
+  border-radius: 4px;
+  background-color: #000;
+}
+
+.student-complaint-audio {
+  width: 100%;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
 .student-complaint-actions {
   margin-top: auto;
   padding-top: 15px;
@@ -1872,4 +1885,56 @@ body:not(.dark-mode) .dark-mode-toggle svg {
 /* Add soft shadow to cards */
 .modern-performance-card, .modern-calendar-card, .modern-events-card, .modern-welcome-card {
   box-shadow: 0 4px 24px rgba(30,40,90,0.10);
+}
+
+/* Dark mode adjustments */
+body.dark-mode .student-complaint-video {
+  background-color: #1a1a1a;
+}
+
+body.dark-mode .student-complaint-audio {
+  background-color: #1a1a1a;
+}
+
+.complaint-media-container,
+.supervisor-complaint-media,
+.dean-complaint-media {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.complaint-video,
+.supervisor-complaint-video,
+.dean-complaint-video {
+  width: 100%;
+  max-height: 300px;
+  border-radius: 4px;
+  background-color: #000;
+}
+
+.complaint-audio,
+.supervisor-complaint-audio,
+.dean-complaint-audio {
+  width: 100%;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.supervisor-complaint-photo,
+.dean-complaint-photo {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+body.dark-mode .complaint-video,
+body.dark-mode .supervisor-complaint-video,
+body.dark-mode .dean-complaint-video {
+  background-color: #1a1a1a;
+}
+body.dark-mode .complaint-audio,
+body.dark-mode .supervisor-complaint-audio,
+body.dark-mode .dean-complaint-audio {
+  background-color: #1a1a1a;
 }

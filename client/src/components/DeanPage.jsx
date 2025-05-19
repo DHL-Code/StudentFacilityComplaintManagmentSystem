@@ -5,11 +5,13 @@ import '../styles/DeanStyles.css';
 import { FaSun, FaMoon } from 'react-icons/fa';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHome, faCommentDots, faUser, faCog, faBook, faStar, faSignOutAlt, faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 const DeanPage = () => {
-  const [activeTab, setActiveTab] = useState('complaints');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [deanData, setDeanData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -43,6 +45,20 @@ const DeanPage = () => {
     return savedHiddenComplaints ? new Set(JSON.parse(savedHiddenComplaints)) : new Set();
   });
 
+  // Validation helpers
+  const validateName = (name) => /^[A-Za-z ]+$/.test(name.trim());
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePhone = (phone) => {
+    if (phone.startsWith('09')) return /^09\d{8}$/.test(phone);
+    if (phone.startsWith('+251')) return /^\+251\d{9,10}$/.test(phone);
+    return false;
+  };
+  const validatePassword = (password) => {
+    if (!password) return true;
+    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*]/.test(password);
+  };
+  const [editErrors, setEditErrors] = useState({});
+
   useEffect(() => {
     localStorage.setItem('hiddenComplaints', JSON.stringify(Array.from(hiddenComplaints)));
   }, [hiddenComplaints]);
@@ -50,6 +66,13 @@ const DeanPage = () => {
   useEffect(() => {
     document.body.classList.add('dark-mode');
   }, []);
+
+  useEffect(() => {
+    if (error) {
+        const timer = setTimeout(() => setError(null), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const chartOptions = {
     responsive: true,
@@ -407,18 +430,14 @@ const DeanPage = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
-    if (formData.newPassword !== formData.confirmNewPassword) {
-      setError("New passwords don't match");
-      setLoading(false);
-      return;
-    }
-
-    if (formData.newPassword && formData.newPassword.length < 6) {
-      setError("Password must be at least 6 characters");
-      setLoading(false);
-      return;
-    }
+    const errors = {};
+    if (!validateName(formData.fullName)) errors.fullName = 'Name must contain only letters and spaces.';
+    if (!validateEmail(formData.email)) errors.email = 'Invalid email address.';
+    if (!validatePhone(formData.phoneNumber)) errors.phoneNumber = 'Phone must be 10 digits (09...) or 13 digits (+251...)';
+    if (formData.newPassword && !validatePassword(formData.newPassword)) errors.newPassword = 'Password must be 8+ chars, upper, lower, number, special.';
+    if (formData.newPassword !== formData.confirmNewPassword) errors.confirmNewPassword = 'Passwords do not match.';
+    setEditErrors(errors);
+    if (Object.keys(errors).length > 0) { setLoading(false); return; }
 
     const formPayload = new FormData();
     formPayload.append('name', formData.fullName);
@@ -566,52 +585,70 @@ const DeanPage = () => {
     : summaryReports.filter(report => String(report.blockNumber).trim() === selectedBlock);
 
   return (
-    <div className={`dean-container ${darkMode ? 'dark-mode' : ''}`}>
-      <div className="dean-header">
-        <h1>Dean's Dashboard</h1>
-        <div className="dean-header-actions">
-          <button className="dean-theme-toggle" onClick={toggleTheme}>
-            {isDarkMode ? <FaSun className="dean-theme-icon" /> : <FaMoon className="dean-theme-icon" />}
-          </button>
-          <DeanNotificationBell />
-          <button className="dean-logout-btn" onClick={handleLogout}>
-            Logout
+    <div className={`student-dashboard-modern${darkMode ? ' dark' : ''}`}>
+      <aside className="modern-sidebar">
+        <div className="sidebar-header">
+          <span className="sidebar-logo">Dean Dashboard</span>
+        </div>
+        <nav className="sidebar-nav">
+          <ul>
+            <li className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>
+              <FontAwesomeIcon icon={faHome} /> <span>Dashboard</span>
+            </li>
+            <li className={activeTab === 'complaints' ? 'active' : ''} onClick={() => setActiveTab('complaints')}>
+              <FontAwesomeIcon icon={faCommentDots} /> <span>Manage Complaints</span>
+            </li>
+            <li className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); fetchDeanData(); }}>
+              <FontAwesomeIcon icon={faUser} /> <span>Profile</span>
+            </li>
+            <li className={activeTab === 'editProfile' ? 'active' : ''} onClick={() => setActiveTab('editProfile')}>
+              <FontAwesomeIcon icon={faCog} /> <span>Edit Profile</span>
+            </li>
+            <li className={activeTab === 'summaryReports' ? 'active' : ''} onClick={() => setActiveTab('summaryReports')}>
+              <FontAwesomeIcon icon={faBook} /> <span>Summary Report</span>
+            </li>
+          </ul>
+        </nav>
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={handleLogout}>
+            <FontAwesomeIcon icon={faSignOutAlt} /> Log Out
           </button>
         </div>
-      </div>
-
-      <div className="dean-main-content">
-        <div className="dean-sidebar">
-          <button
-            className={`dean-nav-btn ${activeTab === 'complaints' ? 'active' : ''}`}
-            onClick={() => setActiveTab('complaints')}
-          >
-            Manage Complaints
-          </button>
-          <button
-            className={`dean-nav-btn ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('profile');
-              fetchDeanData();
-            }}
-          >
-            Profile
-          </button>
-          <button
-            className={`dean-nav-btn ${activeTab === 'editProfile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('editProfile')}
-          >
-            Edit Profile
-          </button>
-          <button
-            className={`dean-nav-btn ${activeTab === 'summaryReports' ? 'active' : ''}`}
-            onClick={() => setActiveTab('summaryReports')}
-          >
-            Summary Report
-          </button>
-        </div>
-
+      </aside>
+      <main className="modern-main-content">
+        <header className="modern-topbar">
+          <div className="topbar-left"></div>
+          <div className="topbar-right">
+            <DeanNotificationBell />
+            <button className="dark-mode-toggle" onClick={toggleTheme}>
+              <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} />
+            </button>
+            <div className="modern-profile-avatar">
+              {currentProfilePhoto ? (
+                <img src={currentProfilePhoto} alt="Profile" />
+              ) : (
+                <FontAwesomeIcon icon={faUser} />
+              )}
+              <span>{deanData?.name?.split(' ')[0] || 'Dean'}</span>
+            </div>
+          </div>
+        </header>
         <div className="dean-content-area">
+          {activeTab === 'dashboard' && (
+            <section className="modern-dashboard-overview">
+              <div className="modern-welcome-card awesome-welcome">
+                <div className="welcome-text">
+                  <h2>Welcome, {deanData?.name?.split(' ')[0] || 'Dean'}!</h2>
+                  <p>
+                    We're glad to have you here. This is your space to manage your facility complaints, update your profile, and provide feedback to help us improve your campus experience.<br /><br />
+                    <strong>Tip:</strong> Use the sidebar to quickly access all features. If you have any issues, don't hesitate to submit a complaint or reach out for support. Your comfort and satisfaction matter!
+                  </p>
+                  <p style={{marginTop: '18px', fontWeight: 500, color: '#fba53b'}}>Have a great day and make your voice heard!</p>
+                </div>
+              </div>
+            </section>
+          )}
+
           {activeTab === 'complaints' && (
             <div className="dean-section">
               <h2>Escalated Complaints</h2>
@@ -637,6 +674,33 @@ const DeanPage = () => {
                       <p><strong>Escalated At:</strong> {new Date(complaint.escalatedAt).toLocaleDateString()}</p>
                       {complaint.isUrgent && <p className="dean-urgent-tag">URGENT</p>}
                     </div>
+                    {complaint.file && (
+                      <div className="dean-complaint-media">
+                        {complaint.file.match(/\.(jpg|jpeg|png)$/i) ? (
+                          <img
+                            src={`http://localhost:5000/${complaint.file}`}
+                            alt="Complaint evidence"
+                            className="dean-complaint-photo"
+                          />
+                        ) : complaint.file.match(/\.(mp4|mov|avi)$/i) ? (
+                          <video
+                            controls
+                            className="dean-complaint-video"
+                            src={`http://localhost:5000/${complaint.file}`}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : complaint.file.match(/\.(mp3|wav)$/i) ? (
+                          <audio
+                            controls
+                            className="dean-complaint-audio"
+                            src={`http://localhost:5000/${complaint.file}`}
+                          >
+                            Your browser does not support the audio tag.
+                          </audio>
+                        ) : null}
+                      </div>
+                    )}
                     <div className="dean-complaint-actions">
                       {complaint.status.toLowerCase() === 'resolved' ? (
                         <button
@@ -757,6 +821,7 @@ const DeanPage = () => {
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       required
                     />
+                    {editErrors.fullName && <span className="error-message">{editErrors.fullName}</span>}
                   </div>
 
                   <div className="dean-form-group">
@@ -767,6 +832,7 @@ const DeanPage = () => {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
                     />
+                    {editErrors.email && <span className="error-message">{editErrors.email}</span>}
                   </div>
 
                   <div className="dean-form-group">
@@ -777,6 +843,7 @@ const DeanPage = () => {
                       onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                       required
                     />
+                    {editErrors.phoneNumber && <span className="error-message">{editErrors.phoneNumber}</span>}
                   </div>
 
                   <div className="dean-form-group">
@@ -909,7 +976,7 @@ const DeanPage = () => {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 };

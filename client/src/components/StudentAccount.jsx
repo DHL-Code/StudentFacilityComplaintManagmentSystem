@@ -54,6 +54,21 @@ const Dashboard = () => {
 
     const [feedbackStatus, setFeedbackStatus] = useState([]);
 
+    // Validation helpers
+    const validateName = (name) => /^[A-Za-z ]+$/.test(name.trim());
+    const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const validatePhone = (phone) => {
+        if (phone.startsWith('09')) return /^09\d{8}$/.test(phone);
+        if (phone.startsWith('+251')) return /^\+251\d{9,10}$/.test(phone);
+        return false;
+    };
+    const validatePassword = (password) => {
+        if (!password) return true; // allow blank if not changing
+        return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*]/.test(password);
+    };
+
+    const [editErrors, setEditErrors] = useState({});
+
     const handleNavigation = (section) => {
         setActiveSection(section);
         setIsNavActive(false);
@@ -82,6 +97,14 @@ const Dashboard = () => {
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
+        const errors = {};
+        if (!validateName(formData.fullName)) errors.fullName = 'Name must contain only letters and spaces.';
+        if (!validateEmail(formData.email)) errors.email = 'Invalid email address.';
+        if (!validatePhone(formData.phoneNumber)) errors.phoneNumber = 'Phone must be 10 digits (09...) or 13 digits (+251...)';
+        if (formData.newPassword && !validatePassword(formData.newPassword)) errors.newPassword = 'Password must be 8+ chars, upper, lower, number, special.';
+        if (formData.newPassword !== formData.confirmNewPassword) errors.confirmNewPassword = 'Passwords do not match.';
+        setEditErrors(errors);
+        if (Object.keys(errors).length > 0) return;
         setLoading(true);
         setError(null);
 
@@ -275,8 +298,8 @@ const Dashboard = () => {
                 college: profile.college
             });
 
-            // Only fetch departments if we don't already have them
-            if (profile.college && !availableDepartments.some(dept => dept.name === profile.department)) {
+            // Fetch departments for the current college
+            if (profile.college) {
                 fetchDepartments(profile.college);
             }
         }
@@ -285,8 +308,13 @@ const Dashboard = () => {
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
-            const isValidType = selectedFile.type === 'image/jpeg' || selectedFile.type === 'image/png';
-            const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
+            const validTypes = [
+                'image/jpeg', 'image/png',
+                'audio/mpeg', 'audio/wav', 'audio/mp3',
+                'video/mp4', 'video/quicktime', 'video/x-msvideo'
+            ];
+            const isValidType = validTypes.includes(selectedFile.type);
+            const isValidSize = selectedFile.size <= 50 * 1024 * 1024; // 50MB limit
 
             if (isValidType && isValidSize) {
                 setFile(selectedFile);
@@ -296,7 +324,7 @@ const Dashboard = () => {
                 reader.readAsDataURL(selectedFile);
                 setFileError('');
             } else {
-                setFileError('File must be a JPG or PNG and less than 5 MB.');
+                setFileError('File must be an image (JPG/PNG), audio (MP3/WAV), or video (MP4/MOV/AVI) and less than 50MB');
             }
         }
     };
@@ -639,6 +667,20 @@ const Dashboard = () => {
         }
     }, [profile?.userId]);
 
+    // Add useEffect to auto-clear error and success messages
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => setSuccessMessage(''), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
+
     return (
         <div className={`student-dashboard-modern${darkMode ? ' dark' : ''}`}>
             <aside className="modern-sidebar">
@@ -783,8 +825,12 @@ const Dashboard = () => {
                                         />
                                     </label>
                                     <label>
-                                        Upload a Photograph (max 5 MB):
-                                        <input type="file" accept=".jpg,.png" onChange={handleFileChange} />
+                                        Upload Evidence (Image/Audio/Video, max 50MB):
+                                        <input 
+                                            type="file" 
+                                            accept=".jpg,.png,.mp3,.wav,.mp4,.mov,.avi" 
+                                            onChange={handleFileChange} 
+                                        />
                                         {fileError && <p className="student-error">{fileError}</p>}
                                     </label>
                                     <button type="submit">Submit Complaint</button>
@@ -892,6 +938,7 @@ const Dashboard = () => {
                                                 value={formData.fullName || ''}
                                                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                                             />
+                                            {editErrors.fullName && <span className="error-message">{editErrors.fullName}</span>}
                                         </label>
 
                                         <label>
@@ -902,6 +949,7 @@ const Dashboard = () => {
                                                 value={formData.email || ''}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             />
+                                            {editErrors.email && <span className="error-message">{editErrors.email}</span>}
                                         </label>
 
                                         <label>
@@ -911,6 +959,7 @@ const Dashboard = () => {
                                                 value={formData.phoneNumber || ''}
                                                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                                             />
+                                            {editErrors.phoneNumber && <span className="error-message">{editErrors.phoneNumber}</span>}
                                         </label>
 
                                         <label>
@@ -958,7 +1007,11 @@ const Dashboard = () => {
                                                 </option>
                                                 {availableDepartments?.length > 0 &&
                                                     availableDepartments.map((dept) => (
-                                                        <option key={dept._id} value={dept.name}>
+                                                        <option 
+                                                            key={dept._id} 
+                                                            value={dept.name}
+                                                            selected={dept.name === profile?.department}
+                                                        >
                                                             {dept.name}
                                                         </option>
                                                     ))
@@ -1007,8 +1060,9 @@ const Dashboard = () => {
                                                     type="password"
                                                     value={formData.newPassword}
                                                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                                                    placeholder="Enter new password (min 6 characters)"
+                                                    placeholder="Enter new password (min 8 chars, upper, lower, number, special)"
                                                 />
+                                                {editErrors.newPassword && <span className="error-message">{editErrors.newPassword}</span>}
                                             </label>
 
                                             <label>
@@ -1019,6 +1073,7 @@ const Dashboard = () => {
                                                     onChange={(e) => setFormData({ ...formData, confirmNewPassword: e.target.value })}
                                                     placeholder="Confirm new password"
                                                 />
+                                                {editErrors.confirmNewPassword && <span className="error-message">{editErrors.confirmNewPassword}</span>}
                                             </label>
                                         </div>
                                     </div>
@@ -1147,12 +1202,30 @@ const Dashboard = () => {
                                                     <p><strong>Submitted:</strong> {new Date(complaint.createdAt).toLocaleDateString()}</p>
                                                 </div>
                                                 {complaint.file && (
-                                                    <div className="student-complaint-image">
-                                                        <img
-                                                            src={`http://localhost:5000/${complaint.file}`}
-                                                            alt="Complaint evidence"
-                                                            className="student-complaint-photo"
-                                                        />
+                                                    <div className="student-complaint-media">
+                                                        {complaint.file.match(/\.(jpg|jpeg|png)$/i) ? (
+                                                            <img
+                                                                src={`http://localhost:5000/${complaint.file}`}
+                                                                alt="Complaint evidence"
+                                                                className="student-complaint-photo"
+                                                            />
+                                                        ) : complaint.file.match(/\.(mp4|mov|avi)$/i) ? (
+                                                            <video 
+                                                                controls 
+                                                                className="student-complaint-video"
+                                                                src={`http://localhost:5000/${complaint.file}`}
+                                                            >
+                                                                Your browser does not support the video tag.
+                                                            </video>
+                                                        ) : complaint.file.match(/\.(mp3|wav)$/i) ? (
+                                                            <audio 
+                                                                controls 
+                                                                className="student-complaint-audio"
+                                                                src={`http://localhost:5000/${complaint.file}`}
+                                                            >
+                                                                Your browser does not support the audio tag.
+                                                            </audio>
+                                                        ) : null}
                                                     </div>
                                                 )}
                                                 <div className="student-complaint-actions">

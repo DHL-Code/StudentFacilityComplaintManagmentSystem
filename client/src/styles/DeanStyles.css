@@ -74,11 +74,18 @@
 }
 
 .dean-container.dark-mode {
-  --bg-primary: #121212;
-  --bg-secondary: #1e1e1e;
-  --text-primary: #ffffff;
+  --bg-primary: #181e36;
+  --bg-secondary: #232b4a;
+  --sidebar-bg: #232b4a;
+  --sidebar-active: #1a213a;
+  --sidebar-text: #fff;
+  --sidebar-icon: #fff;
+  --card-bg: #5567a3;
+  --card-text: #fff;
+  --highlight: #ffb347;
+  --border-color: #232b4a;
+  --text-primary: #fff;
   --text-secondary: #b0b0b0;
-  --border-color: #333;
 }
 
 /* Header Styles */
@@ -146,8 +153,10 @@
 /* Sidebar Styles */
 .dean-sidebar {
   width: 220px;
-  background-color: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  border-radius: 0 24px 24px 0;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.04);
   padding: 1rem 0;
   position: fixed;
   top: 4rem;
@@ -161,11 +170,13 @@
   padding: 1rem 1.5rem;
   background: none;
   border: none;
-  color: var(--text-primary);
+  color: var(--sidebar-text);
   text-align: left;
   cursor: pointer;
   transition: background-color 0.3s;
   font-size: 1rem;
+  font-weight: 500;
+  border-radius: 0 20px 20px 0;
 }
 
 .dean-nav-btn:hover {
@@ -173,8 +184,8 @@
 }
 
 .dean-nav-btn.active {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-left: 4px solid #007bff;
+  background: var(--sidebar-active);
+  color: #fff;
 }
 
 /* Content Area Styles */
@@ -186,11 +197,13 @@
 }
 
 .dean-section {
+  background: none;
+  box-shadow: none;
+  padding: 0;
   background-color: var(--bg-secondary);
   border-radius: 8px;
   padding: 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dean-section h2 {
@@ -831,4 +844,28 @@
         align-items: flex-start;
         gap: 0.5rem;
     }
+}
+
+:root {
+  --bg-primary: #f8fbff;
+  --bg-secondary: #eaf3fb;
+  --sidebar-bg: #eaf3fb;
+  --sidebar-active: #3b5998;
+  --sidebar-text: #222;
+  --sidebar-icon: #3b5998;
+  --card-bg: #5567a3;
+  --card-text: #fff;
+  --highlight: #ffb347;
+  --border-color: #e0e0e0;
+  --text-primary: #222;
+  --text-secondary: #666;
+}
+
+.dean-welcome-card {
+  background: var(--card-bg);
+  color: var(--card-text);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }

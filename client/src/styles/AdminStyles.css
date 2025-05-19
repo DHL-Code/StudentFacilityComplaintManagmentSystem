@@ -190,8 +190,56 @@ body:not(.dark-mode) .section p {
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   padding: 2rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 15px;
+  background: linear-gradient(120deg, #f8fafc 60%, #e3f0ff 100%) !important;
+  box-shadow: 0 8px 32px rgba(80, 120, 255, 0.10), 0 1.5px 8px 0 rgba(80, 120, 255, 0.08);
+  border: 2px solid #b6d0ff;
+  border-radius: 18px;
+  transition: box-shadow 0.3s, border-color 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+body:not(.dark-mode) .staff-form::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: -30%;
+  width: 160%;
+  height: 160%;
+  background: radial-gradient(circle at 60% 40%, #e3f0ff 0%, #b6d0ff 100%, transparent 100%);
+  opacity: 0.25;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(12px);
+}
+
+body:not(.dark-mode) .staff-form:hover {
+  box-shadow: 0 12px 40px 0 rgba(80, 120, 255, 0.18), 0 2px 12px 0 rgba(80, 120, 255, 0.12);
+  border-color: #2563eb;
+}
+
+body:not(.dark-mode) .staff-form .form-group {
+  background: rgba(255,255,255,0.85);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(80, 120, 255, 0.07);
+  padding: 1.2rem 1rem 0.7rem 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+body:not(.dark-mode) .staff-form .form-group input,
+body:not(.dark-mode) .staff-form .form-group select {
+  background: #f4f8ff !important;
+  border: 1.5px solid #b6d0ff !important;
+  color: #232a4d !important;
+  box-shadow: 0 1px 4px rgba(80, 120, 255, 0.06);
+}
+
+body:not(.dark-mode) .staff-form .form-group input:focus,
+body:not(.dark-mode) .staff-form .form-group select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px #90caf9 !important;
 }
 
 body:not(.dark-mode) .staff-form h2,
@@ -1547,4 +1595,57 @@ body:not(.dark-mode) .dark-mode-toggle {
 body:not(.dark-mode) .notification-bell:hover,
 body:not(.dark-mode) .dark-mode-toggle:hover {
   background: #1565c0 !important;
+}
+
+body.dark-mode .staff-form input::placeholder,
+body.dark-mode .staff-form select::placeholder,
+body.dark-mode .staff-form input::-webkit-input-placeholder,
+body.dark-mode .staff-form select::-webkit-input-placeholder {
+  color: #b0b8d1 !important;
+  opacity: 1;
+}
+body.dark-mode .staff-form input:-ms-input-placeholder,
+body.dark-mode .staff-form select:-ms-input-placeholder {
+  color: #b0b8d1 !important;
+}
+body.dark-mode .staff-form input::-ms-input-placeholder,
+body.dark-mode .staff-form select::-ms-input-placeholder {
+  color: #b0b8d1 !important;
+}
+
+body.dark-mode .staff-form input,
+body.dark-mode .staff-form select,
+body.dark-mode .staff-form option {
+  color: #e3e8ff !important;
+  background: #232a4d !important;
+  border-color: #3a4069 !important;
+}
+
+body.dark-mode .staff-form .form-group label {
+  color: #111 !important;
+}
+
+.colleges-list,
+.departments-list,
+.blocks-list,
+.dorms-list {
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4dabf7 #e3f2fd;
+}
+.colleges-list::-webkit-scrollbar,
+.departments-list::-webkit-scrollbar,
+.blocks-list::-webkit-scrollbar,
+.dorms-list::-webkit-scrollbar {
+  width: 8px;
+  background: #e3f2fd;
+  border-radius: 8px;
+}
+.colleges-list::-webkit-scrollbar-thumb,
+.departments-list::-webkit-scrollbar-thumb,
+.blocks-list::-webkit-scrollbar-thumb,
+.dorms-list::-webkit-scrollbar-thumb {
+  background: #4dabf7;
+  border-radius: 8px;
 }

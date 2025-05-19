@@ -1341,45 +1341,39 @@ const AdminPage = () => {
     }
   }, [activeTab]);
 
+  // Validation helpers
+  const validateName = (name) => /^[A-Za-z ]+$/.test(name.trim());
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePhone = (phone) => {
+      if (phone.startsWith('09')) return /^09\d{8}$/.test(phone);
+      if (phone.startsWith('+251')) return /^\+251\d{9,10}$/.test(phone);
+      return false;
+  };
+  const validatePassword = (password) => {
+      if (!password) return false;
+      return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*]/.test(password);
+  };
+
   const validateForm = () => {
     const errors = {};
-
-    // Name validation
-    if (!newStaff.name.trim()) {
-      errors.name = 'Name is required';
+    if (!validateName(newStaff.name)) {
+        errors.name = 'Name must contain only letters and spaces.';
     }
-
-    // Email validation
-    if (!newStaff.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newStaff.email)) {
-      errors.email = 'Please enter a valid email address';
+    if (!validateEmail(newStaff.email)) {
+        errors.email = 'Please enter a valid email address.';
     }
-
-    // Phone validation
-    if (!newStaff.phone.trim()) {
-      errors.phone = 'Phone number is required';
-    } else if (!/^\d{10}$/.test(newStaff.phone)) {
-      errors.phone = 'Phone number must be exactly 10 digits';
+    if (!validatePhone(newStaff.phone)) {
+        errors.phone = 'Phone must be 10 digits (09...) or 13 digits (+251...)';
     }
-
-    // Password validation
-    if (!newStaff.password) {
-      errors.password = 'Password is required';
-    } else if (newStaff.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+    if (!validatePassword(newStaff.password)) {
+        errors.password = 'Password must be 8+ chars, upper, lower, number, special.';
     }
-
-    // Role validation
     if (!newStaff.role) {
-      errors.role = 'Role is required';
+        errors.role = 'Role is required';
     }
-
-    // Block validation for proctors
     if (newStaff.role === 'proctor' && !newStaff.block) {
-      errors.block = 'Block is required for proctors';
+        errors.block = 'Block is required for proctors';
     }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -1953,6 +1947,20 @@ const AdminPage = () => {
     }
   }, [successMessage]);
 
+  // Add useEffect to auto-clear error and success messages
+  useEffect(() => {
+    if (errorMessage) {
+        const timer = setTimeout(() => setErrorMessage(''), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
+  useEffect(() => {
+    if (successMessage) {
+        const timer = setTimeout(() => setSuccessMessage(''), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   return (
     <div className={`admin-dashboard-modern${darkMode ? ' dark' : ''}`}> {/* Modern wrapper */}
       {/* Sidebar */}
@@ -2158,113 +2166,108 @@ const AdminPage = () => {
         <div className="section">
           <h2 style={{ color: 'white' }}>Create Staff Account</h2>
           {successMessage && (
-                <div className="success-message" style={{ color: 'green', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{successMessage}</div>
-              )}
+            <div className="success-message" style={{ color: 'green', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{successMessage}</div>
+          )}
           {errorMessage && (
-                <div className="error-message" style={{ color: 'red', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{errorMessage}</div>
-              )}
-              <form onSubmit={handleCreateStaff} className="staff-form" style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '8px' }}>
-                {/* Name */}
-                <div className="form-group">
-                  <label>Name</label>
-                  <input type="text" value={newStaff.name} onChange={e => setNewStaff({ ...newStaff, name: e.target.value })} required />
-                  {formErrors.name && <span className="error-message">{formErrors.name}</span>}
-                  </div>
-                {/* Email */}
-                <div className="form-group">
-                  <label>Email</label>
-                  <input type="email" value={newStaff.email} onChange={e => setNewStaff({ ...newStaff, email: e.target.value })} onBlur={handleEmailBlur} required />
-                  {formErrors.email && <span className="error-message">{formErrors.email}</span>}
-              </div>
-                {/* Phone */}
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input type="text" value={newStaff.phone} onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })} onBlur={handlePhoneBlur} required />
-                  {formErrors.phone && <span className="error-message">{formErrors.phone}</span>}
+            <div className="error-message" style={{ color: 'red', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{errorMessage}</div>
+          )}
+          <form onSubmit={handleCreateStaff} className="staff-form" style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '8px' }}>
+            {/* Name */}
+            <div className="form-group">
+              <label>Name</label>
+              <input type="text" value={newStaff.name} onChange={e => setNewStaff({ ...newStaff, name: e.target.value })} required />
+              {formErrors.name && <span className="error-message">{formErrors.name}</span>}
             </div>
-                {/* Role */}
-                <div className="form-group">
-                  <label>Role</label>
-                  <select value={newStaff.role} onChange={e => setNewStaff({ ...newStaff, role: e.target.value })} required>
+            {/* Email */}
+            <div className="form-group">
+              <label>Email</label>
+              <input type="email" value={newStaff.email} onChange={e => setNewStaff({ ...newStaff, email: e.target.value })} onBlur={handleEmailBlur} required />
+              {formErrors.email && <span className="error-message">{formErrors.email}</span>}
+            </div>
+            {/* Phone */}
+            <div className="form-group">
+              <label>Phone</label>
+              <input type="text" value={newStaff.phone} onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })} onBlur={handlePhoneBlur} required />
+              {formErrors.phone && <span className="error-message">{formErrors.phone}</span>}
+            </div>
+            {/* Role */}
+            <div className="form-group">
+              <label>Role</label>
+              <select value={newStaff.role} onChange={e => setNewStaff({ ...newStaff, role: e.target.value })} required>
                 <option value="proctor">Proctor</option>
                 <option value="supervisor">Supervisor</option>
-                    <option value="dean">Dean</option>
+                <option value="dean">Dean</option>
               </select>
-                  {formErrors.role && <span className="error-message">{formErrors.role}</span>}
+              {formErrors.role && <span className="error-message">{formErrors.role}</span>}
             </div>
-                {/* Password */}
-                <div className="form-group">
-                  <label>Password</label>
-                  <input type="password" value={newStaff.password} onChange={e => setNewStaff({ ...newStaff, password: e.target.value })} onBlur={handlePasswordBlur} required />
-                  {formErrors.password && <span className="error-message">{formErrors.password}</span>}
-                </div>
-                {/* Block (for proctor) */}
+            {/* Password */}
+            <div className="form-group">
+              <label>Password</label>
+              <input type="password" value={newStaff.password} onChange={e => setNewStaff({ ...newStaff, password: e.target.value })} onBlur={handlePasswordBlur} required />
+              {formErrors.password && <span className="error-message">{formErrors.password}</span>}
+            </div>
+            {/* Block (for proctor) */}
             {newStaff.role === 'proctor' && (
-                  <div className="form-group">
-                    <label>Block</label>
-                    <select value={newStaff.block} onChange={e => setNewStaff({ ...newStaff, block: e.target.value })} required>
+              <div className="form-group">
+                <label>Block</label>
+                <select value={newStaff.block} onChange={e => setNewStaff({ ...newStaff, block: e.target.value })} required>
                   <option value="">Select Block</option>
-                      {blocks.map(block => (
-                        <option key={block._id} value={block._id}>{block.number}</option>
+                  {blocks.map(block => (
+                    <option key={block._id} value={block._id}>{block.number}</option>
                   ))}
                 </select>
-                    {formErrors.block && <span className="error-message">{formErrors.block}</span>}
+                {formErrors.block && <span className="error-message">{formErrors.block}</span>}
               </div>
             )}
-                {/* Gender (for supervisor) */}
+            {/* Gender (for supervisor) */}
             {newStaff.role === 'supervisor' && (
-                  <div className="form-group">
-                    <label>Gender</label>
-                    <select value={newStaff.gender} onChange={e => setNewStaff({ ...newStaff, gender: e.target.value })} required>
+              <div className="form-group">
+                <label>Gender</label>
+                <select value={newStaff.gender} onChange={e => setNewStaff({ ...newStaff, gender: e.target.value })} required>
                   <option value="">Select Gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                 </select>
               </div>
             )}
-                {/* Profile Photo */}
-                <div className="form-group photo-upload">
-                  <label>Profile Photo</label>
-                  <input type="file" accept="image/*" onChange={handleProfilePhotoChange} />
-                  {profilePreview && <img src={profilePreview} alt="Preview" style={{ width: 80, height: 80, borderRadius: '50%', marginTop: 10 }} />}
-                </div>
-                <button type="submit" className="add-student-button">Create Staff</button>
+            {/* Profile Photo removed */}
+            <button type="submit" className="add-student-button">Create Staff</button>
           </form>
         </div>
       )}
-          {activeTab === 'feedback' && (
+      {activeTab === 'feedback' && (
         <div className="section">
-              <h2 style={{ color: 'white' }}>Student Feedback</h2>
-              {successMessage && (
+          <h2 style={{ color: 'white' }}>Student Feedback</h2>
+          {successMessage && (
                 <div style={{ color: 'green', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{successMessage}</div>
-              )}
-              {feedbackError && (
+          )}
+          {feedbackError && (
                 <div style={{ color: 'red', backgroundColor: '#2a2a2a', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>{feedbackError}</div>
-              )}
-              {feedbackLoading ? (
-                <p style={{ color: 'white' }}>Loading feedback data...</p>
-              ) : feedback.length === 0 ? (
-                <p style={{ color: 'white' }}>No feedback available.</p>
-              ) : (
+          )}
+          {feedbackLoading ? (
+            <p style={{ color: 'white' }}>Loading feedback data...</p>
+          ) : feedback.length === 0 ? (
+            <p style={{ color: 'white' }}>No feedback available.</p>
+          ) : (
                 <div className="feedback-container" style={{ maxHeight: '600px', overflowY: 'auto', padding: '10px' }}>
                   {feedback.map(item => (
                     <div key={item._id} className="feedback-card" style={{ background: '#232a4d', color: '#fff', borderRadius: '12px', marginBottom: '16px', padding: '18px', boxShadow: '0 2px 8px rgba(30,40,90,0.08)' }}>
                       <div className="feedback-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <span style={{ fontWeight: 600 }}>{item.studentName || item.studentId || item.userId || 'Anonymous Student'}</span>
                         <span style={{ fontSize: '0.9em', color: '#4dabf7' }}>{new Date(item.createdAt).toLocaleString()}</span>
-              </div>
+                    </div>
                       <div className="feedback-body" style={{ marginBottom: '8px' }}>{item.comment || item.message}</div>
                       <div className="feedback-actions" style={{ display: 'flex', gap: '10px' }}>
                         <button className="student-delete-btn" style={{ background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 16px', cursor: 'pointer' }} onClick={() => handleDeleteFeedback(item._id)}>Delete</button>
-            </div>
-          </div>
-                  ))}
-              </div>
-              )}
+                  </div>
                 </div>
-              )}
+              ))}
+            </div>
+          )}
+        </div>
+      )}
           {activeTab === 'colleges-departments' && (
-            <div className="section">
+        <div className="section">
               <h2 style={{ color: 'white' }}>Manage Colleges and Departments</h2>
               <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                 {/* Colleges Management */}
@@ -2287,7 +2290,7 @@ const AdminPage = () => {
                       </li>
                     ))}
                   </ul>
-              </div>
+                </div>
                 {/* Departments Management */}
                 <div style={{ flex: 1, minWidth: 300 }}>
                   <h3 style={{ color: '#4dabf7' }}>Departments</h3>
@@ -2301,7 +2304,7 @@ const AdminPage = () => {
                     </select>
                     <button type="submit" className="add-student-button">{editingDepartment ? 'Update' : 'Add'}</button>
                     {editingDepartment && <button type="button" className="student-delete-btn" onClick={() => { setEditingDepartment(null); setNewDepartment({ name: '', college: '' }); }}>Cancel</button>}
-                  </form>
+            </form>
                   {departmentErrorMessage && <div className="error-message" style={{ color: 'red', marginBottom: 8 }}>{departmentErrorMessage}</div>}
                   <ul className="departments-list" style={{ listStyle: 'none', padding: 0 }}>
                     {departments.map(dept => {
@@ -2323,10 +2326,10 @@ const AdminPage = () => {
                       );
                     })}
                   </ul>
-                    </div>
                       </div>
-                        </div>
-                      )}
+                    </div>
+                </div>
+              )}
       {activeTab === 'blocks-dorms' && (
         <div className="section">
           <h2 style={{ color: 'white' }}>Manage Blocks and Dorms</h2>
@@ -2351,7 +2354,7 @@ const AdminPage = () => {
                       </li>
                     ))}
                   </ul>
-                      </div>
+                </div>
                 {/* Dorms Management */}
                 <div style={{ flex: 1, minWidth: 300 }}>
                   <h3 style={{ color: '#4dabf7' }}>Dorms</h3>
@@ -2376,13 +2379,13 @@ const AdminPage = () => {
                           String(b._id).trim() === String(dormBlockId).trim() ||
                           String(b.number).trim() === String(dormBlockNumber).trim()
                       );
-                      return (
+                    return (
                         <li key={dorm._id} style={{ background: '#232a4d', color: '#fff', borderRadius: 8, marginBottom: 8, padding: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span>{dorm.number} (Block {foundBlock?.number || 'Unknown'})</span>
-                          <span>
+                        <span>
                             <button className="student-edit-btn" style={{ marginRight: 8 }} onClick={() => handleEditDorm(dorm)}>Edit</button>
                             <button className="student-delete-btn" onClick={() => handleDeleteDorm(dorm._id)}>Delete</button>
-                          </span>
+                        </span>
                         </li>
                       );
                     })}
@@ -2476,7 +2479,7 @@ const AdminPage = () => {
                           // Fetch departments for selected college
                           const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(e.target.value)}/departments`, {
                             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                          });
+                            });
                           if (response.ok) {
                             const data = await response.json();
                             setDepartments(data);
@@ -2546,7 +2549,7 @@ const AdminPage = () => {
                   <div className="error-message">{summaryReportsError}</div>
                 ) : filteredReports.length === 0 ? (
                   <div>No reports available.</div>
-                ) : (
+            ) : (
                   filteredReports.map((report, idx) => (
                     <div key={idx} className="admin-summary-report-card">
                   <div className="report-header">

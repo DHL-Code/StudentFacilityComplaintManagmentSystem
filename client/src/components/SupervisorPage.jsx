@@ -61,6 +61,8 @@ const SupervisorPage = () => {
     const [showValidationModal, setShowValidationModal] = useState(false);
     const [validationModalMessage, setValidationModalMessage] = useState('');
 
+    const [editErrors, setEditErrors] = useState({});
+
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
@@ -101,6 +103,13 @@ const SupervisorPage = () => {
             }
         }
     }, [location]);
+
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     const fetchProfile = async () => {
         setLoading(true);
@@ -504,28 +513,17 @@ const SupervisorPage = () => {
         }
     };
 
-    // Add password validation function
+    // Validation helpers
+    const validateName = (name) => /^[A-Za-z ]+$/.test(name.trim());
+    const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const validatePhone = (phone) => {
+        if (phone.startsWith('09')) return /^09\d{8}$/.test(phone);
+        if (phone.startsWith('+251')) return /^\+251\d{9,10}$/.test(phone);
+        return false;
+    };
     const validatePassword = (password) => {
-        const passwordErrors = [];
-        if (!password) {
-            passwordErrors.push("Password is required.");
-        }
-        if (password.length < 8) {
-            passwordErrors.push("Password should be at least 8 characters long.");
-        }
-        if (!/[A-Z]/.test(password)) {
-            passwordErrors.push("Password should contain at least one uppercase letter.");
-        }
-        if (!/[a-z]/.test(password)) {
-            passwordErrors.push("Password should contain at least one lowercase letter.");
-        }
-        if (!/[0-9]/.test(password)) {
-            passwordErrors.push("Password should contain at least one number.");
-        }
-        if (!/[!@#$%^&*]/.test(password)) {
-            passwordErrors.push("Password should contain at least one special character.");
-        }
-        return passwordErrors;
+        if (!password) return true;
+        return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*]/.test(password);
     };
 
     const handlePasswordChange = (e) => {
@@ -559,6 +557,14 @@ const SupervisorPage = () => {
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
+        const errors = {};
+        if (!validateName(formData.fullName)) errors.fullName = 'Name must contain only letters and spaces.';
+        if (!validateEmail(formData.email)) errors.email = 'Invalid email address.';
+        if (!validatePhone(formData.phoneNumber)) errors.phoneNumber = 'Phone must be 10 digits (09...) or 13 digits (+251...)';
+        if (formData.newPassword && !validatePassword(formData.newPassword)) errors.newPassword = 'Password must be 8+ chars, upper, lower, number, special.';
+        if (formData.newPassword !== formData.confirmNewPassword) errors.confirmNewPassword = 'Passwords do not match.';
+        setEditErrors(errors);
+        if (Object.keys(errors).length > 0) { setLoading(false); return; }
         setLoading(true);
         setError(null);
 
@@ -1017,6 +1023,7 @@ const SupervisorPage = () => {
                                                 placeholder="Enter your full name"
                                             />
                                         </label>
+                                        {editErrors.fullName && <span className="error-message">{editErrors.fullName}</span>}
                                     </div>
 
                                     <div className="form-group">
@@ -1029,6 +1036,7 @@ const SupervisorPage = () => {
                                                 placeholder="Enter your email"
                                             />
                                         </label>
+                                        {editErrors.email && <span className="error-message">{editErrors.email}</span>}
                                     </div>
 
                                     <div className="form-group">
@@ -1041,6 +1049,7 @@ const SupervisorPage = () => {
                                                 placeholder="Enter your phone number"
                                             />
                                         </label>
+                                        {editErrors.phoneNumber && <span className="error-message">{editErrors.phoneNumber}</span>}
                                     </div>
 
                                     <div className="form-group">
@@ -1151,6 +1160,33 @@ const SupervisorPage = () => {
                                             {complaint.isUrgent && <p className="urgent-tag">URGENT</p>}
                                             {complaint.status === 'resolved' && (
                                                 <p><strong>Resolved On:</strong> {new Date(complaint.resolvedAt).toLocaleDateString()}</p>
+                                            )}
+                                            {complaint.file && (
+                                                <div className="supervisor-complaint-media">
+                                                    {complaint.file.match(/\.(jpg|jpeg|png)$/i) ? (
+                                                        <img
+                                                            src={`http://localhost:5000/${complaint.file}`}
+                                                            alt="Complaint evidence"
+                                                            className="supervisor-complaint-photo"
+                                                        />
+                                                    ) : complaint.file.match(/\.(mp4|mov|avi)$/i) ? (
+                                                        <video
+                                                            controls
+                                                            className="supervisor-complaint-video"
+                                                            src={`http://localhost:5000/${complaint.file}`}
+                                                        >
+                                                            Your browser does not support the video tag.
+                                                        </video>
+                                                    ) : complaint.file.match(/\.(mp3|wav)$/i) ? (
+                                                        <audio
+                                                            controls
+                                                            className="supervisor-complaint-audio"
+                                                            src={`http://localhost:5000/${complaint.file}`}
+                                                        >
+                                                            Your browser does not support the audio tag.
+                                                        </audio>
+                                                    ) : null}
+                                                </div>
                                             )}
                                         </div>
                                         <div className="Supervisor-complaint-actions">
@@ -1271,6 +1307,33 @@ const SupervisorPage = () => {
                                             <p><strong>Status:</strong> {selectedComplaint.status}</p>
                                             {selectedComplaint.resolvedAt && (
                                                 <p><strong>Resolved On:</strong> {new Date(selectedComplaint.resolvedAt).toLocaleString()}</p>
+                                            )}
+                                            {selectedComplaint.file && (
+                                                <div className="supervisor-complaint-media">
+                                                    {selectedComplaint.file.match(/\.(jpg|jpeg|png)$/i) ? (
+                                                        <img
+                                                            src={`http://localhost:5000/${selectedComplaint.file}`}
+                                                            alt="Complaint evidence"
+                                                            className="supervisor-complaint-photo"
+                                                        />
+                                                    ) : selectedComplaint.file.match(/\.(mp4|mov|avi)$/i) ? (
+                                                        <video
+                                                            controls
+                                                            className="supervisor-complaint-video"
+                                                            src={`http://localhost:5000/${selectedComplaint.file}`}
+                                                        >
+                                                            Your browser does not support the video tag.
+                                                        </video>
+                                                    ) : selectedComplaint.file.match(/\.(mp3|wav)$/i) ? (
+                                                        <audio
+                                                            controls
+                                                            className="supervisor-complaint-audio"
+                                                            src={`http://localhost:5000/${selectedComplaint.file}`}
+                                                        >
+                                                            Your browser does not support the audio tag.
+                                                        </audio>
+                                                    ) : null}
+                                                </div>
                                             )}
                                         </div>
                                         <div className="modal-actions">
