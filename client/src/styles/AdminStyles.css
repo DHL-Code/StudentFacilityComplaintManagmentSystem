@@ -550,24 +550,57 @@ button:hover {
 }
 
 .modal-content {
-  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  background: #fff;
   padding: 2rem;
-  border-radius: 15px;
+  border-radius: 8px;
   width: 90%;
-  max-width: 500px;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
   position: relative;
-  animation: modalEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-@keyframes modalEnter {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.modal-content h3 {
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.modal-content .form-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modal-content .form-group label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.modal-content .form-group input,
+.modal-content .form-group select {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.modal-content .form-group input:focus,
+.modal-content .form-group select:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+.admin-student-form-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  justify-content: flex-end;
 }
 
 /* Loading Spinner */
@@ -1649,4 +1682,123 @@ body.dark-mode .staff-form .form-group label {
 .dorms-list::-webkit-scrollbar-thumb {
   background: #4dabf7;
   border-radius: 8px;
+}
+
+/* Hamburger Menu Styles */
+.hamburger-icon {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    cursor: pointer;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.hamburger-icon:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile Sidebar Styles */
+.mobile-sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100%;
+    background: #1a1a1a;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    overflow-y: auto;
+}
+
+.mobile-sidebar .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.mobile-sidebar .sidebar-header h2 {
+    color: #fff;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.mobile-sidebar .sidebar-header button {
+    background: none;
+    border: none;
+    color: #fba53b;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.mobile-sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mobile-sidebar li {
+    padding: 15px;
+    margin: 5px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+}
+
+.mobile-sidebar li:hover {
+    background: #333;
+}
+
+.mobile-sidebar li.active {
+    background: #fba53b;
+    color: #000;
+}
+
+.mobile-sidebar li svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .hamburger-icon {
+        display: block;
+    }
+
+    .modern-sidebar {
+        display: none;
+    }
+
+    .modern-main-content {
+        margin-left: 0;
+        padding: 20px;
+    }
+
+    .mobile-sidebar-overlay {
+        display: block;
+    }
 }

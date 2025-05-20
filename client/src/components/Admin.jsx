@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AdminNotificationBell from '../components/AdminNotificationBell';
 import '../styles/AdminStyles.css';
 import { AlertCircle } from 'lucide-react';
 import MessagePopup from './MessagePopup';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon, faSignOutAlt, faUser, faBell, faHome, faClipboardList, faUsers, faUniversity, faBuilding, faChartBar, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faSun, faMoon, faSignOutAlt, faUser, faBell, faHome, faClipboardList, faUsers, faUniversity, faBuilding, faChartBar, faPlus, faBars } from '@fortawesome/free-solid-svg-icons';
+import { FaBars } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
@@ -118,6 +119,9 @@ const AdminPage = () => {
 
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarRef = useRef(null);
 
   const location = useLocation();
 
@@ -1467,6 +1471,14 @@ const AdminPage = () => {
     setErrorMessage('');
 
     try {
+      // Check if studentId already exists
+      const existingId = studentApprovals.find(s => s.studentId === newStudent.studentId);
+      if (existingId) {
+        setErrorMessage('Student ID already exists. Please use a different ID.');
+        setLoading(false);
+        return;
+      }
+
       // Check if email already exists
       const existingEmail = studentApprovals.find(s => s.email === newStudent.email);
       if (existingEmail) {
@@ -1478,9 +1490,6 @@ const AdminPage = () => {
       // Format the date to be compatible with datetime-local input
       const formattedDate = new Date(newStudent.registrationDate).toISOString().slice(0, 16);
 
-      // Generate the next sequential ID
-      const nextId = `s${String(studentApprovals.length + 1).padStart(3, '0')}`;
-
       const response = await fetch('http://localhost:5000/api/student-approvals', {
         method: 'POST',
         headers: {
@@ -1488,7 +1497,7 @@ const AdminPage = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          studentId: nextId,
+          studentId: newStudent.studentId,
           name: newStudent.name,
           email: newStudent.email,
           department: newStudent.department,
@@ -1523,7 +1532,14 @@ const AdminPage = () => {
         const reorderedData = reorderStudentIds(approvalsData);
         setStudentApprovals(reorderedData);
       } else {
-        setErrorMessage(data.message || 'Failed to create student approval request');
+        // Handle server-side validation errors
+        if (data.message) {
+          setErrorMessage(data.message);
+        } else if (data.error) {
+          setErrorMessage(data.error);
+        } else {
+          setErrorMessage('Failed to create student approval request');
+        }
       }
     } catch (error) {
       console.error('Error creating student approval:', error);
@@ -1957,9 +1973,75 @@ const AdminPage = () => {
     }
   }, [successMessage]);
 
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Add this function to handle form field changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewStudent(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   return (
     <div className={`admin-dashboard-modern${darkMode ? ' dark' : ''}`}> {/* Modern wrapper */}
-      {/* Sidebar */}
+      {/* Hamburger Icon */}
+      <div className="hamburger-icon" onClick={() => setIsSidebarOpen(true)}>
+        <FaBars />
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="mobile-sidebar-overlay">
+          <div className="mobile-sidebar" ref={sidebarRef}>
+            <div className="sidebar-header">
+              <h2>Admin Dashboard</h2>
+              <button onClick={() => setIsSidebarOpen(false)}>×</button>
+            </div>
+            <ul>
+              <li className={activeTab === 'account-approvals' ? 'active' : ''} onClick={() => { setActiveTab('account-approvals'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faUsers} /> <span>Student Approvals</span>
+              </li>
+              <li className={activeTab === 'create-staff' ? 'active' : ''} onClick={() => { setActiveTab('create-staff'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faUser} /> <span>Create Staff</span>
+              </li>
+              <li className={activeTab === 'feedback' ? 'active' : ''} onClick={() => { setActiveTab('feedback'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faBell} /> <span>Student Feedback</span>
+              </li>
+              <li className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faUser} /> <span>Profile</span>
+              </li>
+              <li className={activeTab === 'colleges-departments' ? 'active' : ''} onClick={() => { setActiveTab('colleges-departments'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faUniversity} /> <span>Colleges & Departments</span>
+              </li>
+              <li className={activeTab === 'blocks-dorms' ? 'active' : ''} onClick={() => { setActiveTab('blocks-dorms'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faBuilding} /> <span>Blocks & Dorms</span>
+              </li>
+              <li className={activeTab === 'summary-reports' ? 'active' : ''} onClick={() => { setActiveTab('summary-reports'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faChartBar} /> <span>Summary Reports</span>
+              </li>
+              <li onClick={handleLogout}>
+                <FontAwesomeIcon icon={faSignOutAlt} /> <span>Log Out</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Existing Sidebar */}
       <aside className="modern-sidebar">
         <div className="sidebar-header">
           <span className="sidebar-logo">Admin Dashboard</span>
@@ -2521,75 +2603,139 @@ const AdminPage = () => {
                 <div className="modal-overlay">
                   <div className="modal-content">
                     <h3>{editingStudent ? 'Edit Student' : 'Add Student'}</h3>
+                    {errorMessage && (
+                      <div className="error-message" style={{ 
+                        color: '#dc3545', 
+                        backgroundColor: '#f8d7da', 
+                        padding: '10px', 
+                        marginBottom: '15px', 
+                        borderRadius: '4px',
+                        border: '1px solid #f5c6cb'
+                      }}>
+                        {errorMessage}
+                      </div>
+                    )}
                     <form onSubmit={handleFormSubmit}>
-                      {/* Student ID (read-only for add, editable for edit) */}
+                      {/* Student ID */}
                       <div className="form-group">
                         <label>ID</label>
-                        <input type="text" value={newStudent.studentId} onChange={e => setNewStudent({ ...newStudent, studentId: e.target.value })} readOnly={!editingStudent} required />
-                  </div>
+                        <input 
+                          type="text" 
+                          name="studentId"
+                          value={newStudent.studentId} 
+                          onChange={handleInputChange}
+                          readOnly={editingStudent} 
+                          required 
+                        />
+                      </div>
                       {/* Status */}
                       <div className="form-group">
                         <label>Status</label>
-                        <select value={newStudent.status} onChange={e => setNewStudent({ ...newStudent, status: e.target.value })} required>
+                        <select 
+                          name="status"
+                          value={newStudent.status} 
+                          onChange={handleInputChange}
+                          required
+                        >
                           <option value="pending">Pending</option>
                           <option value="approved">Approved</option>
                           <option value="rejected">Rejected</option>
                         </select>
-                  </div>
+                      </div>
                       {/* Name */}
                       <div className="form-group">
                         <label>Name</label>
-                        <input type="text" value={newStudent.name} onChange={e => setNewStudent({ ...newStudent, name: e.target.value })} required />
-                  </div>
+                        <input 
+                          type="text" 
+                          name="name"
+                          value={newStudent.name} 
+                          onChange={handleInputChange}
+                          required 
+                        />
+                      </div>
                       {/* Email */}
                       <div className="form-group">
                         <label>Email</label>
-                        <input type="email" value={newStudent.email} onChange={e => setNewStudent({ ...newStudent, email: e.target.value })} required />
+                        <input 
+                          type="email" 
+                          name="email"
+                          value={newStudent.email} 
+                          onChange={handleInputChange}
+                          required 
+                        />
                       </div>
                       {/* College Dropdown */}
                       <div className="form-group">
                         <label>College</label>
-                        <select value={newStudent.college} onChange={async e => {
-                          setNewStudent({ ...newStudent, college: e.target.value, department: '' });
-                          // Fetch departments for selected college
-                          const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(e.target.value)}/departments`, {
-                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                        <select 
+                          name="college"
+                          value={newStudent.college} 
+                          onChange={async (e) => {
+                            handleInputChange(e);
+                            // Fetch departments for selected college
+                            const response = await fetch(`http://localhost:5000/api/colleges/${encodeURIComponent(e.target.value)}/departments`, {
+                              headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                             });
-                          if (response.ok) {
-                            const data = await response.json();
-                            setDepartments(data);
-                        } else {
-                          setDepartments([]);
-                        }
-                        }} required>
-                      <option value="">Select College</option>
+                            if (response.ok) {
+                              const data = await response.json();
+                              setDepartments(data);
+                            } else {
+                              setDepartments([]);
+                            }
+                          }} 
+                          required
+                        >
+                          <option value="">Select College</option>
                           {colleges.map(college => (
                             <option key={college._id} value={college.name}>{college.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                          ))}
+                        </select>
+                      </div>
                       {/* Department Dropdown */}
                       <div className="form-group">
                         <label>Department</label>
-                        <select value={newStudent.department} onChange={e => setNewStudent({ ...newStudent, department: e.target.value })} required>
-                      <option value="">Select Department</option>
+                        <select 
+                          name="department"
+                          value={newStudent.department} 
+                          onChange={handleInputChange}
+                          required
+                        >
+                          <option value="">Select Department</option>
                           {departments.map(dept => (
                             <option key={dept._id} value={dept.name}>{dept.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                          ))}
+                        </select>
+                      </div>
                       {/* Registration Date */}
                       <div className="form-group">
                         <label>Registration Date</label>
-                        <input type="datetime-local" value={newStudent.registrationDate} onChange={e => setNewStudent({ ...newStudent, registrationDate: e.target.value })} required />
-                  </div>
-                  <div className="admin-student-form-buttons">
+                        <input 
+                          type="datetime-local" 
+                          name="registrationDate"
+                          value={newStudent.registrationDate} 
+                          onChange={handleInputChange}
+                          required 
+                        />
+                      </div>
+                      <div className="admin-student-form-buttons">
                         <button type="submit" className="add-student-button">{editingStudent ? 'Update' : 'Add'}</button>
-                        <button type="button" className="student-delete-btn" onClick={() => { setShowAddStudentForm(false); setEditingStudent(null); }}>Cancel</button>
+                        <button type="button" className="student-delete-btn" onClick={() => { 
+                          setShowAddStudentForm(false); 
+                          setEditingStudent(null);
+                          setNewStudent({
+                            studentId: '',
+                            name: '',
+                            email: '',
+                            department: '',
+                            college: '',
+                            status: 'pending',
+                            registrationDate: new Date().toISOString().slice(0, 16)
+                          });
+                        }}>Cancel</button>
+                      </div>
+                    </form>
                   </div>
-                </form>
-              </div>
-            </div>
+                </div>
           )}
               </div>
           )}

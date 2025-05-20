@@ -6,6 +6,8 @@ import { FaSun, FaMoon, FaBars, FaTimes } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHome, faCommentDots, faUser, faCog, faFileAlt, faClipboardList, faBook, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -65,6 +67,8 @@ const SupervisorPage = () => {
 
     const [expandedImage, setExpandedImage] = useState(null);
 
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
@@ -112,6 +116,16 @@ const SupervisorPage = () => {
             return () => clearTimeout(timer);
         }
     }, [error]);
+
+    useEffect(() => {
+        if (!isSidebarOpen) return;
+        const handleClick = (e) => {
+            if (e.target.closest('.mobile-sidebar') || e.target.closest('.hamburger-icon')) return;
+            setIsSidebarOpen(false);
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [isSidebarOpen]);
 
     const fetchProfile = async () => {
         setLoading(true);
@@ -806,7 +820,12 @@ const SupervisorPage = () => {
 
     return (
         <div className="supervisor-page">
-            {/* Sidebar */}
+            {/* Hamburger for mobile */}
+            <div className="hamburger-icon" onClick={() => setIsSidebarOpen(true)}>
+                <FaBars size={28} color="#fba53b" />
+            </div>
+
+            {/* Desktop Sidebar */}
             <div className="Supervisor-sidebar">
                 <div className="sidebar-header">Supervisor Dashboard</div>
                 <div className="Supervisor-sidebar-nav">
@@ -836,6 +855,66 @@ const SupervisorPage = () => {
                     Log Out
                 </button>
             </div>
+
+            {/* Mobile Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div className="mobile-sidebar-overlay">
+                    <nav className="mobile-sidebar">
+                        <div className="sidebar-header">
+                            <span className="sidebar-logo">Supervisor Dashboard</span>
+                            <button onClick={() => setIsSidebarOpen(false)}>&times;</button>
+                        </div>
+                        <ul>
+                            <li 
+                                className={activeSection === 'dashboard' ? 'active' : ''} 
+                                onClick={() => handleNavigation('dashboard')}
+                            >
+                                <FontAwesomeIcon icon={faHome} /> <span>Dashboard</span>
+                            </li>
+                            <li 
+                                className={activeSection === 'complaints' ? 'active' : ''} 
+                                onClick={() => handleNavigation('complaints')}
+                            >
+                                <FontAwesomeIcon icon={faCommentDots} /> <span>Complaint Management</span>
+                            </li>
+                            <li 
+                                className={activeSection === 'viewProfile' ? 'active' : ''} 
+                                onClick={() => handleNavigation('viewProfile')}
+                            >
+                                <FontAwesomeIcon icon={faUser} /> <span>View Profile</span>
+                            </li>
+                            <li 
+                                className={activeSection === 'editProfile' ? 'active' : ''} 
+                                onClick={() => handleNavigation('editProfile')}
+                            >
+                                <FontAwesomeIcon icon={faCog} /> <span>Edit Profile</span>
+                            </li>
+                            <li 
+                                className={activeSection === 'reports' ? 'active' : ''} 
+                                onClick={() => handleNavigation('reports')}
+                            >
+                                <FontAwesomeIcon icon={faFileAlt} /> <span>Escalation Reports</span>
+                            </li>
+                            <li 
+                                className={activeSection === 'summaryReports' ? 'active' : ''} 
+                                onClick={() => handleNavigation('summaryReports')}
+                            >
+                                <FontAwesomeIcon icon={faClipboardList} /> <span>View Summary Reports</span>
+                            </li>
+                            <li 
+                                className={activeSection === 'viewReports' ? 'active' : ''} 
+                                onClick={() => handleNavigation('viewReports')}
+                            >
+                                <FontAwesomeIcon icon={faBook} /> <span>View Reports</span>
+                            </li>
+                            <li onClick={handleLogout}>
+                                <FontAwesomeIcon icon={faSignOutAlt} /> <span>Log Out</span>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            )}
+
             {/* Main Content */}
             <div className="Supervisor-main-content">
                 {/* Topbar */}

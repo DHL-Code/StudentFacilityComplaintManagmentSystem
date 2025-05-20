@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DeanNotificationBell from '../components/DeanNotificationBell';
 import '../styles/DeanStyles.css';
-import { FaSun, FaMoon } from 'react-icons/fa';
+import { FaSun, FaMoon, FaBars } from 'react-icons/fa';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -44,6 +44,7 @@ const DeanPage = () => {
     const savedHiddenComplaints = localStorage.getItem('hiddenComplaints');
     return savedHiddenComplaints ? new Set(JSON.parse(savedHiddenComplaints)) : new Set();
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Validation helpers
   const validateName = (name) => /^[A-Za-z ]+$/.test(name.trim());
@@ -73,6 +74,17 @@ const DeanPage = () => {
         return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // Add click outside handler
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    const handleClick = (e) => {
+      if (e.target.closest('.mobile-sidebar') || e.target.closest('.hamburger-icon')) return;
+      setIsSidebarOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isSidebarOpen]);
 
   const chartOptions = {
     responsive: true,
@@ -586,36 +598,74 @@ const DeanPage = () => {
 
   return (
     <div className={`dean-container${darkMode ? ' dark-mode' : ''}`}>
-      
+      {/* Hamburger for mobile */}
+      <div className="hamburger-icon" onClick={() => setIsSidebarOpen(true)}>
+        <FaBars size={28} color="#fba53b" />
+      </div>
+
+      {/* Desktop Sidebar */}
       <aside className="modern-sidebar">
         <div className="sidebar-header">
           <span className="sidebar-logo">Dean Dashboard</span>
         </div>
         <nav className="sidebar-nav">
           <ul>
-            <li className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>
+            <li className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}>
               <FontAwesomeIcon icon={faHome} /> <span>Dashboard</span>
             </li>
-            <li className={activeTab === 'complaints' ? 'active' : ''} onClick={() => setActiveTab('complaints')}>
+            <li className={activeTab === 'complaints' ? 'active' : ''} onClick={() => { setActiveTab('complaints'); setIsSidebarOpen(false); }}>
               <FontAwesomeIcon icon={faCommentDots} /> <span>Manage Complaints</span>
             </li>
-            <li className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); fetchDeanData(); }}>
+            <li className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); fetchDeanData(); setIsSidebarOpen(false); }}>
               <FontAwesomeIcon icon={faUser} /> <span>Profile</span>
             </li>
-            <li className={activeTab === 'editProfile' ? 'active' : ''} onClick={() => setActiveTab('editProfile')}>
+            <li className={activeTab === 'editProfile' ? 'active' : ''} onClick={() => { setActiveTab('editProfile'); setIsSidebarOpen(false); }}>
               <FontAwesomeIcon icon={faCog} /> <span>Edit Profile</span>
             </li>
-            <li className={activeTab === 'summaryReports' ? 'active' : ''} onClick={() => setActiveTab('summaryReports')}>
+            <li className={activeTab === 'summaryReports' ? 'active' : ''} onClick={() => { setActiveTab('summaryReports'); setIsSidebarOpen(false); }}>
               <FontAwesomeIcon icon={faBook} /> <span>Summary Report</span>
             </li>
           </ul>
         </nav>
         <div className="sidebar-footer">
-          <button className="logout-btn" onClick={handleLogout}>
+          <button className="logout-btn" onClick={() => { handleLogout(); setIsSidebarOpen(false); }}>
             <FontAwesomeIcon icon={faSignOutAlt} /> Log Out
           </button>
         </div>
       </aside>
+
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="mobile-sidebar-overlay">
+          <nav className="mobile-sidebar">
+            <div className="sidebar-header">
+              <span className="sidebar-logo">Dean Dashboard</span>
+              <button onClick={() => setIsSidebarOpen(false)}>&times;</button>
+            </div>
+            <ul>
+              <li className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faHome} /> <span>Dashboard</span>
+              </li>
+              <li className={activeTab === 'complaints' ? 'active' : ''} onClick={() => { setActiveTab('complaints'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faCommentDots} /> <span>Manage Complaints</span>
+              </li>
+              <li className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); fetchDeanData(); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faUser} /> <span>Profile</span>
+              </li>
+              <li className={activeTab === 'editProfile' ? 'active' : ''} onClick={() => { setActiveTab('editProfile'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faCog} /> <span>Edit Profile</span>
+              </li>
+              <li className={activeTab === 'summaryReports' ? 'active' : ''} onClick={() => { setActiveTab('summaryReports'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faBook} /> <span>Summary Report</span>
+              </li>
+              <li onClick={() => { handleLogout(); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faSignOutAlt} /> <span>Log Out</span>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
+
       <main className="modern-main-content">
         <header className="modern-topbar">
           <div className="topbar-left"></div>

@@ -5,6 +5,7 @@ import { faFlag, faCommentDots, faMoon, faSun, faBell, faSignOutAlt, faExpand, f
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import '../styles/ProctorDashboard.css';
+import { FaBars } from 'react-icons/fa';
 
 function ProctorDashboard() {
   const location = useLocation();
@@ -45,6 +46,7 @@ function ProctorDashboard() {
   const [profileUpdateMessage, setProfileUpdateMessage] = useState('');
   const [isUpdateSuccess, setIsUpdateSuccess] = useState(false);
   const [editErrors, setEditErrors] = useState({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Consolidated data fetching
   useEffect(() => {
@@ -547,9 +549,25 @@ function ProctorDashboard() {
     }
   }, [profileUpdateMessage]);
 
+  // Add click outside handler
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    const handleClick = (e) => {
+      if (e.target.closest('.mobile-sidebar') || e.target.closest('.hamburger-icon')) return;
+      setIsSidebarOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isSidebarOpen]);
+
   return (
     <div className={`proctor-dashboard-modern${darkMode ? ' dark' : ''}`}>
-      {/* Sidebar */}
+      {/* Hamburger for mobile */}
+      <div className="hamburger-icon" onClick={() => setIsSidebarOpen(true)}>
+        <FaBars size={28} color="#fba53b" />
+      </div>
+
+      {/* Desktop Sidebar */}
       <aside className="modern-sidebar">
         <div className="sidebar-header">
           <span className="sidebar-logo">Proctor Dashboard</span>
@@ -579,6 +597,38 @@ function ProctorDashboard() {
           </button>
         </div>
       </aside>
+
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="mobile-sidebar-overlay">
+          <nav className="mobile-sidebar">
+            <div className="sidebar-header">
+              <span className="sidebar-logo">Proctor Dashboard</span>
+              <button onClick={() => setIsSidebarOpen(false)}>&times;</button>
+            </div>
+            <ul>
+              <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => { setActiveSection('dashboard'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faHome} /> <span>Dashboard</span>
+              </li>
+              <li className={activeSection === 'notifications' ? 'active' : ''} onClick={() => { setActiveSection('notifications'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faBell} /> <span>Complaints</span>
+              </li>
+              <li className={activeSection === 'profile' ? 'active' : ''} onClick={() => { setActiveSection('profile'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faUser} /> <span>My Profile</span>
+              </li>
+              <li className={activeSection === 'report' ? 'active' : ''} onClick={() => { setActiveSection('report'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faFileAlt} /> <span>Write Report</span>
+              </li>
+              <li className={activeSection === 'summary-report' ? 'active' : ''} onClick={() => { setActiveSection('summary-report'); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faClipboardList} /> <span>Summary Report</span>
+              </li>
+              <li onClick={() => { handleLogout(); setIsSidebarOpen(false); }}>
+                <FontAwesomeIcon icon={faSignOutAlt} /> <span>Log Out</span>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="modern-main-content">
